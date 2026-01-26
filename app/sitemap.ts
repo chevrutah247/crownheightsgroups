@@ -1,10 +1,9 @@
 import { MetadataRoute } from 'next';
-import { groups, categories, locations } from '@/lib/data';
+import { categories } from '@/lib/data';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://crownheightsgroups.com';
-
-  // Static pages
+  
   const staticPages = [
     {
       url: baseUrl,
@@ -13,10 +12,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: `${baseUrl}/suggest`,
+      url: `${baseUrl}/services`,
       lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
-      priority: 0.5,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/contact`,
@@ -24,35 +23,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.5,
     },
+    {
+      url: `${baseUrl}/suggest`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.5,
+    },
   ];
 
-  // Category pages
-  const categoryPages = categories.map(category => ({
-    url: `${baseUrl}/c/${category.slug}`,
+  const categoryPages = categories.map(cat => ({
+    url: `${baseUrl}/c/${cat.slug}`,
     lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.8,
+    changeFrequency: 'daily' as const,
+    priority: 0.7,
   }));
 
-  // Location pages
-  const locationPages = locations
-    .filter(loc => loc.status === 'approved')
-    .map(location => ({
-      url: `${baseUrl}/area/${location.neighborhood.toLowerCase().replace(/\s+/g, '-')}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    }));
-
-  // Group pages
-  const groupPages = groups
-    .filter(group => group.status === 'approved')
-    .map(group => ({
-      url: `${baseUrl}/g/${group.id}`,
-      lastModified: new Date(group.createdAt),
-      changeFrequency: 'monthly' as const,
-      priority: 0.6,
-    }));
-
-  return [...staticPages, ...categoryPages, ...locationPages, ...groupPages];
+  return [...staticPages, ...categoryPages];
 }
