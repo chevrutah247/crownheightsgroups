@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
-import { serviceContacts as defaultServices } from '@/lib/data';
+
+const defaultServices: any[] = [];
 
 function getRedis() {
   const url = process.env.KV_REST_API_URL;
@@ -20,10 +21,9 @@ export async function GET() {
       if (Array.isArray(data)) return NextResponse.json(data);
     }
     
-    await redis.set('services', JSON.stringify(defaultServices));
     return NextResponse.json(defaultServices);
   } catch (error) {
-    console.error('GET services error:', error);
+    console.error('GET error:', error);
     return NextResponse.json(defaultServices);
   }
 }
@@ -31,20 +31,15 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const redis = getRedis();
-    if (!redis) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
+    if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     
     const newService = await request.json();
-    console.log('Creating service:', newService);
     
     let services: any[] = [];
     const stored = await redis.get('services');
     if (stored) {
       services = typeof stored === 'string' ? JSON.parse(stored) : stored;
-      if (!Array.isArray(services)) services = [...defaultServices];
-    } else {
-      services = [...defaultServices];
+      if (!Array.isArray(services)) services = [];
     }
     
     const id = String(Date.now());
@@ -53,6 +48,9 @@ export async function POST(request: NextRequest) {
       name: newService.name,
       phone: newService.phone,
       secondPhone: newService.secondPhone || '',
+      address: newService.address || '',
+      website: newService.website || '',
+      logo: newService.logo || '',
       categoryId: newService.categoryId || '1',
       description: newService.description || '',
       languages: newService.languages || ['English'],
@@ -65,10 +63,9 @@ export async function POST(request: NextRequest) {
     services.push(service);
     await redis.set('services', JSON.stringify(services));
     
-    console.log('Service created:', service);
     return NextResponse.json(service);
   } catch (error) {
-    console.error('POST services error:', error);
+    console.error('POST error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -76,9 +73,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const redis = getRedis();
-    if (!redis) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
+    if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     
     const updated = await request.json();
     
@@ -86,22 +81,18 @@ export async function PUT(request: NextRequest) {
     const stored = await redis.get('services');
     if (stored) {
       services = typeof stored === 'string' ? JSON.parse(stored) : stored;
-      if (!Array.isArray(services)) services = [...defaultServices];
-    } else {
-      services = [...defaultServices];
+      if (!Array.isArray(services)) services = [];
     }
     
     const index = services.findIndex((s: any) => s.id === updated.id);
-    if (index === -1) {
-      return NextResponse.json({ error: 'Service not found' }, { status: 404 });
-    }
+    if (index === -1) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     
     services[index] = { ...services[index], ...updated };
     await redis.set('services', JSON.stringify(services));
     
     return NextResponse.json(services[index]);
   } catch (error) {
-    console.error('PUT services error:', error);
+    console.error('PUT error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -109,9 +100,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const redis = getRedis();
-    if (!redis) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
+    if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     
     const { id } = await request.json();
     
@@ -119,9 +108,7 @@ export async function DELETE(request: NextRequest) {
     const stored = await redis.get('services');
     if (stored) {
       services = typeof stored === 'string' ? JSON.parse(stored) : stored;
-      if (!Array.isArray(services)) services = [...defaultServices];
-    } else {
-      services = [...defaultServices];
+      if (!Array.isArray(services)) services = [];
     }
     
     services = services.filter((s: any) => s.id !== id);
@@ -129,7 +116,7 @@ export async function DELETE(request: NextRequest) {
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('DELETE services error:', error);
+    console.error('DELETE error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }

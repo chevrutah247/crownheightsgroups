@@ -4,115 +4,97 @@ import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EmergencyBar from '@/components/EmergencyBar';
-import { 
-  serviceCategories, 
-  serviceContacts, 
-  getApprovedServiceContacts,
-  getServiceCategoryById,
-  getLocationById 
-} from '@/lib/data';
-import { ServiceContact, ServiceCategory } from '@/lib/types';
 
-interface UserInfo {
+interface ServiceCategory {
+  id: string;
   name: string;
-  email: string;
-  role: 'user' | 'admin';
+  nameRu?: string;
+  icon: string;
+  slug: string;
+}
+
+interface Service {
+  id: string;
+  name: string;
+  phone: string;
+  secondPhone?: string;
+  address?: string;
+  website?: string;
+  logo?: string;
+  categoryId: string;
+  description?: string;
+  languages?: string[];
+  isPinned?: boolean;
 }
 
 export default function ServicesPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredContacts, setFilteredContacts] = useState<ServiceContact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('session_token');
-      
       if (!token) {
         window.location.href = '/auth/login';
         return;
       }
-      
       try {
-        const response = await fetch('/api/auth/session', {
+        const res = await fetch('/api/auth/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token })
         });
-        
-        const data = await response.json();
-        
+        const data = await res.json();
         if (data.valid) {
-          setIsAuthenticated(true);
-          setUser(data.user);
+          setUser({ name: data.user.name, email: data.user.email, role: data.user.role });
         } else {
-          localStorage.removeItem('session_token');
           window.location.href = '/auth/login';
         }
-      } catch (error) {
+      } catch (e) {
         window.location.href = '/auth/login';
       }
     };
-    
     checkAuth();
+    fetchData();
   }, []);
 
-  // Filter contacts
-  useEffect(() => {
-    let result = getApprovedServiceContacts();
-    
-    if (selectedCategory) {
-      result = result.filter(c => c.categoryId === selectedCategory);
-    }
-    
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(c => 
-        c.name.toLowerCase().includes(query) ||
-        c.description?.toLowerCase().includes(query) ||
-        c.phone.includes(query)
-      );
-    }
-    
-    // Sort: pinned first, then alphabetically
-    result.sort((a, b) => {
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      return a.name.localeCompare(b.name);
-    });
-    
-    setFilteredContacts(result);
-  }, [selectedCategory, searchQuery]);
-
-  const handleLogout = async () => {
-    const token = localStorage.getItem('session_token');
+  const fetchData = async () => {
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
+      const [catRes, svcRes] = await Promise.all([
+        fetch('/api/admin/service-categories'),
+        fetch('/api/admin/services')
+      ]);
+      const catData = await catRes.json();
+      const svcData = await svcRes.json();
+      setCategories(Array.isArray(catData) ? catData : []);
+      setServices(Array.isArray(svcData) ? svcData : []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
-    localStorage.removeItem('session_token');
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
     window.location.href = '/auth/login';
   };
 
-  const handleCall = (phone: string) => {
-    window.location.href = `tel:${phone.replace(/[^0-9+]/g, '')}`;
-  };
+  const filteredServices = selectedCategory 
+    ? services.filter(s => s.categoryId === selectedCategory)
+    : services;
 
-  if (isAuthenticated === null) {
-    return (
-      <div className="auth-container">
-        <div className="loading">
-          <div className="spinner"></div>
-        </div>
-      </div>
-    );
+  const sortedServices = [...filteredServices].sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    return 0;
+  });
+
+  if (loading) {
+    return <div className="auth-container"><div className="loading"><div className="spinner"></div></div></div>;
   }
 
   return (
@@ -122,149 +104,115 @@ export default function ServicesPage() {
       
       <main className="main">
         <div className="page-header">
-          <h1 className="page-title">Services & Contacts</h1>
-          <p className="page-subtitle">
-            Find trusted professionals in your community
-          </p>
+          <h1 className="page-title">📞 Service Directory</h1>
+          <p className="page-subtitle">Find trusted local service providers</p>
         </div>
 
-        {/* Search and Filter */}
-        <div className="filters-section">
-          <div className="filters-row">
-            <div className="filter-group search-group">
-              <label className="filter-label">Search</label>
-              <input
-                type="text"
-                className="filter-input search-input"
-                placeholder="Search by name or phone..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            
-            <div className="filter-group">
-              <label className="filter-label">Category</label>
-              <select
-                className="filter-select"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-              >
-                <option value="">All Categories</option>
-                {serviceCategories.map(cat => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name} {cat.nameRu ? `/ ${cat.nameRu}` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Category Pills */}
-        <div className="category-pills">
+        {/* Category Filter */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '2rem' }}>
           <button
-            className={`category-pill ${selectedCategory === '' ? 'active' : ''}`}
             onClick={() => setSelectedCategory('')}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '20px',
+              border: 'none',
+              background: !selectedCategory ? '#2563eb' : '#e5e7eb',
+              color: !selectedCategory ? 'white' : '#333',
+              cursor: 'pointer',
+              fontWeight: !selectedCategory ? 'bold' : 'normal'
+            }}
           >
             All
           </button>
-          {serviceCategories.map(cat => (
+          {categories.sort((a,b) => (a.order || 0) - (b.order || 0)).map(cat => (
             <button
               key={cat.id}
-              className={`category-pill ${selectedCategory === cat.id ? 'active' : ''}`}
               onClick={() => setSelectedCategory(cat.id)}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '20px',
+                border: 'none',
+                background: selectedCategory === cat.id ? '#2563eb' : '#e5e7eb',
+                color: selectedCategory === cat.id ? 'white' : '#333',
+                cursor: 'pointer',
+                fontWeight: selectedCategory === cat.id ? 'bold' : 'normal'
+              }}
             >
               {cat.icon} {cat.name}
             </button>
           ))}
         </div>
 
-        {/* Results count */}
-        <div className="sort-bar">
-          <span className="results-count">
-            {filteredContacts.length} contact{filteredContacts.length !== 1 ? 's' : ''} found
-          </span>
-        </div>
-
-        {/* Contacts Grid */}
-        {filteredContacts.length > 0 ? (
-          <div className="services-grid">
-            {filteredContacts.map(contact => {
-              const category = getServiceCategoryById(contact.categoryId);
+        {/* Services Grid */}
+        {sortedServices.length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+            {sortedServices.map(service => {
+              const cat = categories.find(c => c.id === service.categoryId);
               return (
-                <div key={contact.id} className={`service-card ${contact.isPinned ? 'pinned' : ''}`}>
-                  {contact.isPinned && (
-                    <div className="pinned-badge">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                      </svg>
-                      Recommended
-                    </div>
+                <div key={service.id} style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  border: service.isPinned ? '2px solid #f59e0b' : '1px solid #eee'
+                }}>
+                  {service.isPinned && (
+                    <div style={{ color: '#f59e0b', fontSize: '0.8rem', marginBottom: '0.5rem' }}>⭐ Featured</div>
                   )}
                   
-                  <div className="service-header">
-                    <div className="service-icon">
-                      {category?.icon || '👤'}
-                    </div>
-                    <div className="service-info">
-                      <h3 className="service-name">{contact.name}</h3>
-                      {category && (
-                        <span className="service-category">
-                          {category.name}
-                          {category.nameRu && <span className="service-category-ru"> / {category.nameRu}</span>}
-                        </span>
-                      )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                    {service.logo ? (
+                      <img src={service.logo} alt={service.name} style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '50px', height: '50px', borderRadius: '8px', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                        {cat?.icon || '🔧'}
+                      </div>
+                    )}
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{service.name}</h3>
+                      <p style={{ margin: 0, color: '#666', fontSize: '0.85rem' }}>{cat?.name}</p>
                     </div>
                   </div>
-                  
-                  {contact.description && (
-                    <p className="service-description">{contact.description}</p>
+
+                  {service.description && (
+                    <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>{service.description}</p>
                   )}
-                  
-                  {contact.languages && contact.languages.length > 0 && (
-                    <div className="service-languages">
-                      <span className="languages-label">Languages:</span>
-                      {contact.languages.map(lang => (
-                        <span key={lang} className="language-tag">{lang}</span>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <a href={`tel:${service.phone}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#2563eb', textDecoration: 'none', fontWeight: 'bold' }}>
+                      📞 {service.phone}
+                    </a>
+                    {service.secondPhone && (
+                      <a href={`tel:${service.secondPhone}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#2563eb', textDecoration: 'none' }}>
+                        📞 {service.secondPhone}
+                      </a>
+                    )}
+                    {service.address && (
+                      <p style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, color: '#666', fontSize: '0.9rem' }}>
+                        📍 {service.address}
+                      </p>
+                    )}
+                    {service.website && (
+                      <a href={service.website.startsWith('http') ? service.website : `https://${service.website}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#2563eb', textDecoration: 'none', fontSize: '0.9rem' }}>
+                        🌐 Website
+                      </a>
+                    )}
+                  </div>
+
+                  {service.languages && service.languages.length > 0 && (
+                    <div style={{ marginTop: '1rem', display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                      {service.languages.map(lang => (
+                        <span key={lang} style={{ padding: '2px 8px', background: '#f3f4f6', borderRadius: '4px', fontSize: '0.75rem' }}>{lang}</span>
                       ))}
                     </div>
                   )}
-                  
-                  <div className="service-phones">
-                    <button 
-                      className="phone-btn primary"
-                      onClick={() => handleCall(contact.phone)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-                        <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
-                      </svg>
-                      {contact.phone}
-                    </button>
-                    
-                    {contact.secondPhone && (
-                      <button 
-                        className="phone-btn secondary"
-                        onClick={() => handleCall(contact.secondPhone!)}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-                          <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
-                        </svg>
-                        {contact.secondPhone}
-                      </button>
-                    )}
-                  </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="empty-state">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-            </svg>
-            <h3>No contacts found</h3>
-            <p>Try adjusting your filters or search query</p>
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+            <p>No services found</p>
           </div>
         )}
       </main>
