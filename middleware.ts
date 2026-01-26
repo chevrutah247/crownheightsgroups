@@ -5,8 +5,16 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Allow these paths without gate check
-  const publicPaths = ['/gate', '/api/', '/_next/', '/favicon.ico'];
-  if (publicPaths.some(path => pathname.startsWith(path))) {
+  const publicPaths = [
+    '/gate', 
+    '/api/', 
+    '/_next/', 
+    '/favicon.ico',
+    '/sitemap.xml',
+    '/robots.txt'
+  ];
+  
+  if (publicPaths.some(path => pathname.startsWith(path) || pathname === path)) {
     return NextResponse.next();
   }
   
