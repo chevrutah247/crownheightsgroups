@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = validateSession(token);
+    const user = await validateSession(token);
 
     if (!user) {
       return NextResponse.json(

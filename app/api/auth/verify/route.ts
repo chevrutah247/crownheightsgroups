@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user
-    const result = verifyUser(email, code);
+    const result = await verifyUser(email, code);
 
     if (!result.success) {
       return NextResponse.json(
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get updated user and create session
-    const user = getUserByEmail(email);
+    const user = await getUserByEmail(email);
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const token = createSession(email);
+    const token = await createSession(email);
 
     return NextResponse.json({
       success: true,

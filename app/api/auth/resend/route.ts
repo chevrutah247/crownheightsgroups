@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = getUserByEmail(email);
+    const user = await getUserByEmail(email);
     if (!user) {
       return NextResponse.json(
         { error: 'No account found with this email' },
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate new code
-    const newCode = regenerateVerificationCode(email);
+    const newCode = await regenerateVerificationCode(email);
     if (!newCode) {
       return NextResponse.json(
         { error: 'Failed to generate new code' },

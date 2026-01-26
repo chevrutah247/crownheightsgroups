@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate credentials
-    const result = validateLogin(email, password);
+    const result = await validateLogin(email, password);
 
     if (!result.success) {
       // Check if it's verification issue
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create session
-    const token = createSession(email);
+    const token = await createSession(email);
 
     return NextResponse.json({
       success: true,

@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user exists
-    const existingUser = getUserByEmail(email);
+    const existingUser = await getUserByEmail(email);
     if (existingUser) {
       if (existingUser.isVerified) {
         return NextResponse.json(
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user
-    const user = createUser(email, password, name);
+    const user = await createUser(email, password, name);
 
     // Log verification code for testing (remove in production!)
     console.log('=================================');
