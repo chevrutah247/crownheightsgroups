@@ -1,126 +1,141 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
-import { groups as defaultGroups } from '@/lib/data';
 
 function getRedis() {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
-  if (url && token) {
-    return new Redis({ url, token });
-  }
+  if (url && token) return new Redis({ url, token });
   return null;
 }
 
-// Get all groups
 export async function GET() {
   try {
     const redis = getRedis();
-    if (!redis) {
-      return NextResponse.json(defaultGroups);
-    }
+    if (!redis) return NextResponse.json([]);
     
     const stored = await redis.get('groups');
-    if (stored && Array.isArray(stored)) {
-      return NextResponse.json(stored);
+    if (stored) {
+      const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      if (Array.isArray(data)) return NextResponse.json(data);
     }
-    
-    // Initialize with default groups
-    await redis.set('groups', JSON.stringify(defaultGroups));
-    return NextResponse.json(defaultGroups);
+    return NextResponse.json([]);
   } catch (error) {
-    console.error('GET error:', error);
-    return NextResponse.json(defaultGroups);
+    console.error('GET groups error:', error);
+    return NextResponse.json([]);
   }
 }
 
-// Update a group
-export async function PUT(request: NextRequest) {
-  try {
-    const redis = getRedis();
-    if (!redis) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
-    
-    const updatedGroup = await request.json();
-    console.log('PUT received:', updatedGroup);
-    
-    let groups = await redis.get('groups') as any[];
-    if (!groups || !Array.isArray(groups)) {
-      groups = [...defaultGroups];
-    }
-    
-    const index = groups.findIndex((g: any) => g.id === updatedGroup.id);
-    if (index === -1) {
-      return NextResponse.json({ error: 'Group not found' }, { status: 404 });
-    }
-    
-    groups[index] = { ...groups[index], ...updatedGroup };
-    await redis.set('groups', JSON.stringify(groups));
-    
-    return NextResponse.json(groups[index]);
-  } catch (error) {
-    console.error('PUT error:', error);
-    return NextResponse.json({ error: String(error) }, { status: 500 });
-  }
-}
-
-// Create a new group
 export async function POST(request: NextRequest) {
   try {
     const redis = getRedis();
-    if (!redis) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
+    if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     
     const newGroup = await request.json();
-    console.log('POST received:', newGroup);
+    console.log('Creating group:', newGroup);
     
-    let groups = await redis.get('groups') as any[];
-    if (!groups || !Array.isArray(groups)) {
-      groups = [...defaultGroups];
+    let groups: any[] = [];
+    const stored = await redis.get('groups');
+    if (stored) {
+      groups = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      if (!Array.isArray(groups)) groups = [];
     }
     
     const id = String(Date.now());
+    
+    // Handle both whatsappLinks array and single whatsappLink
+    let whatsappLinks = newGroup.whatsappLinks || [];
+    if (newGroup.whatsappLink && !whatsappLinks.length) {
+      whatsappLinks = [newGroup.whatsappLink];
+    }
+    // Filter out empty links
+    whatsappLinks = whatsappLinks.filter((link: string) => link && link.trim());
+    
     const group = {
       id,
-      title: newGroup.title || 'Untitled',
+      title: newGroup.title || '',
       description: newGroup.description || '',
-      whatsappLink: newGroup.whatsappLink || '',
+      whatsappLinks: whatsappLinks,
+      whatsappLink: whatsappLinks[0] || '', // Keep for backwards compatibility
       categoryId: newGroup.categoryId || '1',
       locationId: newGroup.locationId || '1',
       language: newGroup.language || 'English',
-      tags: newGroup.tags || [],
-      isPinned: newGroup.isPinned || false,
+      status: newGroup.status || 'approved',
       clicksCount: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      status: 'approved'
+      isPinned: newGroup.isPinned || false,
+      pinnedOrder: newGroup.pinnedOrder || 999,
+      tags: newGroup.tags || [],
+      createdAt: new Date().toISOString()
     };
+    
+    console.log('Saving group:', group);
     
     groups.push(group);
     await redis.set('groups', JSON.stringify(groups));
     
-    console.log('Group created:', group);
     return NextResponse.json(group);
   } catch (error) {
-    console.error('POST error:', error);
+    console.error('POST groups error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
 
-// Delete a group
+export async function PUT(request: NextRequest) {
+  try {
+    const redis = getRedis();
+    if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    
+    const updated = await request.json();
+    console.log('Updating group:', updated);
+    
+    let groups: any[] = [];
+    const stored = await redis.get('groups');
+    if (stored) {
+      groups = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      if (!Array.isArray(groups)) groups = [];
+    }
+    
+    const index = groups.findIndex((g: any) => g.id === updated.id);
+    if (index === -1) {
+      return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    }
+    
+    // Handle whatsappLinks
+    let whatsappLinks = updated.whatsappLinks || [];
+    if (updated.whatsappLink && !whatsappLinks.length) {
+      whatsappLinks = [updated.whatsappLink];
+    }
+    whatsappLinks = whatsappLinks.filter((link: string) => link && link.trim());
+    
+    groups[index] = {
+      ...groups[index],
+      ...updated,
+      whatsappLinks: whatsappLinks,
+      whatsappLink: whatsappLinks[0] || groups[index].whatsappLink || ''
+    };
+    
+    console.log('Saved group:', groups[index]);
+    
+    await redis.set('groups', JSON.stringify(groups));
+    
+    return NextResponse.json(groups[index]);
+  } catch (error) {
+    console.error('PUT groups error:', error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   try {
     const redis = getRedis();
-    if (!redis) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
+    if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     
     const { id } = await request.json();
-    console.log('DELETE received:', id);
     
-    let groups = await redis.get('groups') as any[];
-    if (!groups || !Array.isArray(groups)) {
-      groups = [...defaultGroups];
+    let groups: any[] = [];
+    const stored = await redis.get('groups');
+    if (stored) {
+      groups = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      if (!Array.isArray(groups)) groups = [];
     }
     
     groups = groups.filter((g: any) => g.id !== id);
@@ -128,7 +143,7 @@ export async function DELETE(request: NextRequest) {
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('DELETE error:', error);
+    console.error('DELETE groups error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
