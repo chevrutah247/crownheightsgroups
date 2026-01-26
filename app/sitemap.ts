@@ -23,12 +23,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.5,
     },
-    {
-      url: `${baseUrl}/suggest`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
-      priority: 0.5,
-    },
   ];
 
   const categoryPages = categories.map(cat => ({
