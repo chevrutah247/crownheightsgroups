@@ -12,7 +12,6 @@ export async function GET() {
   try {
     const redis = getRedis();
     if (!redis) return NextResponse.json([]);
-    
     const stored = await redis.get('groups');
     if (stored) {
       const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
@@ -20,7 +19,6 @@ export async function GET() {
     }
     return NextResponse.json([]);
   } catch (error) {
-    console.error('GET groups error:', error);
     return NextResponse.json([]);
   }
 }
@@ -31,7 +29,6 @@ export async function POST(request: NextRequest) {
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     
     const newGroup = await request.json();
-    console.log('Creating group:', newGroup);
     
     let groups: any[] = [];
     const stored = await redis.get('groups');
@@ -40,22 +37,40 @@ export async function POST(request: NextRequest) {
       if (!Array.isArray(groups)) groups = [];
     }
     
-    const id = String(Date.now());
-    
-    // Handle both whatsappLinks array and single whatsappLink
+    // Get WhatsApp links
     let whatsappLinks = newGroup.whatsappLinks || [];
     if (newGroup.whatsappLink && !whatsappLinks.length) {
       whatsappLinks = [newGroup.whatsappLink];
     }
-    // Filter out empty links
     whatsappLinks = whatsappLinks.filter((link: string) => link && link.trim());
     
+    // CHECK FOR DUPLICATES
+    // 1. Check by title (case insensitive)
+    const titleLower = newGroup.title?.toLowerCase().trim();
+    const duplicateTitle = groups.find(g => g.title?.toLowerCase().trim() === titleLower);
+    if (duplicateTitle) {
+      return NextResponse.json({ error: 'A group with this name already exists' }, { status: 400 });
+    }
+    
+    // 2. Check by WhatsApp link
+    for (const link of whatsappLinks) {
+      const linkClean = link.trim().toLowerCase();
+      const duplicateLink = groups.find(g => {
+        const existingLinks = g.whatsappLinks || [g.whatsappLink].filter(Boolean);
+        return existingLinks.some((l: string) => l?.toLowerCase().trim() === linkClean);
+      });
+      if (duplicateLink) {
+        return NextResponse.json({ error: `This WhatsApp link is already used by group "${duplicateLink.title}"` }, { status: 400 });
+      }
+    }
+    
+    const id = String(Date.now());
     const group = {
       id,
       title: newGroup.title || '',
       description: newGroup.description || '',
       whatsappLinks: whatsappLinks,
-      whatsappLink: whatsappLinks[0] || '', // Keep for backwards compatibility
+      whatsappLink: whatsappLinks[0] || '',
       categoryId: newGroup.categoryId || '1',
       locationId: newGroup.locationId || '1',
       language: newGroup.language || 'English',
@@ -67,14 +82,11 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString()
     };
     
-    console.log('Saving group:', group);
-    
     groups.push(group);
     await redis.set('groups', JSON.stringify(groups));
     
     return NextResponse.json(group);
   } catch (error) {
-    console.error('POST groups error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -85,7 +97,6 @@ export async function PUT(request: NextRequest) {
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     
     const updated = await request.json();
-    console.log('Updating group:', updated);
     
     let groups: any[] = [];
     const stored = await redis.get('groups');
@@ -99,12 +110,30 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Group not found' }, { status: 404 });
     }
     
-    // Handle whatsappLinks
     let whatsappLinks = updated.whatsappLinks || [];
     if (updated.whatsappLink && !whatsappLinks.length) {
       whatsappLinks = [updated.whatsappLink];
     }
     whatsappLinks = whatsappLinks.filter((link: string) => link && link.trim());
+    
+    // CHECK FOR DUPLICATES (excluding current group)
+    const titleLower = updated.title?.toLowerCase().trim();
+    const duplicateTitle = groups.find((g, i) => i !== index && g.title?.toLowerCase().trim() === titleLower);
+    if (duplicateTitle) {
+      return NextResponse.json({ error: 'A group with this name already exists' }, { status: 400 });
+    }
+    
+    for (const link of whatsappLinks) {
+      const linkClean = link.trim().toLowerCase();
+      const duplicateLink = groups.find((g, i) => {
+        if (i === index) return false;
+        const existingLinks = g.whatsappLinks || [g.whatsappLink].filter(Boolean);
+        return existingLinks.some((l: string) => l?.toLowerCase().trim() === linkClean);
+      });
+      if (duplicateLink) {
+        return NextResponse.json({ error: `This WhatsApp link is already used by group "${duplicateLink.title}"` }, { status: 400 });
+      }
+    }
     
     groups[index] = {
       ...groups[index],
@@ -113,13 +142,10 @@ export async function PUT(request: NextRequest) {
       whatsappLink: whatsappLinks[0] || groups[index].whatsappLink || ''
     };
     
-    console.log('Saved group:', groups[index]);
-    
     await redis.set('groups', JSON.stringify(groups));
     
     return NextResponse.json(groups[index]);
   } catch (error) {
-    console.error('PUT groups error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -143,7 +169,6 @@ export async function DELETE(request: NextRequest) {
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('DELETE groups error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }

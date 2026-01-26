@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
-const defaultServices: any[] = [];
-
 function getRedis() {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
@@ -13,18 +11,15 @@ function getRedis() {
 export async function GET() {
   try {
     const redis = getRedis();
-    if (!redis) return NextResponse.json(defaultServices);
-    
+    if (!redis) return NextResponse.json([]);
     const stored = await redis.get('services');
     if (stored) {
       const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
       if (Array.isArray(data)) return NextResponse.json(data);
     }
-    
-    return NextResponse.json(defaultServices);
+    return NextResponse.json([]);
   } catch (error) {
-    console.error('GET error:', error);
-    return NextResponse.json(defaultServices);
+    return NextResponse.json([]);
   }
 }
 
@@ -42,6 +37,37 @@ export async function POST(request: NextRequest) {
       if (!Array.isArray(services)) services = [];
     }
     
+    // CHECK FOR DUPLICATES
+    // 1. Check by name (case insensitive)
+    const nameLower = newService.name?.toLowerCase().trim();
+    const duplicateName = services.find(s => s.name?.toLowerCase().trim() === nameLower);
+    if (duplicateName) {
+      return NextResponse.json({ error: 'A service with this name already exists' }, { status: 400 });
+    }
+    
+    // 2. Check by phone number (normalize: remove spaces, dashes, parentheses)
+    const normalizePhone = (phone: string) => phone?.replace(/[\s\-\(\)\.]/g, '') || '';
+    const phoneNorm = normalizePhone(newService.phone);
+    if (phoneNorm) {
+      const duplicatePhone = services.find(s => normalizePhone(s.phone) === phoneNorm);
+      if (duplicatePhone) {
+        return NextResponse.json({ error: `This phone number is already used by "${duplicatePhone.name}"` }, { status: 400 });
+      }
+    }
+    
+    // 3. Check by website (if provided)
+    if (newService.website) {
+      const websiteNorm = newService.website.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').trim();
+      const duplicateWebsite = services.find(s => {
+        if (!s.website) return false;
+        const existingNorm = s.website.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').trim();
+        return existingNorm === websiteNorm;
+      });
+      if (duplicateWebsite) {
+        return NextResponse.json({ error: `This website is already used by "${duplicateWebsite.name}"` }, { status: 400 });
+      }
+    }
+    
     const id = String(Date.now());
     const service = {
       id,
@@ -57,7 +83,7 @@ export async function POST(request: NextRequest) {
       locationId: newService.locationId || '1',
       status: 'approved',
       isPinned: newService.isPinned || false,
-      createdAt: new Date().toISOString().split('T')[0]
+      createdAt: new Date().toISOString()
     };
     
     services.push(service);
@@ -65,7 +91,6 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(service);
   } catch (error) {
-    console.error('POST error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -85,14 +110,43 @@ export async function PUT(request: NextRequest) {
     }
     
     const index = services.findIndex((s: any) => s.id === updated.id);
-    if (index === -1) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (index === -1) {
+      return NextResponse.json({ error: 'Service not found' }, { status: 404 });
+    }
+    
+    // CHECK FOR DUPLICATES (excluding current service)
+    const nameLower = updated.name?.toLowerCase().trim();
+    const duplicateName = services.find((s, i) => i !== index && s.name?.toLowerCase().trim() === nameLower);
+    if (duplicateName) {
+      return NextResponse.json({ error: 'A service with this name already exists' }, { status: 400 });
+    }
+    
+    const normalizePhone = (phone: string) => phone?.replace(/[\s\-\(\)\.]/g, '') || '';
+    const phoneNorm = normalizePhone(updated.phone);
+    if (phoneNorm) {
+      const duplicatePhone = services.find((s, i) => i !== index && normalizePhone(s.phone) === phoneNorm);
+      if (duplicatePhone) {
+        return NextResponse.json({ error: `This phone number is already used by "${duplicatePhone.name}"` }, { status: 400 });
+      }
+    }
+    
+    if (updated.website) {
+      const websiteNorm = updated.website.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').trim();
+      const duplicateWebsite = services.find((s, i) => {
+        if (i === index || !s.website) return false;
+        const existingNorm = s.website.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').trim();
+        return existingNorm === websiteNorm;
+      });
+      if (duplicateWebsite) {
+        return NextResponse.json({ error: `This website is already used by "${duplicateWebsite.name}"` }, { status: 400 });
+      }
+    }
     
     services[index] = { ...services[index], ...updated };
     await redis.set('services', JSON.stringify(services));
     
     return NextResponse.json(services[index]);
   } catch (error) {
-    console.error('PUT error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -116,7 +170,6 @@ export async function DELETE(request: NextRequest) {
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('DELETE error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
