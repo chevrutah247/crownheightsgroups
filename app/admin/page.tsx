@@ -1,14 +1,131 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { groups, categories, locations, suggestions, serviceCategories, serviceContacts, emergencyContacts, getStats } from '@/lib/data';
+import { categories, locations, suggestions, serviceCategories, serviceContacts, emergencyContacts } from '@/lib/data';
 
 type Tab = 'dashboard' | 'groups' | 'categories' | 'locations' | 'suggestions' | 'services' | 'service-categories' | 'emergency' | 'banner';
 
+interface Group {
+  id: string;
+  title: string;
+  description: string;
+  whatsappLink: string;
+  categoryId: string;
+  locationId: string;
+  language: string;
+  tags?: string[];
+  status: string;
+  clicksCount: number;
+  createdAt: string;
+  isPinned?: boolean;
+  pinnedOrder?: number;
+}
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
-  const stats = getStats();
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [isNewGroup, setIsNewGroup] = useState(false);
+
+  // Load groups from API
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const fetchGroups = async () => {
+    try {
+      const res = await fetch('/api/admin/groups');
+      const data = await res.json();
+      setGroups(data);
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditGroup = (group: Group) => {
+    setEditingGroup({ ...group });
+    setIsNewGroup(false);
+    setShowModal(true);
+  };
+
+  const handleNewGroup = () => {
+    setEditingGroup({
+      id: '',
+      title: '',
+      description: '',
+      whatsappLink: '',
+      categoryId: '1',
+      locationId: '1',
+      language: 'English',
+      status: 'approved',
+      clicksCount: 0,
+      createdAt: new Date().toISOString().split('T')[0]
+    });
+    setIsNewGroup(true);
+    setShowModal(true);
+  };
+
+  const handleSaveGroup = async () => {
+    if (!editingGroup) return;
+
+    try {
+      const method = isNewGroup ? 'POST' : 'PUT';
+      const res = await fetch('/api/admin/groups', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingGroup)
+      });
+
+      if (res.ok) {
+        await fetchGroups();
+        setShowModal(false);
+        setEditingGroup(null);
+      }
+    } catch (error) {
+      console.error('Error saving group:', error);
+    }
+  };
+
+  const handleDeleteGroup = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this group?')) return;
+
+    try {
+      const res = await fetch('/api/admin/groups', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+
+      if (res.ok) {
+        await fetchGroups();
+      }
+    } catch (error) {
+      console.error('Error deleting group:', error);
+    }
+  };
+
+  const handleTogglePin = async (group: Group) => {
+    const updatedGroup = { ...group, isPinned: !group.isPinned };
+    
+    try {
+      const res = await fetch('/api/admin/groups', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedGroup)
+      });
+
+      if (res.ok) {
+        await fetchGroups();
+      }
+    } catch (error) {
+      console.error('Error toggling pin:', error);
+    }
+  };
 
   const navItems: { id: Tab; label: string; icon: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -23,6 +140,8 @@ export default function AdminPage() {
   ];
 
   const pendingSuggestions = suggestions.filter(s => s.status === 'pending');
+  const pinnedCount = groups.filter(g => g.isPinned).length;
+  const totalClicks = groups.reduce((sum, g) => sum + g.clicksCount, 0);
 
   return (
     <div className="admin-layout">
@@ -74,7 +193,11 @@ export default function AdminPage() {
             <div className="stats-grid">
               <div className="stat-card">
                 <p className="stat-label">Total Groups</p>
-                <p className="stat-value">{stats.totalGroups}</p>
+                <p className="stat-value">{groups.length}</p>
+              </div>
+              <div className="stat-card">
+                <p className="stat-label">Pinned (Paid)</p>
+                <p className="stat-value" style={{ color: 'var(--accent)' }}>⭐ {pinnedCount}</p>
               </div>
               <div className="stat-card">
                 <p className="stat-label">Service Contacts</p>
@@ -82,28 +205,16 @@ export default function AdminPage() {
               </div>
               <div className="stat-card">
                 <p className="stat-label">Total Locations</p>
-                <p className="stat-value">{stats.totalLocations}</p>
+                <p className="stat-value">{locations.length}</p>
               </div>
               <div className="stat-card">
                 <p className="stat-label">Categories</p>
-                <p className="stat-value">{stats.totalCategories}</p>
+                <p className="stat-value">{categories.length}</p>
               </div>
               <div className="stat-card">
-                <p className="stat-label">Pending Suggestions</p>
-                <p className="stat-value">{stats.pendingSuggestions}</p>
+                <p className="stat-label">Total Views</p>
+                <p className="stat-value">{totalClicks.toLocaleString()}</p>
               </div>
-              <div className="stat-card">
-                <p className="stat-label">Total Group Views</p>
-                <p className="stat-value">{stats.totalClicks.toLocaleString()}</p>
-              </div>
-            </div>
-
-            <div className="admin-card">
-              <h3 style={{ marginBottom: '1rem' }}>Recent Activity</h3>
-              <p style={{ color: 'var(--text-muted)' }}>
-                Welcome to the Crown Heights Groups admin panel. 
-                Use the sidebar to manage groups, categories, locations, and review suggestions.
-              </p>
             </div>
           </>
         )}
@@ -112,66 +223,94 @@ export default function AdminPage() {
           <>
             <div className="admin-header">
               <h1 className="admin-title">Groups</h1>
-              <button className="admin-btn">+ Add Group</button>
+              <button className="admin-btn" onClick={handleNewGroup}>+ Add Group</button>
             </div>
             
-            <div className="admin-card">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Pinned</th>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>Location</th>
-                    <th>Views</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {groups.map(group => {
-                    const category = categories.find(c => c.id === group.categoryId);
-                    const location = locations.find(l => l.id === group.locationId);
-                    return (
-                      <tr key={group.id}>
-                        <td>
-                          <button 
-                            className={`pin-btn ${group.isPinned ? 'pinned' : ''}`}
-                            title={group.isPinned ? 'Unpin group' : 'Pin group'}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                            </svg>
-                          </button>
-                        </td>
-                        <td>
-                          {group.isPinned && <span style={{ color: 'var(--accent)', marginRight: '4px' }}>⭐</span>}
-                          {group.title}
-                        </td>
-                        <td>{category?.name || '-'}</td>
-                        <td>{location?.neighborhood || '-'}</td>
-                        <td>{group.clicksCount.toLocaleString()}</td>
-                        <td>
-                          <span className={`status-badge status-${group.status}`}>
-                            {group.status}
-                          </span>
-                        </td>
-                        <td>
-                          <button className="action-btn edit">Edit</button>
-                          <button className="action-btn delete">Delete</button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            {loading ? (
+              <div className="admin-card">Loading...</div>
+            ) : (
+              <div className="admin-card">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Pin ⭐</th>
+                      <th>Title</th>
+                      <th>Category</th>
+                      <th>Language</th>
+                      <th>Views</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {groups.map(group => {
+                      const category = categories.find(c => c.id === group.categoryId);
+                      return (
+                        <tr key={group.id} style={group.isPinned ? { background: '#fef3c7' } : {}}>
+                          <td>
+                            <button 
+                              onClick={() => handleTogglePin(group)}
+                              style={{
+                                background: group.isPinned ? '#f59e0b' : '#e5e7eb',
+                                border: 'none',
+                                borderRadius: '4px',
+                                padding: '6px 10px',
+                                cursor: 'pointer',
+                                fontSize: '1rem'
+                              }}
+                              title={group.isPinned ? 'Unpin (remove from paid)' : 'Pin (mark as paid)'}
+                            >
+                              {group.isPinned ? '⭐' : '☆'}
+                            </button>
+                          </td>
+                          <td>
+                            <strong>{group.title}</strong>
+                            {group.whatsappLink && (
+                              <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                                <a href={group.whatsappLink} target="_blank" rel="noopener noreferrer">
+                                  🔗 WhatsApp Link
+                                </a>
+                              </div>
+                            )}
+                          </td>
+                          <td>{category?.icon} {category?.name || '-'}</td>
+                          <td>
+                            <span style={{
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.8rem',
+                              background: group.language === 'Russian' ? '#fee2e2' : 
+                                         group.language === 'Hebrew' ? '#dbeafe' : '#d1fae5'
+                            }}>
+                              {group.language || 'English'}
+                            </span>
+                          </td>
+                          <td>{group.clicksCount.toLocaleString()}</td>
+                          <td>
+                            <button 
+                              className="action-btn edit"
+                              onClick={() => handleEditGroup(group)}
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              className="action-btn delete"
+                              onClick={() => handleDeleteGroup(group.id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
             
             <div className="admin-card" style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg-warm)' }}>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                <strong>💡 Tip:</strong> Pinned groups (⭐) always appear first in search results, 
-                regardless of the sorting option selected by users. Use this feature to highlight 
-                important community groups.
+                <strong>💡 Tip:</strong> Pinned groups (⭐) appear first in search results. 
+                Use this for paid/featured listings!
               </p>
             </div>
           </>
@@ -181,9 +320,7 @@ export default function AdminPage() {
           <>
             <div className="admin-header">
               <h1 className="admin-title">Categories</h1>
-              <button className="admin-btn">+ Add Category</button>
             </div>
-            
             <div className="admin-card">
               <table className="admin-table">
                 <thead>
@@ -192,7 +329,6 @@ export default function AdminPage() {
                     <th>Name</th>
                     <th>Slug</th>
                     <th>Groups</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -204,10 +340,6 @@ export default function AdminPage() {
                         <td>{cat.name}</td>
                         <td>{cat.slug}</td>
                         <td>{groupCount}</td>
-                        <td>
-                          <button className="action-btn edit">Edit</button>
-                          <button className="action-btn delete">Delete</button>
-                        </td>
                       </tr>
                     );
                   })}
@@ -221,9 +353,7 @@ export default function AdminPage() {
           <>
             <div className="admin-header">
               <h1 className="admin-title">Locations</h1>
-              <button className="admin-btn">+ Add Location</button>
             </div>
-            
             <div className="admin-card">
               <table className="admin-table">
                 <thead>
@@ -231,10 +361,7 @@ export default function AdminPage() {
                     <th>Neighborhood</th>
                     <th>City</th>
                     <th>State</th>
-                    <th>Country</th>
                     <th>Groups</th>
-                    <th>Status</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -245,17 +372,7 @@ export default function AdminPage() {
                         <td>{loc.neighborhood}</td>
                         <td>{loc.city}</td>
                         <td>{loc.state}</td>
-                        <td>{loc.country}</td>
                         <td>{groupCount}</td>
-                        <td>
-                          <span className={`status-badge status-${loc.status}`}>
-                            {loc.status}
-                          </span>
-                        </td>
-                        <td>
-                          <button className="action-btn edit">Edit</button>
-                          <button className="action-btn delete">Delete</button>
-                        </td>
                       </tr>
                     );
                   })}
@@ -265,74 +382,19 @@ export default function AdminPage() {
           </>
         )}
 
-        {activeTab === 'suggestions' && (
-          <>
-            <div className="admin-header">
-              <h1 className="admin-title">Suggestions</h1>
-            </div>
-            
-            <div className="admin-card">
-              {pendingSuggestions.length === 0 ? (
-                <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
-                  No pending suggestions
-                </p>
-              ) : (
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Type</th>
-                      <th>Details</th>
-                      <th>Contact</th>
-                      <th>Date</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {suggestions.map(sugg => (
-                      <tr key={sugg.id}>
-                        <td>
-                          <span className="status-badge" style={{ background: '#e2e8f0', color: '#4a5568' }}>
-                            {sugg.type}
-                          </span>
-                        </td>
-                        <td>
-                          {sugg.type === 'group' 
-                            ? sugg.payload.title 
-                            : sugg.payload.neighborhood}
-                        </td>
-                        <td>{sugg.contactEmail || '-'}</td>
-                        <td>{new Date(sugg.createdAt).toLocaleDateString()}</td>
-                        <td>
-                          <button className="action-btn approve">Approve</button>
-                          <button className="action-btn delete">Reject</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </>
-        )}
-
         {activeTab === 'services' && (
           <>
             <div className="admin-header">
               <h1 className="admin-title">Service Contacts</h1>
-              <button className="admin-btn">+ Add Contact</button>
             </div>
-            
             <div className="admin-card">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Pinned</th>
                     <th>Name</th>
                     <th>Category</th>
                     <th>Phone</th>
                     <th>Languages</th>
-                    <th>Status</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -340,35 +402,10 @@ export default function AdminPage() {
                     const category = serviceCategories.find(c => c.id === contact.categoryId);
                     return (
                       <tr key={contact.id}>
-                        <td>
-                          <button 
-                            className={`pin-btn ${contact.isPinned ? 'pinned' : ''}`}
-                            title={contact.isPinned ? 'Unpin contact' : 'Pin contact'}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                            </svg>
-                          </button>
-                        </td>
-                        <td>
-                          {contact.isPinned && <span style={{ color: 'var(--accent)', marginRight: '4px' }}>⭐</span>}
-                          {contact.name}
-                        </td>
+                        <td>{contact.isPinned && '⭐ '}{contact.name}</td>
                         <td>{category ? `${category.icon} ${category.name}` : '-'}</td>
-                        <td>
-                          {contact.phone}
-                          {contact.secondPhone && <><br/><small>{contact.secondPhone}</small></>}
-                        </td>
+                        <td>{contact.phone}</td>
                         <td>{contact.languages?.join(', ') || '-'}</td>
-                        <td>
-                          <span className={`status-badge status-${contact.status}`}>
-                            {contact.status}
-                          </span>
-                        </td>
-                        <td>
-                          <button className="action-btn edit">Edit</button>
-                          <button className="action-btn delete">Delete</button>
-                        </td>
                       </tr>
                     );
                   })}
@@ -381,57 +418,32 @@ export default function AdminPage() {
         {activeTab === 'service-categories' && (
           <>
             <div className="admin-header">
-              <h1 className="admin-title">Service Types / Professions</h1>
-              <button className="admin-btn">+ Add Category</button>
+              <h1 className="admin-title">Service Types</h1>
             </div>
-            
             <div className="admin-card">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Order</th>
                     <th>Icon</th>
                     <th>Name (EN)</th>
                     <th>Name (RU)</th>
-                    <th>Slug</th>
                     <th>Contacts</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {serviceCategories.sort((a, b) => a.order - b.order).map(cat => {
+                  {serviceCategories.map(cat => {
                     const contactCount = serviceContacts.filter(c => c.categoryId === cat.id).length;
                     return (
                       <tr key={cat.id}>
-                        <td>
-                          <input 
-                            type="number" 
-                            value={cat.order} 
-                            style={{ width: '50px', padding: '4px', textAlign: 'center' }}
-                            readOnly
-                          />
-                        </td>
                         <td style={{ fontSize: '1.5rem' }}>{cat.icon}</td>
                         <td>{cat.name}</td>
                         <td>{cat.nameRu || '-'}</td>
-                        <td><code>{cat.slug}</code></td>
                         <td>{contactCount}</td>
-                        <td>
-                          <button className="action-btn edit">Edit</button>
-                          <button className="action-btn delete">Delete</button>
-                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
-            </div>
-            
-            <div className="admin-card" style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg-warm)' }}>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                <strong>💡 Tip:</strong> Service categories appear in the order specified. 
-                You can add Russian names to make the site more accessible.
-              </p>
             </div>
           </>
         )}
@@ -440,87 +452,43 @@ export default function AdminPage() {
           <>
             <div className="admin-header">
               <h1 className="admin-title">Emergency Contacts</h1>
-              <button className="admin-btn">+ Add Emergency Contact</button>
             </div>
-            
             <div className="admin-card">
-              <p style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>
-                These contacts appear in the red bar at the top of every page.
-              </p>
-              
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Order</th>
                     <th>Icon</th>
                     <th>Name</th>
                     <th>Phone</th>
-                    <th>Color</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {emergencyContacts.sort((a, b) => a.order - b.order).map(contact => (
+                  {emergencyContacts.map(contact => (
                     <tr key={contact.id}>
-                      <td>
-                        <input 
-                          type="number" 
-                          value={contact.order} 
-                          style={{ width: '50px', padding: '4px', textAlign: 'center' }}
-                          readOnly
-                        />
-                      </td>
                       <td style={{ fontSize: '1.5rem' }}>{contact.icon}</td>
                       <td><strong>{contact.name}</strong></td>
                       <td>{contact.phone}</td>
-                      <td>
-                        <span 
-                          style={{ 
-                            display: 'inline-block',
-                            width: '24px', 
-                            height: '24px', 
-                            background: contact.color,
-                            borderRadius: '4px'
-                          }}
-                        />
-                      </td>
-                      <td>
-                        <button className="action-btn edit">Edit</button>
-                        <button className="action-btn delete">Delete</button>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            
-            <div className="admin-card" style={{ marginTop: '1rem' }}>
-              <h4 style={{ marginBottom: '0.5rem' }}>Preview:</h4>
-              <div style={{ 
-                background: 'linear-gradient(90deg, #1a1a2e, #16213e, #1a1a2e)',
-                padding: '0.75rem',
-                borderRadius: '8px',
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                flexWrap: 'wrap'
-              }}>
-                {emergencyContacts.map(c => (
-                  <span key={c.id} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    padding: '0.4rem 0.75rem',
-                    background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '999px',
-                    color: 'white',
-                    fontSize: '0.8rem'
-                  }}>
-                    {c.icon} <strong>{c.name}</strong> {c.phone}
-                  </span>
-                ))}
-              </div>
+          </>
+        )}
+
+        {activeTab === 'suggestions' && (
+          <>
+            <div className="admin-header">
+              <h1 className="admin-title">Suggestions</h1>
+            </div>
+            <div className="admin-card">
+              {pendingSuggestions.length === 0 ? (
+                <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                  No pending suggestions
+                </p>
+              ) : (
+                <p>Pending suggestions: {pendingSuggestions.length}</p>
+              )}
             </div>
           </>
         )}
@@ -530,50 +498,173 @@ export default function AdminPage() {
             <div className="admin-header">
               <h1 className="admin-title">Banner Settings</h1>
             </div>
-            
             <div className="admin-card">
-              <form style={{ maxWidth: '500px' }}>
-                <div className="form-group">
-                  <label className="form-label">
-                    <input type="checkbox" defaultChecked style={{ marginRight: '0.5rem' }} />
-                    Enable Banner
-                  </label>
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Title</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    defaultValue="🎉 Welcome to Crown Heights Groups!"
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Text</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    defaultValue="Find and join WhatsApp groups in your community."
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Button Text (optional)</label>
-                  <input type="text" className="form-input" defaultValue="Learn More" />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Button Link (optional)</label>
-                  <input type="text" className="form-input" defaultValue="/about" />
-                </div>
-                
-                <button type="submit" className="form-btn">Save Changes</button>
-              </form>
+              <p>Banner configuration coming soon...</p>
             </div>
           </>
         )}
       </main>
+
+      {/* Edit Modal */}
+      {showModal && editingGroup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '2rem',
+            width: '90%',
+            maxWidth: '500px',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <h2 style={{ marginBottom: '1.5rem' }}>
+              {isNewGroup ? 'Add New Group' : 'Edit Group'}
+            </h2>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  value={editingGroup.title}
+                  onChange={e => setEditingGroup({ ...editingGroup, title: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  WhatsApp Link *
+                </label>
+                <input
+                  type="url"
+                  value={editingGroup.whatsappLink}
+                  onChange={e => setEditingGroup({ ...editingGroup, whatsappLink: e.target.value })}
+                  placeholder="https://chat.whatsapp.com/..."
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Description
+                </label>
+                <textarea
+                  value={editingGroup.description}
+                  onChange={e => setEditingGroup({ ...editingGroup, description: e.target.value })}
+                  rows={3}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Category
+                </label>
+                <select
+                  value={editingGroup.categoryId}
+                  onChange={e => setEditingGroup({ ...editingGroup, categoryId: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
+                >
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Location
+                </label>
+                <select
+                  value={editingGroup.locationId}
+                  onChange={e => setEditingGroup({ ...editingGroup, locationId: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
+                >
+                  {locations.map(loc => (
+                    <option key={loc.id} value={loc.id}>{loc.neighborhood}, {loc.city}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Language
+                </label>
+                <select
+                  value={editingGroup.language || 'English'}
+                  onChange={e => setEditingGroup({ ...editingGroup, language: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
+                >
+                  <option value="English">🇺🇸 English</option>
+                  <option value="Russian">🇷🇺 Russian</option>
+                  <option value="Hebrew">🇮🇱 Hebrew</option>
+                  <option value="Yiddish">יידיש Yiddish</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={editingGroup.isPinned || false}
+                    onChange={e => setEditingGroup({ ...editingGroup, isPinned: e.target.checked })}
+                    style={{ width: '20px', height: '20px' }}
+                  />
+                  <span style={{ fontWeight: 'bold' }}>⭐ Pin this group (Featured/Paid)</span>
+                </label>
+                <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.25rem' }}>
+                  Pinned groups appear at the top of search results
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  border: '1px solid #ddd',
+                  background: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveGroup}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: '#2563eb',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                {isNewGroup ? 'Create Group' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
