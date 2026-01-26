@@ -11,17 +11,20 @@ export function middleware(request: NextRequest) {
     '/_next/', 
     '/favicon.ico',
     '/sitemap.xml',
-    '/robots.txt'
+    '/robots.txt',
+    '/og-image.png',
+    '/apple-touch-icon.png',
+    '/google'
   ];
   
-  if (publicPaths.some(path => pathname.startsWith(path) || pathname === path)) {
+  if (publicPaths.some(path => pathname === path || pathname.startsWith(path))) {
     return NextResponse.next();
   }
   
   // Check if user passed the gate
   const gatePassed = request.cookies.get('gate_passed')?.value;
   
-  if (!gatePassed && pathname !== '/gate') {
+  if (!gatePassed) {
     return NextResponse.redirect(new URL('/gate', request.url));
   }
   
@@ -29,5 +32,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|google).*)'],
 };
