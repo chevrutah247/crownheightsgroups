@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import Redis from 'ioredis';
+import { Redis } from '@upstash/redis';
 
 export interface User {
   id: string;
@@ -19,8 +19,12 @@ interface Session {
 }
 
 function getRedis() {
-  if (!process.env.REDIS_URL) return null;
-  return new Redis(process.env.REDIS_URL);
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (url && token) {
+    return new Redis({ url, token });
+  }
+  return null;
 }
 
 export function hashPassword(password: string): string {
@@ -57,7 +61,6 @@ export async function createUser(email: string, password: string, name: string):
   
   if (redis) {
     await redis.set(`user:${email.toLowerCase()}`, JSON.stringify(user));
-    await redis.quit();
   }
   
   console.log(`VERIFICATION CODE for ${email}: ${verificationCode}`);
@@ -68,33 +71,30 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
   const redis = getRedis();
   if (!redis) return undefined;
   
-  try {
-    if (email.toLowerCase() === 'admin@crownheightsgroups.com') {
-      const existing = await redis.get('user:admin@crownheightsgroups.com');
-      if (!existing) {
-        const admin: User = {
-          id: 'admin-1',
-          email: 'admin@crownheightsgroups.com',
-          password: hashPassword('admin123'),
-          name: 'Admin',
-          isVerified: true,
-          createdAt: new Date().toISOString(),
-          role: 'admin'
-        };
-        await redis.set('user:admin@crownheightsgroups.com', JSON.stringify(admin));
-        await redis.quit();
-        return admin;
-      }
+  if (email.toLowerCase() === 'admin@crownheightsgroups.com') {
+    const existing = await redis.get('user:admin@crownheightsgroups.com');
+    if (!existing) {
+      const admin: User = {
+        id: 'admin-1',
+        email: 'admin@crownheightsgroups.com',
+        password: hashPassword('admin123'),
+        name: 'Admin',
+        isVerified: true,
+        createdAt: new Date().toISOString(),
+        role: 'admin'
+      };
+      await redis.set('user:admin@crownheightsgroups.com', JSON.stringify(admin));
+      return admin;
     }
-    
-    const data = await redis.get(`user:${email.toLowerCase()}`);
-    await redis.quit();
-    return data ? JSON.parse(data) : undefined;
-  } catch (err) {
-    console.error('Redis error:', err);
-    await redis.quit();
-    return undefined;
   }
+  
+  const data = await redis.get(`user:${email.toLowerCase()}`);
+  if (data && typeof data === 'string') {
+    return JSON.parse(data);
+  } else if (data && typeof data === 'object') {
+    return data as User;
+  }
+  return undefined;
 }
 
 export async function verifyUser(email: string, code: string): Promise<{ success: boolean; error?: string }> {
@@ -113,7 +113,6 @@ export async function verifyUser(email: string, code: string): Promise<{ success
   const redis = getRedis();
   if (redis) {
     await redis.set(`user:${email.toLowerCase()}`, JSON.stringify(user));
-    await redis.quit();
   }
   
   return { success: true };
@@ -130,7 +129,6 @@ export async function regenerateVerificationCode(email: string): Promise<string 
   const redis = getRedis();
   if (redis) {
     await redis.set(`user:${email.toLowerCase()}`, JSON.stringify(user));
-    await redis.quit();
   }
   
   return newCode;
@@ -152,8 +150,7 @@ export async function createSession(email: string): Promise<string> {
   const session: Session = { email, expiry: Date.now() + 7 * 24 * 60 * 60 * 1000 };
   
   if (redis) {
-    await redis.setex(`session:${token}`, 7 * 24 * 60 * 60, JSON.stringify(session));
-    await redis.quit();
+    await redis.set(`session:${token}`, JSON.stringify(session), { ex: 7 * 24 * 60 * 60 });
   }
   
   return token;
@@ -163,33 +160,22 @@ export async function validateSession(token: string): Promise<User | null> {
   const redis = getRedis();
   if (!redis) return null;
   
-  try {
-    const data = await redis.get(`session:${token}`);
-    await redis.quit();
-    if (!data) return null;
-    
-    const session: Session = JSON.parse(data);
-    if (Date.now() > session.expiry) {
-      const r = getRedis();
-      if (r) {
-        await r.del(`session:${token}`);
-        await r.quit();
-      }
-      return null;
-    }
-    
-    return await getUserByEmail(session.email) || null;
-  } catch (err) {
-    await redis.quit();
+  const data = await redis.get(`session:${token}`);
+  if (!data) return null;
+  
+  const session: Session = typeof data === 'string' ? JSON.parse(data) : data as Session;
+  if (Date.now() > session.expiry) {
+    await redis.del(`session:${token}`);
     return null;
   }
+  
+  return await getUserByEmail(session.email) || null;
 }
 
 export async function deleteSession(token: string): Promise<void> {
   const redis = getRedis();
   if (redis) {
     await redis.del(`session:${token}`);
-    await redis.quit();
   }
 }
 
