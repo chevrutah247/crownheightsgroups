@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { categories, locations, suggestions, serviceCategories, serviceContacts, emergencyContacts } from '@/lib/data';
 
-type Tab = 'dashboard' | 'groups' | 'categories' | 'locations' | 'suggestions' | 'services' | 'service-categories' | 'emergency' | 'banner';
+type Tab = 'dashboard' | 'groups' | 'users' | 'categories' | 'locations' | 'suggestions' | 'services' | 'emergency';
 
 interface Group {
   id: string;
@@ -14,25 +14,33 @@ interface Group {
   categoryId: string;
   locationId: string;
   language: string;
-  tags?: string[];
   status: string;
   clicksCount: number;
   createdAt: string;
   isPinned?: boolean;
-  pinnedOrder?: number;
+}
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'user' | 'admin';
+  isVerified: boolean;
+  createdAt: string;
 }
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [groups, setGroups] = useState<Group[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [isNewGroup, setIsNewGroup] = useState(false);
 
-  // Load groups from API
   useEffect(() => {
     fetchGroups();
+    fetchUsers();
   }, []);
 
   const fetchGroups = async () => {
@@ -44,6 +52,51 @@ export default function AdminPage() {
       console.error('Error fetching groups:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('/api/admin/users');
+      const data = await res.json();
+      setUsers(data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const handleToggleAdmin = async (user: User) => {
+    const newRole = user.role === 'admin' ? 'user' : 'admin';
+    if (!confirm(`Make ${user.email} ${newRole === 'admin' ? 'an admin' : 'a regular user'}?`)) return;
+    
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email, role: newRole })
+      });
+      if (res.ok) {
+        fetchUsers();
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
+  };
+
+  const handleDeleteUser = async (email: string) => {
+    if (!confirm(`Delete user ${email}? This cannot be undone.`)) return;
+    
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (res.ok) {
+        fetchUsers();
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
     }
   };
 
@@ -71,9 +124,7 @@ export default function AdminPage() {
   };
 
   const handleSaveGroup = async () => {
-    console.log("Saving group:", editingGroup);
     if (!editingGroup) return;
-
     try {
       const method = isNewGroup ? 'POST' : 'PUT';
       const res = await fetch('/api/admin/groups', {
@@ -81,7 +132,6 @@ export default function AdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingGroup)
       });
-
       if (res.ok) {
         await fetchGroups();
         setShowModal(false);
@@ -93,36 +143,27 @@ export default function AdminPage() {
   };
 
   const handleDeleteGroup = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this group?')) return;
-
+    if (!confirm('Delete this group?')) return;
     try {
       const res = await fetch('/api/admin/groups', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
-
-      if (res.ok) {
-        await fetchGroups();
-      }
+      if (res.ok) fetchGroups();
     } catch (error) {
       console.error('Error deleting group:', error);
     }
   };
 
   const handleTogglePin = async (group: Group) => {
-    const updatedGroup = { ...group, isPinned: !group.isPinned };
-    
     try {
       const res = await fetch('/api/admin/groups', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedGroup)
+        body: JSON.stringify({ ...group, isPinned: !group.isPinned })
       });
-
-      if (res.ok) {
-        await fetchGroups();
-      }
+      if (res.ok) fetchGroups();
     } catch (error) {
       console.error('Error toggling pin:', error);
     }
@@ -131,18 +172,15 @@ export default function AdminPage() {
   const navItems: { id: Tab; label: string; icon: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'groups', label: 'Groups', icon: '👥' },
+    { id: 'users', label: 'Users', icon: '👤' },
     { id: 'categories', label: 'Categories', icon: '📁' },
-    { id: 'locations', label: 'Locations', icon: '📍' },
-    { id: 'services', label: 'Service Contacts', icon: '🔧' },
-    { id: 'service-categories', label: 'Service Types', icon: '🏷️' },
+    { id: 'services', label: 'Services', icon: '🔧' },
     { id: 'emergency', label: 'Emergency', icon: '🚨' },
-    { id: 'suggestions', label: 'Suggestions', icon: '📬' },
-    { id: 'banner', label: 'Banner', icon: '📢' },
   ];
 
-  const pendingSuggestions = suggestions.filter(s => s.status === 'pending');
   const pinnedCount = groups.filter(g => g.isPinned).length;
   const totalClicks = groups.reduce((sum, g) => sum + g.clicksCount, 0);
+  const adminCount = users.filter(u => u.role === 'admin').length;
 
   return (
     <div className="admin-layout">
@@ -160,18 +198,6 @@ export default function AdminPage() {
               >
                 <span>{item.icon}</span>
                 <span>{item.label}</span>
-                {item.id === 'suggestions' && pendingSuggestions.length > 0 && (
-                  <span style={{
-                    marginLeft: 'auto',
-                    background: 'var(--accent)',
-                    color: 'white',
-                    padding: '2px 8px',
-                    borderRadius: '999px',
-                    fontSize: '0.75rem'
-                  }}>
-                    {pendingSuggestions.length}
-                  </span>
-                )}
               </li>
             ))}
             <li className="admin-nav-item" style={{ marginTop: 'auto' }}>
@@ -187,10 +213,7 @@ export default function AdminPage() {
       <main className="admin-content">
         {activeTab === 'dashboard' && (
           <>
-            <div className="admin-header">
-              <h1 className="admin-title">Dashboard</h1>
-            </div>
-            
+            <div className="admin-header"><h1 className="admin-title">Dashboard</h1></div>
             <div className="stats-grid">
               <div className="stat-card">
                 <p className="stat-label">Total Groups</p>
@@ -201,16 +224,12 @@ export default function AdminPage() {
                 <p className="stat-value" style={{ color: 'var(--accent)' }}>⭐ {pinnedCount}</p>
               </div>
               <div className="stat-card">
-                <p className="stat-label">Service Contacts</p>
-                <p className="stat-value">{serviceContacts.length}</p>
+                <p className="stat-label">Users</p>
+                <p className="stat-value">{users.length}</p>
               </div>
               <div className="stat-card">
-                <p className="stat-label">Total Locations</p>
-                <p className="stat-value">{locations.length}</p>
-              </div>
-              <div className="stat-card">
-                <p className="stat-label">Categories</p>
-                <p className="stat-value">{categories.length}</p>
+                <p className="stat-label">Admins</p>
+                <p className="stat-value">{adminCount}</p>
               </div>
               <div className="stat-card">
                 <p className="stat-label">Total Views</p>
@@ -226,121 +245,36 @@ export default function AdminPage() {
               <h1 className="admin-title">Groups</h1>
               <button className="admin-btn" onClick={handleNewGroup}>+ Add Group</button>
             </div>
-            
-            {loading ? (
-              <div className="admin-card">Loading...</div>
-            ) : (
-              <div className="admin-card">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Pin ⭐</th>
-                      <th>Title</th>
-                      <th>Category</th>
-                      <th>Language</th>
-                      <th>Views</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {groups.map(group => {
-                      const category = categories.find(c => c.id === group.categoryId);
-                      return (
-                        <tr key={group.id} style={group.isPinned ? { background: '#fef3c7' } : {}}>
-                          <td>
-                            <button 
-                              onClick={() => handleTogglePin(group)}
-                              style={{
-                                background: group.isPinned ? '#f59e0b' : '#e5e7eb',
-                                border: 'none',
-                                borderRadius: '4px',
-                                padding: '6px 10px',
-                                cursor: 'pointer',
-                                fontSize: '1rem'
-                              }}
-                              title={group.isPinned ? 'Unpin (remove from paid)' : 'Pin (mark as paid)'}
-                            >
-                              {group.isPinned ? '⭐' : '☆'}
-                            </button>
-                          </td>
-                          <td>
-                            <strong>{group.title}</strong>
-                            {group.whatsappLink && (
-                              <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                                <a href={group.whatsappLink} target="_blank" rel="noopener noreferrer">
-                                  🔗 WhatsApp Link
-                                </a>
-                              </div>
-                            )}
-                          </td>
-                          <td>{category?.icon} {category?.name || '-'}</td>
-                          <td>
-                            <span style={{
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              fontSize: '0.8rem',
-                              background: group.language === 'Russian' ? '#fee2e2' : 
-                                         group.language === 'Hebrew' ? '#dbeafe' : '#d1fae5'
-                            }}>
-                              {group.language || 'English'}
-                            </span>
-                          </td>
-                          <td>{group.clicksCount.toLocaleString()}</td>
-                          <td>
-                            <button 
-                              className="action-btn edit"
-                              onClick={() => handleEditGroup(group)}
-                            >
-                              Edit
-                            </button>
-                            <button 
-                              className="action-btn delete"
-                              onClick={() => handleDeleteGroup(group.id)}
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            
-            <div className="admin-card" style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg-warm)' }}>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                <strong>💡 Tip:</strong> Pinned groups (⭐) appear first in search results. 
-                Use this for paid/featured listings!
-              </p>
-            </div>
-          </>
-        )}
-
-        {activeTab === 'categories' && (
-          <>
-            <div className="admin-header">
-              <h1 className="admin-title">Categories</h1>
-            </div>
             <div className="admin-card">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Icon</th>
-                    <th>Name</th>
-                    <th>Slug</th>
-                    <th>Groups</th>
+                    <th>Pin</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Language</th>
+                    <th>Views</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {categories.map(cat => {
-                    const groupCount = groups.filter(g => g.categoryId === cat.id).length;
+                  {groups.map(group => {
+                    const category = categories.find(c => c.id === group.categoryId);
                     return (
-                      <tr key={cat.id}>
-                        <td>{cat.icon}</td>
-                        <td>{cat.name}</td>
-                        <td>{cat.slug}</td>
-                        <td>{groupCount}</td>
+                      <tr key={group.id} style={group.isPinned ? { background: '#fef3c7' } : {}}>
+                        <td>
+                          <button onClick={() => handleTogglePin(group)} style={{ background: group.isPinned ? '#f59e0b' : '#e5e7eb', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>
+                            {group.isPinned ? '⭐' : '☆'}
+                          </button>
+                        </td>
+                        <td><strong>{group.title}</strong></td>
+                        <td>{category?.icon} {category?.name}</td>
+                        <td>{group.language || 'English'}</td>
+                        <td>{group.clicksCount}</td>
+                        <td>
+                          <button className="action-btn edit" onClick={() => handleEditGroup(group)}>Edit</button>
+                          <button className="action-btn delete" onClick={() => handleDeleteGroup(group.id)}>Delete</button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -350,33 +284,78 @@ export default function AdminPage() {
           </>
         )}
 
-        {activeTab === 'locations' && (
+        {activeTab === 'users' && (
           <>
             <div className="admin-header">
-              <h1 className="admin-title">Locations</h1>
+              <h1 className="admin-title">Users ({users.length})</h1>
             </div>
             <div className="admin-card">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Neighborhood</th>
-                    <th>City</th>
-                    <th>State</th>
-                    <th>Groups</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Verified</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {locations.map(loc => {
-                    const groupCount = groups.filter(g => g.locationId === loc.id).length;
-                    return (
-                      <tr key={loc.id}>
-                        <td>{loc.neighborhood}</td>
-                        <td>{loc.city}</td>
-                        <td>{loc.state}</td>
-                        <td>{groupCount}</td>
-                      </tr>
-                    );
-                  })}
+                  {users.map(user => (
+                    <tr key={user.email} style={user.role === 'admin' ? { background: '#dbeafe' } : {}}>
+                      <td><strong>{user.name}</strong></td>
+                      <td>{user.email}</td>
+                      <td>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.85rem',
+                          background: user.role === 'admin' ? '#2563eb' : '#e5e7eb',
+                          color: user.role === 'admin' ? 'white' : '#333'
+                        }}>
+                          {user.role === 'admin' ? '👑 Admin' : 'User'}
+                        </span>
+                      </td>
+                      <td>{user.isVerified ? '✅' : '❌'}</td>
+                      <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                      <td>
+                        <button 
+                          className="action-btn edit" 
+                          onClick={() => handleToggleAdmin(user)}
+                        >
+                          {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                        </button>
+                        <button 
+                          className="action-btn delete" 
+                          onClick={() => handleDeleteUser(user.email)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'categories' && (
+          <>
+            <div className="admin-header"><h1 className="admin-title">Categories</h1></div>
+            <div className="admin-card">
+              <p style={{ color: '#666', marginBottom: '1rem' }}>Categories are managed in the code. Contact developer to add new categories.</p>
+              <table className="admin-table">
+                <thead><tr><th>Icon</th><th>Name</th><th>Groups</th></tr></thead>
+                <tbody>
+                  {categories.map(cat => (
+                    <tr key={cat.id}>
+                      <td>{cat.icon}</td>
+                      <td>{cat.name}</td>
+                      <td>{groups.filter(g => g.categoryId === cat.id).length}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -385,61 +364,19 @@ export default function AdminPage() {
 
         {activeTab === 'services' && (
           <>
-            <div className="admin-header">
-              <h1 className="admin-title">Service Contacts</h1>
-            </div>
+            <div className="admin-header"><h1 className="admin-title">Services</h1></div>
             <div className="admin-card">
+              <p style={{ color: '#666', marginBottom: '1rem' }}>Service contacts are managed in the code. Contact developer to add new services.</p>
               <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Phone</th>
-                    <th>Languages</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Name</th><th>Category</th><th>Phone</th></tr></thead>
                 <tbody>
                   {serviceContacts.map(contact => {
-                    const category = serviceCategories.find(c => c.id === contact.categoryId);
+                    const cat = serviceCategories.find(c => c.id === contact.categoryId);
                     return (
                       <tr key={contact.id}>
-                        <td>{contact.isPinned && '⭐ '}{contact.name}</td>
-                        <td>{category ? `${category.icon} ${category.name}` : '-'}</td>
+                        <td>{contact.name}</td>
+                        <td>{cat?.icon} {cat?.name}</td>
                         <td>{contact.phone}</td>
-                        <td>{contact.languages?.join(', ') || '-'}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-
-        {activeTab === 'service-categories' && (
-          <>
-            <div className="admin-header">
-              <h1 className="admin-title">Service Types</h1>
-            </div>
-            <div className="admin-card">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Icon</th>
-                    <th>Name (EN)</th>
-                    <th>Name (RU)</th>
-                    <th>Contacts</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {serviceCategories.map(cat => {
-                    const contactCount = serviceContacts.filter(c => c.categoryId === cat.id).length;
-                    return (
-                      <tr key={cat.id}>
-                        <td style={{ fontSize: '1.5rem' }}>{cat.icon}</td>
-                        <td>{cat.name}</td>
-                        <td>{cat.nameRu || '-'}</td>
-                        <td>{contactCount}</td>
                       </tr>
                     );
                   })}
@@ -451,24 +388,16 @@ export default function AdminPage() {
 
         {activeTab === 'emergency' && (
           <>
-            <div className="admin-header">
-              <h1 className="admin-title">Emergency Contacts</h1>
-            </div>
+            <div className="admin-header"><h1 className="admin-title">Emergency Contacts</h1></div>
             <div className="admin-card">
               <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Icon</th>
-                    <th>Name</th>
-                    <th>Phone</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Icon</th><th>Name</th><th>Phone</th></tr></thead>
                 <tbody>
-                  {emergencyContacts.map(contact => (
-                    <tr key={contact.id}>
-                      <td style={{ fontSize: '1.5rem' }}>{contact.icon}</td>
-                      <td><strong>{contact.name}</strong></td>
-                      <td>{contact.phone}</td>
+                  {emergencyContacts.map(c => (
+                    <tr key={c.id}>
+                      <td style={{ fontSize: '1.5rem' }}>{c.icon}</td>
+                      <td><strong>{c.name}</strong></td>
+                      <td>{c.phone}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -476,192 +405,56 @@ export default function AdminPage() {
             </div>
           </>
         )}
-
-        {activeTab === 'suggestions' && (
-          <>
-            <div className="admin-header">
-              <h1 className="admin-title">Suggestions</h1>
-            </div>
-            <div className="admin-card">
-              {pendingSuggestions.length === 0 ? (
-                <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
-                  No pending suggestions
-                </p>
-              ) : (
-                <p>Pending suggestions: {pendingSuggestions.length}</p>
-              )}
-            </div>
-          </>
-        )}
-
-        {activeTab === 'banner' && (
-          <>
-            <div className="admin-header">
-              <h1 className="admin-title">Banner Settings</h1>
-            </div>
-            <div className="admin-card">
-              <p>Banner configuration coming soon...</p>
-            </div>
-          </>
-        )}
       </main>
 
-      {/* Edit Modal */}
       {showModal && editingGroup && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '2rem',
-            width: '90%',
-            maxWidth: '500px',
-            maxHeight: '90vh',
-            overflow: 'auto'
-          }}>
-            <h2 style={{ marginBottom: '1.5rem' }}>
-              {isNewGroup ? 'Add New Group' : 'Edit Group'}
-            </h2>
-            
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflow: 'auto' }}>
+            <h2 style={{ marginBottom: '1.5rem' }}>{isNewGroup ? 'Add New Group' : 'Edit Group'}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  Title *
-                </label>
-                <input
-                  type="text"
-                  value={editingGroup.title}
-                  onChange={e => setEditingGroup({ ...editingGroup, title: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
-                />
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Title *</label>
+                <input type="text" value={editingGroup.title} onChange={e => setEditingGroup({ ...editingGroup, title: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
               </div>
-
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  WhatsApp Link *
-                </label>
-                <input
-                  type="url"
-                  value={editingGroup.whatsappLink}
-                  onChange={e => setEditingGroup({ ...editingGroup, whatsappLink: e.target.value })}
-                  placeholder="https://chat.whatsapp.com/..."
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
-                />
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>WhatsApp Link *</label>
+                <input type="url" value={editingGroup.whatsappLink} onChange={e => setEditingGroup({ ...editingGroup, whatsappLink: e.target.value })} placeholder="https://chat.whatsapp.com/..." style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
               </div>
-
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  Description
-                </label>
-                <textarea
-                  value={editingGroup.description}
-                  onChange={e => setEditingGroup({ ...editingGroup, description: e.target.value })}
-                  rows={3}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
-                />
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Description</label>
+                <textarea value={editingGroup.description} onChange={e => setEditingGroup({ ...editingGroup, description: e.target.value })} rows={3} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
               </div>
-
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  Category
-                </label>
-                <select
-                  value={editingGroup.categoryId}
-                  onChange={e => setEditingGroup({ ...editingGroup, categoryId: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
-                >
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
-                  ))}
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Category</label>
+                <select value={editingGroup.categoryId} onChange={e => setEditingGroup({ ...editingGroup, categoryId: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
+                  {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
                 </select>
               </div>
-
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  Location
-                </label>
-                <select
-                  value={editingGroup.locationId}
-                  onChange={e => setEditingGroup({ ...editingGroup, locationId: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
-                >
-                  {locations.map(loc => (
-                    <option key={loc.id} value={loc.id}>{loc.neighborhood}, {loc.city}</option>
-                  ))}
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Location</label>
+                <select value={editingGroup.locationId} onChange={e => setEditingGroup({ ...editingGroup, locationId: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
+                  {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.neighborhood}, {loc.city}</option>)}
                 </select>
               </div>
-
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  Language
-                </label>
-                <select
-                  value={editingGroup.language || 'English'}
-                  onChange={e => setEditingGroup({ ...editingGroup, language: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
-                >
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Language</label>
+                <select value={editingGroup.language || 'English'} onChange={e => setEditingGroup({ ...editingGroup, language: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
                   <option value="English">🇺🇸 English</option>
                   <option value="Russian">🇷🇺 Russian</option>
                   <option value="Hebrew">🇮🇱 Hebrew</option>
                   <option value="Yiddish">יידיש Yiddish</option>
                 </select>
               </div>
-
               <div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={editingGroup.isPinned || false}
-                    onChange={e => setEditingGroup({ ...editingGroup, isPinned: e.target.checked })}
-                    style={{ width: '20px', height: '20px' }}
-                  />
-                  <span style={{ fontWeight: 'bold' }}>⭐ Pin this group (Featured/Paid)</span>
+                  <input type="checkbox" checked={editingGroup.isPinned || false} onChange={e => setEditingGroup({ ...editingGroup, isPinned: e.target.checked })} style={{ width: '20px', height: '20px' }} />
+                  <span style={{ fontWeight: 'bold' }}>⭐ Pin (Featured/Paid)</span>
                 </label>
-                <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.25rem' }}>
-                  Pinned groups appear at the top of search results
-                </p>
               </div>
             </div>
-
             <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-              <button
-                onClick={() => setShowModal(false)}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  border: '1px solid #ddd',
-                  background: 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveGroup}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: '#2563eb',
-                  color: 'white',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                {isNewGroup ? 'Create Group' : 'Save Changes'}
-              </button>
+              <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleSaveGroup} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>{isNewGroup ? 'Create' : 'Save'}</button>
             </div>
           </div>
         </div>
