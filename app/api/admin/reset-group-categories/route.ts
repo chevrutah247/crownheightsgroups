@@ -39,9 +39,7 @@ export async function GET() {
   try {
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'No database' }, { status: 500 });
-    
     await redis.set('groupCategories', JSON.stringify(defaultGroupCategories));
-    
     return NextResponse.json({ success: true, count: defaultGroupCategories.length });
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });

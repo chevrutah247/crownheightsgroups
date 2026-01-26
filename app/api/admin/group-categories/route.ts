@@ -39,18 +39,14 @@ export async function GET() {
   try {
     const redis = getRedis();
     if (!redis) return NextResponse.json(defaultGroupCategories);
-    
     const stored = await redis.get('groupCategories');
     if (stored) {
       const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
       if (Array.isArray(data) && data.length > 0) return NextResponse.json(data);
     }
-    
-    // Initialize with defaults
     await redis.set('groupCategories', JSON.stringify(defaultGroupCategories));
     return NextResponse.json(defaultGroupCategories);
   } catch (error) {
-    console.error('GET error:', error);
     return NextResponse.json(defaultGroupCategories);
   }
 }
@@ -59,9 +55,7 @@ export async function POST(request: NextRequest) {
   try {
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    
     const newCat = await request.json();
-    
     let categories: any[] = [];
     const stored = await redis.get('groupCategories');
     if (stored) {
@@ -70,23 +64,12 @@ export async function POST(request: NextRequest) {
     } else {
       categories = [...defaultGroupCategories];
     }
-    
     const id = String(Date.now());
     const slug = newCat.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const maxOrder = Math.max(...categories.map(c => c.order || 0), 0);
-    
-    const category = {
-      id,
-      name: newCat.name,
-      nameRu: newCat.nameRu || '',
-      slug,
-      icon: newCat.icon || '📁',
-      order: maxOrder + 1
-    };
-    
+    const category = { id, name: newCat.name, nameRu: newCat.nameRu || '', slug, icon: newCat.icon || '📁', order: maxOrder + 1 };
     categories.push(category);
     await redis.set('groupCategories', JSON.stringify(categories));
-    
     return NextResponse.json(category);
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
@@ -97,23 +80,15 @@ export async function PUT(request: NextRequest) {
   try {
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    
     const updated = await request.json();
-    
     let categories: any[] = [];
     const stored = await redis.get('groupCategories');
-    if (stored) {
-      categories = typeof stored === 'string' ? JSON.parse(stored) : stored;
-    } else {
-      categories = [...defaultGroupCategories];
-    }
-    
+    if (stored) { categories = typeof stored === 'string' ? JSON.parse(stored) : stored; }
+    else { categories = [...defaultGroupCategories]; }
     const index = categories.findIndex((c: any) => c.id === updated.id);
     if (index === -1) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    
     categories[index] = { ...categories[index], ...updated };
     await redis.set('groupCategories', JSON.stringify(categories));
-    
     return NextResponse.json(categories[index]);
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
@@ -124,18 +99,12 @@ export async function DELETE(request: NextRequest) {
   try {
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    
     const { id } = await request.json();
-    
     let categories: any[] = [];
     const stored = await redis.get('groupCategories');
-    if (stored) {
-      categories = typeof stored === 'string' ? JSON.parse(stored) : stored;
-    }
-    
+    if (stored) { categories = typeof stored === 'string' ? JSON.parse(stored) : stored; }
     categories = categories.filter((c: any) => c.id !== id);
     await redis.set('groupCategories', JSON.stringify(categories));
-    
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
