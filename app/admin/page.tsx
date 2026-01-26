@@ -48,13 +48,12 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   
-  // Group modal
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [isNewGroup, setIsNewGroup] = useState(false);
   
-  // Service modal
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [isNewService, setIsNewService] = useState(false);
@@ -71,7 +70,7 @@ export default function AdminPage() {
       const data = await res.json();
       setGroups(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Error fetching groups:', error);
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
@@ -83,7 +82,7 @@ export default function AdminPage() {
       const data = await res.json();
       setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error:', error);
     }
   };
 
@@ -93,120 +92,117 @@ export default function AdminPage() {
       const data = await res.json();
       setServices(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Error fetching services:', error);
+      console.error('Error:', error);
     }
   };
 
-  // User handlers
   const handleToggleAdmin = async (user: User) => {
     const newRole = user.role === 'admin' ? 'user' : 'admin';
-    if (!confirm(`Make ${user.email} ${newRole === 'admin' ? 'an admin' : 'a regular user'}?`)) return;
+    if (!confirm(`Make ${user.email} ${newRole}?`)) return;
     try {
-      const res = await fetch('/api/admin/users', {
+      await fetch('/api/admin/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: user.email, role: newRole })
       });
-      if (res.ok) fetchUsers();
+      fetchUsers();
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('Error:', error);
     }
   };
 
   const handleDeleteUser = async (email: string) => {
-    if (!confirm(`Delete user ${email}?`)) return;
+    if (!confirm(`Delete ${email}?`)) return;
     try {
-      const res = await fetch('/api/admin/users', {
+      await fetch('/api/admin/users', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
-      if (res.ok) fetchUsers();
+      fetchUsers();
     } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error('Error:', error);
     }
   };
 
-  // Group handlers
+  const handleNewGroup = () => {
+    setEditingGroup({ id: '', title: '', description: '', whatsappLink: '', categoryId: '1', locationId: '1', language: 'English', status: 'approved', clicksCount: 0, createdAt: '' });
+    setIsNewGroup(true);
+    setShowGroupModal(true);
+  };
+
   const handleEditGroup = (group: Group) => {
     setEditingGroup({ ...group });
     setIsNewGroup(false);
     setShowGroupModal(true);
   };
 
-  const handleNewGroup = () => {
-    setEditingGroup({
-      id: '', title: '', description: '', whatsappLink: '',
-      categoryId: '1', locationId: '1', language: 'English',
-      status: 'approved', clicksCount: 0, createdAt: ''
-    });
-    setIsNewGroup(true);
-    setShowGroupModal(true);
-  };
-
   const handleSaveGroup = async () => {
-    if (!editingGroup) return;
+    if (!editingGroup || !editingGroup.title) return alert('Title is required');
+    setSaving(true);
     try {
-      const res = await fetch('/api/admin/groups', {
+      await fetch('/api/admin/groups', {
         method: isNewGroup ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingGroup)
       });
-      if (res.ok) {
-        await fetchGroups();
-        setShowGroupModal(false);
-      }
+      await fetchGroups();
+      setShowGroupModal(false);
+      setEditingGroup(null);
     } catch (error) {
-      console.error('Error saving group:', error);
+      console.error('Error:', error);
+      alert('Error saving group');
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDeleteGroup = async (id: string) => {
     if (!confirm('Delete this group?')) return;
     try {
-      const res = await fetch('/api/admin/groups', {
+      await fetch('/api/admin/groups', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
-      if (res.ok) fetchGroups();
+      fetchGroups();
     } catch (error) {
-      console.error('Error deleting group:', error);
+      console.error('Error:', error);
     }
   };
 
   const handleTogglePin = async (group: Group) => {
     try {
-      const res = await fetch('/api/admin/groups', {
+      await fetch('/api/admin/groups', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...group, isPinned: !group.isPinned })
       });
-      if (res.ok) fetchGroups();
+      fetchGroups();
     } catch (error) {
-      console.error('Error toggling pin:', error);
+      console.error('Error:', error);
     }
   };
 
-  // Service handlers
+  const handleNewService = () => {
+    setEditingService({ id: '', name: '', phone: '', secondPhone: '', categoryId: '1', description: '', languages: ['English'], locationId: '1', status: 'approved' });
+    setIsNewService(true);
+    setShowServiceModal(true);
+  };
+
   const handleEditService = (service: Service) => {
     setEditingService({ ...service });
     setIsNewService(false);
     setShowServiceModal(true);
   };
 
-  const handleNewService = () => {
-    setEditingService({
-      id: '', name: '', phone: '', secondPhone: '',
-      categoryId: '1', description: '', languages: ['English'],
-      locationId: '1', status: 'approved'
-    });
-    setIsNewService(true);
-    setShowServiceModal(true);
-  };
-
   const handleSaveService = async () => {
     if (!editingService) return;
+    if (!editingService.name || !editingService.phone) {
+      alert('Name and Phone are required');
+      return;
+    }
+    setSaving(true);
     try {
       const res = await fetch('/api/admin/services', {
         method: isNewService ? 'POST' : 'PUT',
@@ -216,67 +212,66 @@ export default function AdminPage() {
       if (res.ok) {
         await fetchServices();
         setShowServiceModal(false);
+        setEditingService(null);
+      } else {
+        alert('Error saving service');
       }
     } catch (error) {
-      console.error('Error saving service:', error);
+      console.error('Error:', error);
+      alert('Error saving service');
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDeleteService = async (id: string) => {
-    if (!confirm('Delete this service contact?')) return;
+    if (!confirm('Delete this service?')) return;
     try {
-      const res = await fetch('/api/admin/services', {
+      await fetch('/api/admin/services', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
-      if (res.ok) fetchServices();
+      fetchServices();
     } catch (error) {
-      console.error('Error deleting service:', error);
+      console.error('Error:', error);
     }
   };
 
   const handleToggleServicePin = async (service: Service) => {
     try {
-      const res = await fetch('/api/admin/services', {
+      await fetch('/api/admin/services', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...service, isPinned: !service.isPinned })
       });
-      if (res.ok) fetchServices();
+      fetchServices();
     } catch (error) {
-      console.error('Error toggling pin:', error);
+      console.error('Error:', error);
     }
   };
 
-  const navItems: { id: Tab; label: string; icon: string }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'groups', label: 'Groups', icon: '👥' },
-    { id: 'users', label: 'Users', icon: '👤' },
-    { id: 'services', label: 'Services', icon: '🔧' },
-    { id: 'emergency', label: 'Emergency', icon: '🚨' },
+  const navItems = [
+    { id: 'dashboard' as Tab, label: 'Dashboard', icon: '📊' },
+    { id: 'groups' as Tab, label: 'Groups', icon: '👥' },
+    { id: 'users' as Tab, label: 'Users', icon: '👤' },
+    { id: 'services' as Tab, label: 'Services', icon: '🔧' },
   ];
-
-  const pinnedCount = groups.filter(g => g.isPinned).length;
 
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <div className="admin-sidebar-header">
-          <h2 className="admin-sidebar-title">Admin Panel</h2>
-        </div>
+        <div className="admin-sidebar-header"><h2 className="admin-sidebar-title">Admin Panel</h2></div>
         <nav>
           <ul className="admin-nav">
             {navItems.map(item => (
               <li key={item.id} className={`admin-nav-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => setActiveTab(item.id)}>
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
+                <span>{item.icon}</span><span>{item.label}</span>
               </li>
             ))}
             <li className="admin-nav-item" style={{ marginTop: 'auto' }}>
               <Link href="/" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span>🏠</span>
-                <span>Back to Site</span>
+                <span>🏠</span><span>Back to Site</span>
               </Link>
             </li>
           </ul>
@@ -288,8 +283,8 @@ export default function AdminPage() {
           <>
             <div className="admin-header"><h1 className="admin-title">Dashboard</h1></div>
             <div className="stats-grid">
-              <div className="stat-card"><p className="stat-label">Total Groups</p><p className="stat-value">{groups.length}</p></div>
-              <div className="stat-card"><p className="stat-label">Pinned Groups</p><p className="stat-value">⭐ {pinnedCount}</p></div>
+              <div className="stat-card"><p className="stat-label">Groups</p><p className="stat-value">{groups.length}</p></div>
+              <div className="stat-card"><p className="stat-label">Pinned</p><p className="stat-value">⭐ {groups.filter(g => g.isPinned).length}</p></div>
               <div className="stat-card"><p className="stat-label">Users</p><p className="stat-value">{users.length}</p></div>
               <div className="stat-card"><p className="stat-label">Services</p><p className="stat-value">{services.length}</p></div>
             </div>
@@ -369,8 +364,8 @@ export default function AdminPage() {
                         <td><button onClick={() => handleToggleServicePin(service)} style={{ background: service.isPinned ? '#f59e0b' : '#e5e7eb', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>{service.isPinned ? '⭐' : '☆'}</button></td>
                         <td><strong>{service.name}</strong></td>
                         <td>{cat?.icon} {cat?.name}</td>
-                        <td>{service.phone}{service.secondPhone && <><br/><small>{service.secondPhone}</small></>}</td>
-                        <td>{service.languages?.join(', ') || '-'}</td>
+                        <td>{service.phone}</td>
+                        <td>{service.languages?.join(', ')}</td>
                         <td>
                           <button className="action-btn edit" onClick={() => handleEditService(service)}>Edit</button>
                           <button className="action-btn delete" onClick={() => handleDeleteService(service.id)}>Delete</button>
@@ -383,127 +378,81 @@ export default function AdminPage() {
             </div>
           </>
         )}
-
-        {activeTab === 'emergency' && (
-          <>
-            <div className="admin-header"><h1 className="admin-title">Emergency Contacts</h1></div>
-            <div className="admin-card">
-              <p style={{ color: '#666', marginBottom: '1rem' }}>Emergency contacts (Hatzolah, Shomrim, Chaveirim) are configured in the system.</p>
-            </div>
-          </>
-        )}
       </main>
 
-      {/* Group Modal */}
       {showGroupModal && editingGroup && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflow: 'auto' }}>
-            <h2 style={{ marginBottom: '1.5rem' }}>{isNewGroup ? 'Add New Group' : 'Edit Group'}</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Title *</label>
-                <input type="text" value={editingGroup.title} onChange={e => setEditingGroup({ ...editingGroup, title: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>WhatsApp Link</label>
-                <input type="url" value={editingGroup.whatsappLink} onChange={e => setEditingGroup({ ...editingGroup, whatsappLink: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Description</label>
-                <textarea value={editingGroup.description} onChange={e => setEditingGroup({ ...editingGroup, description: e.target.value })} rows={3} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Category</label>
-                <select value={editingGroup.categoryId} onChange={e => setEditingGroup({ ...editingGroup, categoryId: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
-                  {defaultCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Location</label>
-                <select value={editingGroup.locationId} onChange={e => setEditingGroup({ ...editingGroup, locationId: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
-                  {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.neighborhood}, {loc.city}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Language</label>
-                <select value={editingGroup.language} onChange={e => setEditingGroup({ ...editingGroup, language: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
-                  <option value="English">🇺🇸 English</option>
-                  <option value="Russian">🇷🇺 Russian</option>
-                  <option value="Hebrew">🇮🇱 Hebrew</option>
-                  <option value="Yiddish">יידיש Yiddish</option>
-                </select>
-              </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input type="checkbox" checked={editingGroup.isPinned || false} onChange={e => setEditingGroup({ ...editingGroup, isPinned: e.target.checked })} />
-                <span>⭐ Pin (Featured)</span>
-              </label>
+            <h2>{isNewGroup ? 'Add New Group' : 'Edit Group'}</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+              <input type="text" placeholder="Title *" value={editingGroup.title} onChange={e => setEditingGroup({ ...editingGroup, title: e.target.value })} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+              <input type="url" placeholder="WhatsApp Link" value={editingGroup.whatsappLink} onChange={e => setEditingGroup({ ...editingGroup, whatsappLink: e.target.value })} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+              <textarea placeholder="Description" value={editingGroup.description} onChange={e => setEditingGroup({ ...editingGroup, description: e.target.value })} rows={3} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+              <select value={editingGroup.categoryId} onChange={e => setEditingGroup({ ...editingGroup, categoryId: e.target.value })} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
+                {defaultCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
+              </select>
+              <select value={editingGroup.language} onChange={e => setEditingGroup({ ...editingGroup, language: e.target.value })} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
+                <option value="English">🇺🇸 English</option>
+                <option value="Russian">🇷🇺 Russian</option>
+                <option value="Hebrew">🇮🇱 Hebrew</option>
+              </select>
+              <label><input type="checkbox" checked={editingGroup.isPinned || false} onChange={e => setEditingGroup({ ...editingGroup, isPinned: e.target.checked })} /> ⭐ Pin (Featured)</label>
             </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
               <button onClick={() => setShowGroupModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleSaveGroup} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>{isNewGroup ? 'Create' : 'Save'}</button>
+              <button onClick={handleSaveGroup} disabled={saving || !editingGroup.title} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: 'none', background: saving || !editingGroup.title ? '#ccc' : '#2563eb', color: 'white', cursor: saving || !editingGroup.title ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>{saving ? 'Saving...' : (isNewGroup ? 'Create' : 'Save')}</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Service Modal */}
       {showServiceModal && editingService && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflow: 'auto' }}>
-            <h2 style={{ marginBottom: '1.5rem' }}>{isNewService ? 'Add New Service' : 'Edit Service'}</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h2>{isNewService ? 'Add New Service' : 'Edit Service'}</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+              <input type="text" placeholder="Name *" value={editingService.name} onChange={e => setEditingService({ ...editingService, name: e.target.value })} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+              <input type="tel" placeholder="Phone *" value={editingService.phone} onChange={e => setEditingService({ ...editingService, phone: e.target.value })} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+              <input type="tel" placeholder="Second Phone (optional)" value={editingService.secondPhone || ''} onChange={e => setEditingService({ ...editingService, secondPhone: e.target.value })} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+              <select value={editingService.categoryId} onChange={e => setEditingService({ ...editingService, categoryId: e.target.value })} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
+                {serviceCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
+              </select>
+              <textarea placeholder="Description" value={editingService.description || ''} onChange={e => setEditingService({ ...editingService, description: e.target.value })} rows={2} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Name *</label>
-                <input type="text" value={editingService.name} onChange={e => setEditingService({ ...editingService, name: e.target.value })} placeholder="e.g. Moshe Plumbing" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Phone *</label>
-                <input type="tel" value={editingService.phone} onChange={e => setEditingService({ ...editingService, phone: e.target.value })} placeholder="718-555-0000" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Second Phone (optional)</label>
-                <input type="tel" value={editingService.secondPhone || ''} onChange={e => setEditingService({ ...editingService, secondPhone: e.target.value })} placeholder="347-555-0000" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Category</label>
-                <select value={editingService.categoryId} onChange={e => setEditingService({ ...editingService, categoryId: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
-                  {serviceCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Description</label>
-                <textarea value={editingService.description || ''} onChange={e => setEditingService({ ...editingService, description: e.target.value })} rows={2} placeholder="Brief description of services..." style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Languages</label>
+                <label style={{ fontWeight: 'bold', marginBottom: '0.5rem', display: 'block' }}>Languages:</label>
                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                   {['English', 'Russian', 'Hebrew', 'Yiddish'].map(lang => (
                     <label key={lang} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={editingService.languages?.includes(lang) || false}
-                        onChange={e => {
-                          const langs = editingService.languages || [];
-                          if (e.target.checked) {
-                            setEditingService({ ...editingService, languages: [...langs, lang] });
-                          } else {
-                            setEditingService({ ...editingService, languages: langs.filter(l => l !== lang) });
-                          }
-                        }}
-                      />
+                      <input type="checkbox" checked={editingService.languages?.includes(lang) || false} onChange={e => {
+                        const langs = editingService.languages || [];
+                        if (e.target.checked) setEditingService({ ...editingService, languages: [...langs, lang] });
+                        else setEditingService({ ...editingService, languages: langs.filter(l => l !== lang) });
+                      }} />
                       {lang}
                     </label>
                   ))}
                 </div>
               </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input type="checkbox" checked={editingService.isPinned || false} onChange={e => setEditingService({ ...editingService, isPinned: e.target.checked })} />
-                <span>⭐ Pin (Featured)</span>
-              </label>
+              <label><input type="checkbox" checked={editingService.isPinned || false} onChange={e => setEditingService({ ...editingService, isPinned: e.target.checked })} /> ⭐ Pin (Featured)</label>
             </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
               <button onClick={() => setShowServiceModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleSaveService} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>{isNewService ? 'Create' : 'Save'}</button>
+              <button 
+                onClick={handleSaveService} 
+                disabled={saving || !editingService.name || !editingService.phone} 
+                style={{ 
+                  flex: 1, 
+                  padding: '0.75rem', 
+                  borderRadius: '8px', 
+                  border: 'none', 
+                  background: (saving || !editingService.name || !editingService.phone) ? '#ccc' : '#2563eb', 
+                  color: 'white', 
+                  cursor: (saving || !editingService.name || !editingService.phone) ? 'not-allowed' : 'pointer', 
+                  fontWeight: 'bold' 
+                }}
+              >
+                {saving ? 'Saving...' : (isNewService ? 'Create' : 'Save')}
+              </button>
             </div>
           </div>
         </div>
