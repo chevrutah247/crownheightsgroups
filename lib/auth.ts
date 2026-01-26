@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { createClient } from 'redis';
+import { Redis } from '@upstash/redis';
 
 export interface User {
   id: string;
@@ -19,15 +19,11 @@ interface Session {
 }
 
 // Redis client
-let redisClient: ReturnType<typeof createClient> | null = null;
-
-async function getRedis() {
-  if (!redisClient && process.env.REDIS_URL) {
-    redisClient = createClient({ url: process.env.REDIS_URL });
-    redisClient.on('error', (err) => console.error('Redis error:', err));
-    await redisClient.connect();
+function getRedis() {
+  if (process.env.REDIS_URL) {
+    return new Redis({ url: process.env.REDIS_URL });
   }
-  return redisClient;
+  return null;
 }
 
 // Hash password
@@ -49,7 +45,7 @@ export function generateSessionToken(): string {
 
 // Create user
 export async function createUser(email: string, password: string, name: string): Promise<User> {
-  const redis = await getRedis();
+  const redis = getRedis();
   const verificationCode = generateVerificationCode();
   
   const user: User = {
@@ -74,11 +70,12 @@ export async function createUser(email: string, password: string, name: string):
 
 // Get user
 export async function getUserByEmail(email: string): Promise<User | undefined> {
-  const redis = await getRedis();
+  const redis = getRedis();
+  if (!redis) return undefined;
   
   // Init admin if needed
-  if (redis && email.toLowerCase() === 'admin@crownheightsgroups.com') {
-    const existing = await redis.get('user:admin@crownheightsgroups.com');
+  if (email.toLowerCase() === 'admin@crownheightsgroups.com') {
+    const existing = await redis.get(`user:admin@crownheightsgroups.com`);
     if (!existing) {
       const admin: User = {
         id: 'admin-1',
@@ -94,9 +91,11 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
     }
   }
   
-  if (redis) {
-    const data = await redis.get(`user:${email.toLowerCase()}`);
-    return data ? JSON.parse(data) : undefined;
+  const data = await redis.get(`user:${email.toLowerCase()}`);
+  if (data && typeof data === 'string') {
+    return JSON.parse(data);
+  } else if (data && typeof data === 'object') {
+    return data as User;
   }
   return undefined;
 }
@@ -115,7 +114,7 @@ export async function verifyUser(email: string, code: string): Promise<{ success
   user.verificationCode = undefined;
   user.verificationExpiry = undefined;
   
-  const redis = await getRedis();
+  const redis = getRedis();
   if (redis) {
     await redis.set(`user:${email.toLowerCase()}`, JSON.stringify(user));
   }
@@ -132,7 +131,7 @@ export async function regenerateVerificationCode(email: string): Promise<string 
   user.verificationCode = newCode;
   user.verificationExpiry = Date.now() + 30 * 60 * 1000;
   
-  const redis = await getRedis();
+  const redis = getRedis();
   if (redis) {
     await redis.set(`user:${email.toLowerCase()}`, JSON.stringify(user));
   }
@@ -154,12 +153,12 @@ export async function validateLogin(email: string, password: string): Promise<{ 
 
 // Create session
 export async function createSession(email: string): Promise<string> {
-  const redis = await getRedis();
+  const redis = getRedis();
   const token = generateSessionToken();
   const session: Session = { email, expiry: Date.now() + 7 * 24 * 60 * 60 * 1000 };
   
   if (redis) {
-    await redis.set(`session:${token}`, JSON.stringify(session), { EX: 7 * 24 * 60 * 60 });
+    await redis.set(`session:${token}`, JSON.stringify(session), { ex: 7 * 24 * 60 * 60 });
   }
   
   return token;
@@ -167,13 +166,13 @@ export async function createSession(email: string): Promise<string> {
 
 // Validate session
 export async function validateSession(token: string): Promise<User | null> {
-  const redis = await getRedis();
+  const redis = getRedis();
   if (!redis) return null;
   
   const data = await redis.get(`session:${token}`);
   if (!data) return null;
   
-  const session: Session = JSON.parse(data);
+  const session: Session = typeof data === 'string' ? JSON.parse(data) : data as Session;
   if (Date.now() > session.expiry) {
     await redis.del(`session:${token}`);
     return null;
@@ -184,7 +183,7 @@ export async function validateSession(token: string): Promise<User | null> {
 
 // Delete session
 export async function deleteSession(token: string): Promise<void> {
-  const redis = await getRedis();
+  const redis = getRedis();
   if (redis) {
     await redis.del(`session:${token}`);
   }
