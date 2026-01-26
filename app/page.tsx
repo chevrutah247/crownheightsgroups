@@ -6,7 +6,7 @@ import Footer from '@/components/Footer';
 import GroupCard from '@/components/GroupCard';
 import Filters from '@/components/Filters';
 import EmergencyBar from '@/components/EmergencyBar';
-import { groups, categories, locations, bannerConfig, getApprovedGroups, getLocationById, getCategoryById } from '@/lib/data';
+import { categories, locations, bannerConfig, getLocationById, getCategoryById } from '@/lib/data';
 import { Group } from '@/lib/types';
 
 interface UserInfo {
@@ -19,10 +19,14 @@ export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<UserInfo | null>(null);
   
-  // Filter state
+  // Groups state
+  const [allGroups, setAllGroups] = useState<Group[]>([]);
   const [filteredGroups, setFilteredGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Filter state
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('1'); // Crown Heights default
+  const [selectedLocation, setSelectedLocation] = useState('1');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'popular' | 'alpha'>('popular');
 
@@ -32,7 +36,6 @@ export default function HomePage() {
       const token = localStorage.getItem('session_token');
       
       if (!token) {
-        // No token, redirect to login
         window.location.href = '/auth/login';
         return;
       }
@@ -54,7 +57,6 @@ export default function HomePage() {
             role: data.user.role
           });
         } else {
-          // Invalid session, clear and redirect
           localStorage.removeItem('session_token');
           localStorage.removeItem('user_name');
           localStorage.removeItem('user_email');
@@ -70,9 +72,28 @@ export default function HomePage() {
     checkAuth();
   }, []);
 
+  // Load groups from API
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const res = await fetch('/api/admin/groups');
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setAllGroups(data.filter((g: Group) => g.status === 'approved'));
+        }
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchGroups();
+  }, []);
+
   // Filter and sort groups
   useEffect(() => {
-    let result = getApprovedGroups();
+    let result = [...allGroups];
     
     // Filter by location
     if (selectedLocation) {
@@ -101,7 +122,7 @@ export default function HomePage() {
     // Sort pinned groups by pinnedOrder
     pinnedGroups.sort((a, b) => (a.pinnedOrder || 999) - (b.pinnedOrder || 999));
     
-    // Sort regular groups based on selected sort option
+    // Sort regular groups
     switch (sortBy) {
       case 'popular':
         regularGroups.sort((a, b) => b.clicksCount - a.clicksCount);
@@ -114,9 +135,8 @@ export default function HomePage() {
         break;
     }
     
-    // Combine: pinned first, then regular
     setFilteredGroups([...pinnedGroups, ...regularGroups]);
-  }, [selectedLocation, selectedCategory, searchQuery, sortBy]);
+  }, [allGroups, selectedLocation, selectedCategory, searchQuery, sortBy]);
 
   const handleLogout = async () => {
     const token = localStorage.getItem('session_token');
@@ -139,7 +159,7 @@ export default function HomePage() {
   };
 
   // Loading state
-  if (isAuthenticated === null) {
+  if (isAuthenticated === null || loading) {
     return (
       <div className="auth-container">
         <div className="loading">
@@ -149,7 +169,6 @@ export default function HomePage() {
     );
   }
 
-  // Main Catalog
   return (
     <>
       <EmergencyBar />
