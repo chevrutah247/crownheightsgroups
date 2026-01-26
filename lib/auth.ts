@@ -18,6 +18,12 @@ interface Session {
   expiry: number;
 }
 
+// Admin emails
+const ADMIN_EMAILS = [
+  'admin@crownheightsgroups.com',
+  'chevrutah24x7@gmail.com'
+];
+
 function getRedis() {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
@@ -46,6 +52,7 @@ export function generateSessionToken(): string {
 export async function createUser(email: string, password: string, name: string): Promise<User> {
   const redis = getRedis();
   const verificationCode = generateVerificationCode();
+  const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
   
   const user: User = {
     id: generateUserId(),
@@ -56,7 +63,7 @@ export async function createUser(email: string, password: string, name: string):
     verificationCode,
     verificationExpiry: Date.now() + 30 * 60 * 1000,
     createdAt: new Date().toISOString(),
-    role: 'user'
+    role: isAdmin ? 'admin' : 'user'
   };
   
   if (redis) {
@@ -71,6 +78,7 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
   const redis = getRedis();
   if (!redis) return undefined;
   
+  // Init default admin if needed
   if (email.toLowerCase() === 'admin@crownheightsgroups.com') {
     const existing = await redis.get('user:admin@crownheightsgroups.com');
     if (!existing) {
@@ -89,12 +97,21 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
   }
   
   const data = await redis.get(`user:${email.toLowerCase()}`);
+  let user: User | undefined;
+  
   if (data && typeof data === 'string') {
-    return JSON.parse(data);
+    user = JSON.parse(data);
   } else if (data && typeof data === 'object') {
-    return data as User;
+    user = data as User;
   }
-  return undefined;
+  
+  // Ensure admin emails have admin role
+  if (user && ADMIN_EMAILS.includes(user.email.toLowerCase()) && user.role !== 'admin') {
+    user.role = 'admin';
+    await redis.set(`user:${user.email.toLowerCase()}`, JSON.stringify(user));
+  }
+  
+  return user;
 }
 
 export async function verifyUser(email: string, code: string): Promise<{ success: boolean; error?: string }> {
