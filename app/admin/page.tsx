@@ -71,6 +71,7 @@ export default function AdminPage() {
   };
 
   const handleSaveGroup = async () => {
+    console.log("Saving group:", editingGroup);
     if (!editingGroup) return;
 
     try {
