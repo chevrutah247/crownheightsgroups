@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 type Tab = 'dashboard' | 'groups' | 'users' | 'services' | 'group-categories' | 'service-categories' | 'locations' | 'suggestions' | 'reports';
 
-interface Group { id: string; title: string; description: string; whatsappLinks?: string[]; whatsappLink?: string; categoryId: string; locationId: string; language: string; status: string; clicksCount: number; isPinned?: boolean; }
+interface Group { id: string; title: string; description: string; whatsappLinks?: string[]; whatsappLink?: string; telegramLink?: string; facebookLink?: string; twitterLink?: string; websiteLink?: string; categoryId: string; locationId: string; language: string; status: string; clicksCount: number; isPinned?: boolean; }
 interface User { id: string; email: string; name: string; role: 'user' | 'admin'; isVerified: boolean; createdAt: string; }
 interface Service { id: string; name: string; phone: string; categoryId: string; description?: string; languages?: string[]; isPinned?: boolean; }
 interface Category { id: string; name: string; nameRu?: string; slug: string; icon: string; order?: number; }
@@ -75,7 +75,19 @@ export default function AdminPage() {
   const handleDeleteUser = async (email: string) => { if (!confirm('Delete?')) return; await fetch('/api/admin/users', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }); fetchUsers(); };
 
   const handleNewGroup = () => { 
-    setEditingGroup({ id: '', title: '', description: '', whatsappLinks: [''], categoryId: groupCategories[0]?.id || '1', locationId: locations[0]?.id || '1', language: 'English', status: 'approved', clicksCount: 0 }); 
+    setEditingGroup({ 
+      id: '', title: '', description: '', 
+      whatsappLinks: [''], 
+      telegramLink: '',
+      facebookLink: '',
+      twitterLink: '',
+      websiteLink: '',
+      categoryId: groupCategories[0]?.id || '1', 
+      locationId: locations[0]?.id || '1', 
+      language: 'English', 
+      status: 'approved', 
+      clicksCount: 0 
+    }); 
     setIsNewGroup(true); 
     setGroupError('');
     setSuggestedTitle('');
@@ -83,22 +95,28 @@ export default function AdminPage() {
   };
   
   const handleEditGroup = (g: Group) => { 
-    setEditingGroup({ ...g, whatsappLinks: g.whatsappLinks || (g.whatsappLink ? [g.whatsappLink] : ['']) }); 
+    setEditingGroup({ 
+      ...g, 
+      whatsappLinks: g.whatsappLinks || (g.whatsappLink ? [g.whatsappLink] : ['']),
+      telegramLink: g.telegramLink || '',
+      facebookLink: g.facebookLink || '',
+      twitterLink: g.twitterLink || '',
+      websiteLink: g.websiteLink || ''
+    }); 
     setIsNewGroup(false); 
     setGroupError('');
     setSuggestedTitle('');
     setShowGroupModal(true); 
   };
   
-  const handleSaveGroup = async (useSuggestedTitle = false) => { 
+  const handleSaveGroup = async () => { 
     if (!editingGroup?.title) return alert('Title required'); 
     setSaving(true);
     setGroupError('');
     
     const dataToSend = {
       ...editingGroup,
-      title: useSuggestedTitle && suggestedTitle ? suggestedTitle : editingGroup.title,
-      whatsappLinks: editingGroup.whatsappLinks.filter((l: string) => l)
+      whatsappLinks: (editingGroup.whatsappLinks || []).filter((l: string) => l && l.trim())
     };
     
     const res = await fetch('/api/admin/groups', { 
@@ -210,7 +228,8 @@ export default function AdminPage() {
     { id: 'reports' as Tab, label: 'Reports', icon: '⚠️', badge: reports.length },
   ];
 
-  const inputStyle = { padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', width: '100%', boxSizing: 'border-box' as const };
+  const inputStyle = { padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', width: '100%', boxSizing: 'border-box' as const, fontSize: '0.95rem' };
+  const labelStyle = { fontWeight: 'bold' as const, display: 'block', marginBottom: '0.25rem', fontSize: '0.9rem' };
   const btnStyle = (d: boolean) => ({ flex: 1, padding: '0.75rem', borderRadius: '8px', border: 'none', background: d ? '#ccc' : '#2563eb', color: 'white', cursor: d ? 'not-allowed' : 'pointer', fontWeight: 'bold' as const });
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
@@ -252,18 +271,19 @@ export default function AdminPage() {
             <div className="admin-header"><h1 className="admin-title">Groups ({groups.length})</h1><button className="admin-btn" onClick={handleNewGroup}>+ Add</button></div>
             <div className="admin-card">
               <table className="admin-table">
-                <thead><tr><th>Pin</th><th>Title</th><th>Category</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Pin</th><th>Title</th><th>Category</th><th>Location</th><th>Links</th><th>Actions</th></tr></thead>
                 <tbody>
                   {groups.map(g => {
                     const cat = groupCategories.find(c => c.id === g.categoryId);
                     const loc = locations.find(l => l.id === g.locationId);
+                    const linksCount = (g.whatsappLinks?.length || (g.whatsappLink ? 1 : 0)) + (g.telegramLink ? 1 : 0) + (g.facebookLink ? 1 : 0) + (g.twitterLink ? 1 : 0) + (g.websiteLink ? 1 : 0);
                     return (
                       <tr key={g.id} style={{ background: g.status === 'broken' ? '#fee2e2' : g.isPinned ? '#fef3c7' : 'white' }}>
                         <td><button onClick={() => handleTogglePin(g)} style={{ background: g.isPinned ? '#f59e0b' : '#e5e7eb', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>{g.isPinned ? '⭐' : '☆'}</button></td>
                         <td><strong>{g.title}</strong></td>
                         <td>{cat?.icon} {cat?.name || 'Unknown'}</td>
                         <td>📍 {loc?.neighborhood || 'Unknown'}</td>
-                        <td><span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', background: g.status === 'broken' ? '#ef4444' : '#10b981', color: 'white' }}>{g.status}</span></td>
+                        <td><span style={{ padding: '2px 8px', background: '#e0f2fe', borderRadius: '4px', fontSize: '0.8rem' }}>{linksCount} links</span></td>
                         <td><button className="action-btn edit" onClick={() => handleEditGroup(g)}>Edit</button><button className="action-btn delete" onClick={() => handleDeleteGroup(g.id)}>Delete</button></td>
                       </tr>
                     );
@@ -450,68 +470,103 @@ export default function AdminPage() {
       {/* Group Modal */}
       {showGroupModal && editingGroup && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflow: 'auto' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '600px', maxHeight: '90vh', overflow: 'auto' }}>
             <h2>{isNewGroup ? 'Add Group' : 'Edit Group'}</h2>
             
-            {/* Error/Suggestion Display */}
             {groupError && (
               <div style={{ background: suggestedTitle ? '#fef3c7' : '#fee2e2', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
                 <p style={{ margin: 0, color: suggestedTitle ? '#92400e' : '#dc2626' }}>{groupError}</p>
                 {suggestedTitle && (
                   <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-                    <button 
-                      onClick={handleUseSuggestedTitle}
-                      style={{ padding: '0.5rem 1rem', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
-                    >
-                      Use "{suggestedTitle}"
-                    </button>
-                    <button 
-                      onClick={() => { setGroupError(''); setSuggestedTitle(''); }}
-                      style={{ padding: '0.5rem 1rem', background: '#e5e7eb', color: '#333', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                    >
-                      Change manually
-                    </button>
+                    <button onClick={handleUseSuggestedTitle} style={{ padding: '0.5rem 1rem', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Use "{suggestedTitle}"</button>
+                    <button onClick={() => { setGroupError(''); setSuggestedTitle(''); }} style={{ padding: '0.5rem 1rem', background: '#e5e7eb', color: '#333', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Change manually</button>
                   </div>
                 )}
               </div>
             )}
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-              <input style={inputStyle} placeholder="Title *" value={editingGroup.title} onChange={e => setEditingGroup({ ...editingGroup, title: e.target.value })} />
               <div>
-                <label style={{ fontWeight: 'bold' }}>WhatsApp Links</label>
+                <label style={labelStyle}>Title *</label>
+                <input style={inputStyle} placeholder="Group name" value={editingGroup.title} onChange={e => setEditingGroup({ ...editingGroup, title: e.target.value })} />
+              </div>
+              
+              <div>
+                <label style={labelStyle}>Description</label>
+                <textarea style={inputStyle} placeholder="What is this group about?" value={editingGroup.description} onChange={e => setEditingGroup({ ...editingGroup, description: e.target.value })} rows={2} />
+              </div>
+
+              {/* WhatsApp Links */}
+              <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: '8px' }}>
+                <label style={{ ...labelStyle, color: '#166534' }}>💬 WhatsApp Links</label>
                 {editingGroup.whatsappLinks?.map((link: string, i: number) => (
                   <div key={i} style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                     <input style={{ ...inputStyle, flex: 1 }} placeholder="https://chat.whatsapp.com/..." value={link} onChange={e => { const links = [...editingGroup.whatsappLinks]; links[i] = e.target.value; setEditingGroup({ ...editingGroup, whatsappLinks: links }); }} />
                     {editingGroup.whatsappLinks.length > 1 && <button onClick={() => { const links = editingGroup.whatsappLinks.filter((_: any, idx: number) => idx !== i); setEditingGroup({ ...editingGroup, whatsappLinks: links }); }} style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>✕</button>}
                   </div>
                 ))}
-                <button onClick={() => setEditingGroup({ ...editingGroup, whatsappLinks: [...editingGroup.whatsappLinks, ''] })} style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', border: '1px solid #2563eb', borderRadius: '8px', background: 'white', color: '#2563eb', cursor: 'pointer' }}>+ Add Link</button>
+                <button onClick={() => setEditingGroup({ ...editingGroup, whatsappLinks: [...(editingGroup.whatsappLinks || []), ''] })} style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', border: '1px solid #25D366', borderRadius: '8px', background: 'white', color: '#25D366', cursor: 'pointer' }}>+ Add WhatsApp Link</button>
               </div>
-              <textarea style={inputStyle} placeholder="Description" value={editingGroup.description} onChange={e => setEditingGroup({ ...editingGroup, description: e.target.value })} rows={3} />
-              <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Category</label>
-                <select style={inputStyle} value={editingGroup.categoryId} onChange={e => setEditingGroup({ ...editingGroup, categoryId: e.target.value })}>
-                  {groupCategories.sort((a, b) => (a.order || 0) - (b.order || 0)).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                </select>
+
+              {/* Other Social Links */}
+              <div style={{ background: '#eff6ff', padding: '1rem', borderRadius: '8px' }}>
+                <label style={{ ...labelStyle, color: '#1e40af' }}>Other Links (optional)</label>
+                
+                <div style={{ marginTop: '0.75rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: '#666' }}>✈️ Telegram</label>
+                  <input style={inputStyle} placeholder="https://t.me/..." value={editingGroup.telegramLink || ''} onChange={e => setEditingGroup({ ...editingGroup, telegramLink: e.target.value })} />
+                </div>
+                
+                <div style={{ marginTop: '0.75rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: '#666' }}>📘 Facebook</label>
+                  <input style={inputStyle} placeholder="https://facebook.com/groups/..." value={editingGroup.facebookLink || ''} onChange={e => setEditingGroup({ ...editingGroup, facebookLink: e.target.value })} />
+                </div>
+                
+                <div style={{ marginTop: '0.75rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: '#666' }}>𝕏 X / Twitter</label>
+                  <input style={inputStyle} placeholder="https://x.com/..." value={editingGroup.twitterLink || ''} onChange={e => setEditingGroup({ ...editingGroup, twitterLink: e.target.value })} />
+                </div>
+                
+                <div style={{ marginTop: '0.75rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: '#666' }}>🌐 Website</label>
+                  <input style={inputStyle} placeholder="https://example.com" value={editingGroup.websiteLink || ''} onChange={e => setEditingGroup({ ...editingGroup, websiteLink: e.target.value })} />
+                </div>
               </div>
-              <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Location</label>
-                <select style={inputStyle} value={editingGroup.locationId} onChange={e => setEditingGroup({ ...editingGroup, locationId: e.target.value })}>
-                  {locations.sort((a, b) => (a.order || 0) - (b.order || 0)).map(l => <option key={l.id} value={l.id}>📍 {l.neighborhood} ({l.country})</option>)}
-                </select>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={labelStyle}>Category</label>
+                  <select style={inputStyle} value={editingGroup.categoryId} onChange={e => setEditingGroup({ ...editingGroup, categoryId: e.target.value })}>
+                    {groupCategories.sort((a, b) => (a.order || 0) - (b.order || 0)).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Location</label>
+                  <select style={inputStyle} value={editingGroup.locationId} onChange={e => setEditingGroup({ ...editingGroup, locationId: e.target.value })}>
+                    {locations.sort((a, b) => (a.order || 0) - (b.order || 0)).map(l => <option key={l.id} value={l.id}>📍 {l.neighborhood}</option>)}
+                  </select>
+                </div>
               </div>
+
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Language</label>
+                <label style={labelStyle}>Language</label>
                 <select style={inputStyle} value={editingGroup.language} onChange={e => setEditingGroup({ ...editingGroup, language: e.target.value })}>
-                  <option value="English">🇺🇸 English</option><option value="Russian">🇷🇺 Russian</option><option value="Hebrew">🇮🇱 Hebrew</option><option value="Yiddish">יידיש Yiddish</option>
+                  <option value="English">🇺🇸 English</option>
+                  <option value="Russian">🇷🇺 Russian</option>
+                  <option value="Hebrew">🇮🇱 Hebrew</option>
+                  <option value="Yiddish">יידיש Yiddish</option>
                 </select>
               </div>
-              <label><input type="checkbox" checked={editingGroup.isPinned} onChange={e => setEditingGroup({ ...editingGroup, isPinned: e.target.checked })} /> ⭐ Pin to top</label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input type="checkbox" checked={editingGroup.isPinned} onChange={e => setEditingGroup({ ...editingGroup, isPinned: e.target.checked })} />
+                ⭐ Pin to top (Featured)
+              </label>
             </div>
+            
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
               <button onClick={() => { setShowGroupModal(false); setGroupError(''); setSuggestedTitle(''); }} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => handleSaveGroup(false)} disabled={saving} style={btnStyle(saving)}>{saving ? 'Saving...' : 'Save'}</button>
+              <button onClick={handleSaveGroup} disabled={saving} style={btnStyle(saving)}>{saving ? 'Saving...' : 'Save Group'}</button>
             </div>
           </div>
         </div>
@@ -547,9 +602,9 @@ export default function AdminPage() {
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '400px' }}>
             <h2>{isNewCategory ? 'Add' : 'Edit'} {categoryType === 'service' ? 'Service Type' : 'Group Category'}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-              <div><label style={{ fontWeight: 'bold' }}>Icon</label><input style={inputStyle} value={editingCategory.icon} onChange={e => setEditingCategory({ ...editingCategory, icon: e.target.value })} /></div>
-              <div><label style={{ fontWeight: 'bold' }}>Name *</label><input style={inputStyle} value={editingCategory.name} onChange={e => setEditingCategory({ ...editingCategory, name: e.target.value })} /></div>
-              <div><label style={{ fontWeight: 'bold' }}>Russian</label><input style={inputStyle} value={editingCategory.nameRu || ''} onChange={e => setEditingCategory({ ...editingCategory, nameRu: e.target.value })} /></div>
+              <div><label style={labelStyle}>Icon</label><input style={inputStyle} value={editingCategory.icon} onChange={e => setEditingCategory({ ...editingCategory, icon: e.target.value })} /></div>
+              <div><label style={labelStyle}>Name *</label><input style={inputStyle} value={editingCategory.name} onChange={e => setEditingCategory({ ...editingCategory, name: e.target.value })} /></div>
+              <div><label style={labelStyle}>Russian Name</label><input style={inputStyle} value={editingCategory.nameRu || ''} onChange={e => setEditingCategory({ ...editingCategory, nameRu: e.target.value })} /></div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
               <button onClick={() => setShowCategoryModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
@@ -565,10 +620,10 @@ export default function AdminPage() {
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '400px' }}>
             <h2>{isNewLocation ? 'Add' : 'Edit'} Location</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-              <div><label style={{ fontWeight: 'bold' }}>Neighborhood *</label><input style={inputStyle} value={editingLocation.neighborhood} onChange={e => setEditingLocation({ ...editingLocation, neighborhood: e.target.value })} /></div>
-              <div><label style={{ fontWeight: 'bold' }}>City</label><input style={inputStyle} value={editingLocation.city} onChange={e => setEditingLocation({ ...editingLocation, city: e.target.value })} /></div>
-              <div><label style={{ fontWeight: 'bold' }}>State</label><input style={inputStyle} value={editingLocation.state} onChange={e => setEditingLocation({ ...editingLocation, state: e.target.value })} /></div>
-              <div><label style={{ fontWeight: 'bold' }}>Country</label><input style={inputStyle} value={editingLocation.country} onChange={e => setEditingLocation({ ...editingLocation, country: e.target.value })} /></div>
+              <div><label style={labelStyle}>Neighborhood *</label><input style={inputStyle} value={editingLocation.neighborhood} onChange={e => setEditingLocation({ ...editingLocation, neighborhood: e.target.value })} /></div>
+              <div><label style={labelStyle}>City</label><input style={inputStyle} value={editingLocation.city} onChange={e => setEditingLocation({ ...editingLocation, city: e.target.value })} /></div>
+              <div><label style={labelStyle}>State</label><input style={inputStyle} value={editingLocation.state} onChange={e => setEditingLocation({ ...editingLocation, state: e.target.value })} /></div>
+              <div><label style={labelStyle}>Country</label><input style={inputStyle} value={editingLocation.country} onChange={e => setEditingLocation({ ...editingLocation, country: e.target.value })} /></div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
               <button onClick={() => setShowLocationModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
