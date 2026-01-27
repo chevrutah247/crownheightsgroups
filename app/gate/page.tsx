@@ -22,7 +22,28 @@ export default function GatePage() {
   return (
     <div className="auth-container">
       <div className="auth-card" style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏠</div>
+        
+        {/* Изображение синагоги 770 */}
+        <div style={{ 
+          marginBottom: '1.5rem',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+        }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img 
+            src="/770.jpg" 
+            alt="770 Eastern Parkway" 
+            style={{ 
+              width: '100%', 
+              height: 'auto',
+              display: 'block',
+              maxHeight: '250px',
+              objectFit: 'cover'
+            }}
+          />
+        </div>
+
         <h1 style={{ marginBottom: '0.5rem', color: 'var(--primary)' }}>Crown Heights Groups</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
           Community members only
