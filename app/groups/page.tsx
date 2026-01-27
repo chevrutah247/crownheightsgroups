@@ -1,16 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EmergencyBar from '@/components/EmergencyBar';
-import { Group } from '@/lib/types';
 
 interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
-interface Category { id: string; name: string; icon: string; order?: number; }
+interface Category { id: string; name: string; icon: string; slug: string; order?: number; }
 interface Location { id: string; neighborhood: string; status: string; order?: number; }
+interface Group { 
+  id: string; title: string; description: string; categoryId: string; locationId: string; 
+  language: string; status: string; clicksCount: number; isPinned?: boolean;
+  whatsappLinks?: string[]; whatsappLink?: string;
+  telegramLink?: string; facebookLink?: string; twitterLink?: string; websiteLink?: string;
+}
 
 export default function GroupsPage() {
+  const searchParams = useSearchParams();
+  const categorySlug = searchParams.get('category');
+  
   const [user, setUser] = useState<UserInfo | null>(null);
   const [allGroups, setAllGroups] = useState<Group[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -21,11 +30,7 @@ export default function GroupsPage() {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'popular' | 'alpha'>('popular');
-  const [reportingGroup, setReportingGroup] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [newLocation, setNewLocation] = useState({ neighborhood: '', city: '', state: '', country: 'USA' });
-  const [submittingLocation, setSubmittingLocation] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -51,13 +56,20 @@ export default function GroupsPage() {
         ]);
         const [groupsData, catsData, locsData] = await Promise.all([groupsRes.json(), catsRes.json(), locsRes.json()]);
         if (Array.isArray(groupsData)) setAllGroups(groupsData.filter((g: Group) => g.status === 'approved'));
-        if (Array.isArray(catsData)) setCategories(catsData);
+        if (Array.isArray(catsData)) {
+          setCategories(catsData);
+          // Set category from URL param
+          if (categorySlug) {
+            const cat = catsData.find((c: Category) => c.slug === categorySlug);
+            if (cat) setSelectedCategory(cat.id);
+          }
+        }
         if (Array.isArray(locsData)) setLocations(locsData.filter((l: Location) => l.status === 'approved'));
       } catch (error) { console.error(error); }
       finally { setLoading(false); }
     };
     fetchData();
-  }, []);
+  }, [categorySlug]);
 
   useEffect(() => {
     let result = [...allGroups];
@@ -67,60 +79,50 @@ export default function GroupsPage() {
       const q = searchQuery.toLowerCase();
       result = result.filter(g => g.title.toLowerCase().includes(q) || g.description.toLowerCase().includes(q));
     }
-    const pinned = result.filter(g => g.isPinned).sort((a, b) => (a.pinnedOrder || 999) - (b.pinnedOrder || 999));
+    const pinned = result.filter(g => g.isPinned).sort((a, b) => (a as any).pinnedOrder - (b as any).pinnedOrder);
     const regular = result.filter(g => !g.isPinned);
     if (sortBy === 'popular') regular.sort((a, b) => b.clicksCount - a.clicksCount);
-    else if (sortBy === 'date') regular.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    else if (sortBy === 'date') regular.sort((a, b) => new Date((b as any).createdAt).getTime() - new Date((a as any).createdAt).getTime());
     else regular.sort((a, b) => a.title.localeCompare(b.title));
     setFilteredGroups([...pinned, ...regular]);
   }, [allGroups, selectedLocation, selectedCategory, searchQuery, sortBy]);
 
   const handleLogout = () => { localStorage.clear(); window.location.href = '/auth/login'; };
-  const handleReport = async (groupId: string) => {
-    if (!user) return;
-    setReportingGroup(groupId);
-    try {
-      const res = await fetch('/api/reports', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupId, userEmail: user.email, reason: 'Link not working' }) });
-      if (res.ok) alert('Thank you!'); else alert('Error');
-    } catch { alert('Error'); }
-    finally { setReportingGroup(null); }
-  };
-  const handleShare = async (group: Group) => {
-    const links = (group as any).whatsappLinks || [(group as any).whatsappLink].filter(Boolean);
-    const text = `${group.title}\n\n${group.description}\n\nJoin: ${links[0]}\n\nMore at: https://crownheightsgroups.com/groups`;
-    if (navigator.share) { try { await navigator.share({ title: group.title, text }); } catch {} }
-    else { await navigator.clipboard.writeText(text); setCopiedId(group.id + '-share'); setTimeout(() => setCopiedId(null), 2000); }
-  };
+  
   const handleCopy = async (group: Group) => {
-    const links = (group as any).whatsappLinks || [(group as any).whatsappLink].filter(Boolean);
+    const links = group.whatsappLinks || [group.whatsappLink].filter(Boolean);
     const cat = categories.find(c => c.id === group.categoryId);
-    const text = `${group.title}\n${cat?.icon} ${cat?.name}\n${group.description}\n\n${links.join('\n')}\n\nMore at: https://crownheightsgroups.com`;
+    let text = group.title + '\n' + cat?.icon + ' ' + cat?.name + '\n' + group.description + '\n\n';
+    if (links.length) text += 'WhatsApp: ' + links.join(', ') + '\n';
+    if (group.telegramLink) text += 'Telegram: ' + group.telegramLink + '\n';
+    if (group.facebookLink) text += 'Facebook: ' + group.facebookLink + '\n';
+    if (group.websiteLink) text += 'Website: ' + group.websiteLink + '\n';
+    text += '\nMore at: https://crownheightsgroups.com';
     await navigator.clipboard.writeText(text);
-    setCopiedId(group.id + '-copy'); setTimeout(() => setCopiedId(null), 2000);
-  };
-  const handleSuggestLocation = async () => {
-    if (!newLocation.neighborhood) return alert('Required');
-    setSubmittingLocation(true);
-    try {
-      const res = await fetch('/api/location-suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...newLocation, suggestedBy: user?.email }) });
-      if (res.ok) { alert('Thanks!'); setShowLocationModal(false); setNewLocation({ neighborhood: '', city: '', state: '', country: 'USA' }); }
-    } catch { alert('Error'); }
-    finally { setSubmittingLocation(false); }
+    setCopiedId(group.id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const getCat = (id: string) => categories.find(c => c.id === id);
   const getLoc = (id: string) => locations.find(l => l.id === id);
+  const getSelectedCategoryName = () => {
+    if (!selectedCategory) return null;
+    const cat = categories.find(c => c.id === selectedCategory);
+    return cat ? cat.icon + ' ' + cat.name : null;
+  };
 
   if (loading) return <div className="auth-container"><div className="loading"><div className="spinner"></div></div></div>;
 
   return (
-    <>
+    <div>
       <EmergencyBar />
       <Header user={user} onLogout={handleLogout} />
       
       <main className="main">
         <div className="page-header">
-          <h1 className="page-title">👥 WhatsApp Groups Directory</h1>
+          <h1 className="page-title">
+            {getSelectedCategoryName() || '👥 All Groups'}
+          </h1>
           <p className="page-subtitle">Find and join community groups</p>
         </div>
 
@@ -129,10 +131,7 @@ export default function GroupsPage() {
         </div>
 
         <div style={{ marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#666' }}>📍 Location</span>
-            <button onClick={() => setShowLocationModal(true)} style={{ fontSize: '0.8rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer' }}>+ Suggest</button>
-          </div>
+          <div style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>📍 Location</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             <button onClick={() => setSelectedLocation('')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: !selectedLocation ? '#2563eb' : '#e5e7eb', color: !selectedLocation ? 'white' : '#333', cursor: 'pointer', fontWeight: !selectedLocation ? 'bold' : 'normal' }}>All</button>
             {locations.sort((a, b) => (a.order || 0) - (b.order || 0)).map(loc => (
@@ -165,7 +164,9 @@ export default function GroupsPage() {
             {filteredGroups.map(group => {
               const cat = getCat(group.categoryId);
               const loc = getLoc(group.locationId);
-              const links = (group as any).whatsappLinks || [(group as any).whatsappLink].filter(Boolean);
+              const waLinks = group.whatsappLinks || [group.whatsappLink].filter(Boolean);
+              const hasLinks = waLinks.length > 0 || group.telegramLink || group.facebookLink || group.twitterLink || group.websiteLink;
+              
               return (
                 <div key={group.id} style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: group.isPinned ? '2px solid #f59e0b' : '1px solid #eee' }}>
                   {group.isPinned && <div style={{ color: '#f59e0b', fontSize: '0.8rem', marginBottom: '0.5rem' }}>⭐ Featured</div>}
@@ -176,18 +177,39 @@ export default function GroupsPage() {
                   </div>
                   <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{group.title}</h3>
                   <p style={{ color: '#666', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>{group.description}</p>
+                  
+                  {/* Links */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                    {links.map((link: string, i: number) => (
-                      <a key={i} href={link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.75rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
-                        {links.length > 1 ? `Join Group ${i + 1}` : 'Join WhatsApp Group'}
+                    {waLinks.map((link: string, i: number) => (
+                      <a key={i} href={link} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        <span>💬</span> WhatsApp {waLinks.length > 1 ? (i + 1) : ''}
                       </a>
                     ))}
+                    {group.telegramLink && (
+                      <a href={group.telegramLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', background: '#0088cc', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        <span>✈️</span> Telegram
+                      </a>
+                    )}
+                    {group.facebookLink && (
+                      <a href={group.facebookLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', background: '#1877f2', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        <span>📘</span> Facebook
+                      </a>
+                    )}
+                    {group.twitterLink && (
+                      <a href={group.twitterLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', background: '#000000', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        <span>𝕏</span> X / Twitter
+                      </a>
+                    )}
+                    {group.websiteLink && (
+                      <a href={group.websiteLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', background: '#6366f1', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        <span>🌐</span> Website
+                      </a>
+                    )}
                   </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                    <button onClick={() => handleShare(group)} style={{ flex: 1, padding: '0.5rem', border: '1px solid #2563eb', borderRadius: '8px', background: copiedId === group.id + '-share' ? '#2563eb' : 'white', color: copiedId === group.id + '-share' ? 'white' : '#2563eb', cursor: 'pointer', fontSize: '0.85rem' }}>{copiedId === group.id + '-share' ? '✓ Copied!' : '📤 Share'}</button>
-                    <button onClick={() => handleCopy(group)} style={{ flex: 1, padding: '0.5rem', border: '1px solid #10b981', borderRadius: '8px', background: copiedId === group.id + '-copy' ? '#10b981' : 'white', color: copiedId === group.id + '-copy' ? 'white' : '#10b981', cursor: 'pointer', fontSize: '0.85rem' }}>{copiedId === group.id + '-copy' ? '✓ Copied!' : '📋 Copy'}</button>
-                  </div>
-                  <button onClick={() => handleReport(group.id)} disabled={reportingGroup === group.id} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ef4444', borderRadius: '8px', background: 'white', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem' }}>{reportingGroup === group.id ? 'Reporting...' : '⚠️ Report'}</button>
+
+                  <button onClick={() => handleCopy(group)} style={{ width: '100%', padding: '0.5rem', border: '1px solid #10b981', borderRadius: '8px', background: copiedId === group.id ? '#10b981' : 'white', color: copiedId === group.id ? 'white' : '#10b981', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    {copiedId === group.id ? '✓ Copied!' : '📋 Copy Info'}
+                  </button>
                 </div>
               );
             })}
@@ -196,24 +218,6 @@ export default function GroupsPage() {
       </main>
 
       <Footer />
-
-      {showLocationModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '400px' }}>
-            <h2 style={{ marginTop: 0 }}>Suggest Location</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <input value={newLocation.neighborhood} onChange={e => setNewLocation({ ...newLocation, neighborhood: e.target.value })} placeholder="Neighborhood *" style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-              <input value={newLocation.city} onChange={e => setNewLocation({ ...newLocation, city: e.target.value })} placeholder="City" style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-              <input value={newLocation.state} onChange={e => setNewLocation({ ...newLocation, state: e.target.value })} placeholder="State" style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-              <input value={newLocation.country} onChange={e => setNewLocation({ ...newLocation, country: e.target.value })} placeholder="Country" style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-              <button onClick={() => setShowLocationModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleSuggestLocation} disabled={submittingLocation} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: 'none', background: '#2563eb', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>{submittingLocation ? '...' : 'Submit'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 }

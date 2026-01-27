@@ -7,31 +7,43 @@ import Footer from '@/components/Footer';
 import EmergencyBar from '@/components/EmergencyBar';
 
 interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
-interface Stats { groups: number; services: number; users: number; }
+interface Group { id: string; title: string; description: string; categoryId: string; whatsappLinks?: string[]; whatsappLink?: string; }
+interface Category { id: string; name: string; icon: string; slug: string; }
+
+const categoryMapping: { [key: string]: string } = {
+  'groups': 'all',
+  'jobs': 'business-jobs',
+  'housing': 'real-estate',
+  'buy-sell': 'buy-sell',
+  'events': 'events',
+  'free': 'chesed',
+  'rides': 'rides',
+};
 
 const mainSections = [
-  { id: 'groups', title: 'WhatsApp Groups', titleRu: 'WhatsApp группы', icon: '👥', color: '#25D366', href: '/groups', desc: 'Find and join community groups' },
-  { id: 'services', title: 'Services', titleRu: 'Услуги', icon: '🔧', color: '#2563eb', href: '/services', desc: 'Find local professionals' },
-  { id: 'jobs', title: 'Jobs', titleRu: 'Работа', icon: '💼', color: '#7c3aed', href: '/jobs', desc: 'Job listings & resumes', comingSoon: true },
-  { id: 'housing', title: 'Housing', titleRu: 'Жильё', icon: '🏠', color: '#ea580c', href: '/housing', desc: 'Apartments & rooms for rent', comingSoon: true },
-  { id: 'classifieds', title: 'Buy & Sell', titleRu: 'Купля-продажа', icon: '🛒', color: '#16a34a', href: '/classifieds', desc: 'Classifieds & marketplace', comingSoon: true },
-  { id: 'events', title: 'Events', titleRu: 'События', icon: '📅', color: '#dc2626', href: '/events', desc: 'Community events & shiurim', comingSoon: true },
-  { id: 'free', title: 'Free Items', titleRu: 'Бесплатно', icon: '🆓', color: '#0891b2', href: '/free', desc: 'Free stuff & gemach', comingSoon: true },
-  { id: 'rides', title: 'Rides', titleRu: 'Поездки', icon: '🚗', color: '#4f46e5', href: '/rides', desc: 'Carpool & ride sharing', comingSoon: true },
+  { id: 'groups', title: 'WhatsApp Groups', icon: '👥', color: '#25D366', href: '/groups', desc: 'Find and join community groups' },
+  { id: 'services', title: 'Services', icon: '🔧', color: '#2563eb', href: '/services', desc: 'Find local professionals' },
+  { id: 'jobs', title: 'Jobs', icon: '💼', color: '#7c3aed', href: '/groups?category=business-jobs', desc: 'Job listings & career' },
+  { id: 'housing', title: 'Housing', icon: '🏠', color: '#ea580c', href: '/groups?category=real-estate', desc: 'Apartments & rooms' },
+  { id: 'buy-sell', title: 'Buy & Sell', icon: '🛒', color: '#16a34a', href: '/groups?category=buy-sell', desc: 'Marketplace' },
+  { id: 'events', title: 'Events', icon: '📅', color: '#dc2626', href: '/groups?category=events', desc: 'Community events' },
+  { id: 'free', title: 'Free / Gemach', icon: '🆓', color: '#0891b2', href: '/groups?category=chesed', desc: 'Free stuff & gemach' },
+  { id: 'rides', title: 'Rides', icon: '🚗', color: '#4f46e5', href: '/groups?category=rides', desc: 'Carpool & rides' },
+  { id: 'news', title: 'News', icon: '📰', color: '#b91c1c', href: '/news', desc: 'Community news' },
 ];
 
-const quickLinks = [
-  { title: 'Lost & Found', icon: '🔍', href: '/lost-found', comingSoon: true },
-  { title: 'Kosher Restaurants', icon: '🍽️', href: '/restaurants', comingSoon: true },
-  { title: 'Minyan Times', icon: '🕐', href: '/minyanim', comingSoon: true },
-  { title: 'Deals & Coupons', icon: '💰', href: '/deals', comingSoon: true },
+const partners = [
+  { name: 'ShabbatHub', url: 'https://shabbathub.com', logo: '🕯️', desc: 'Shabbat hospitality' },
+  { name: 'Ed On The Go', url: 'https://edonthego.org', logo: '📚', desc: 'Jewish education' },
+  { name: 'Custom Glass Brooklyn', url: 'https://customglassbrooklyn.com', logo: '🪟', desc: 'Glass services' },
 ];
 
 export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<UserInfo | null>(null);
-  const [stats, setStats] = useState<Stats>({ groups: 0, services: 0, users: 0 });
-  const [recentGroups, setRecentGroups] = useState<any[]>([]);
+  const [stats, setStats] = useState({ groups: 0, services: 0, users: 0 });
+  const [jewishDate, setJewishDate] = useState<string>('');
+  const [parsha, setParsha] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,45 +78,98 @@ export default function HomePage() {
           services: Array.isArray(services) ? services.length : 0,
           users: Array.isArray(users) ? users.length : 0
         });
-        setRecentGroups(approvedGroups.slice(0, 4));
       } catch (error) { console.error(error); }
       finally { setLoading(false); }
     };
     fetchData();
   }, []);
 
+  // Fetch Jewish date and Parsha
+  useEffect(() => {
+    const fetchJewishInfo = async () => {
+      try {
+        // Hebrew date
+        const today = new Date();
+        const dateRes = await fetch('https://www.hebcal.com/converter?cfg=json&gy=' + today.getFullYear() + '&gm=' + (today.getMonth() + 1) + '&gd=' + today.getDate() + '&g2h=1');
+        const dateData = await dateRes.json();
+        if (dateData.hebrew) {
+          setJewishDate(dateData.hebrew);
+        }
+        
+        // Parsha
+        const parshaRes = await fetch('https://www.hebcal.com/shabbat?cfg=json&geonameid=5110302&M=on');
+        const parshaData = await parshaRes.json();
+        const parshaItem = parshaData.items?.find((item: any) => item.category === 'parashat');
+        if (parshaItem) {
+          setParsha(parshaItem.title);
+        }
+      } catch (error) {
+        console.error('Failed to fetch Jewish info:', error);
+      }
+    };
+    fetchJewishInfo();
+  }, []);
+
   const handleLogout = () => { localStorage.clear(); window.location.href = '/auth/login'; };
 
   if (isAuthenticated === null || loading) return <div className="auth-container"><div className="loading"><div className="spinner"></div></div></div>;
 
+  const today = new Date();
+  const gregorianDate = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
   return (
-    <>
+    <div>
       <EmergencyBar />
       <Header user={user} onLogout={handleLogout} />
       
       {/* Hero Section */}
-      <section style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%)', color: 'white', padding: '3rem 1rem', textAlign: 'center' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', fontWeight: 'bold' }}>
+      <section style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%)', color: 'white', padding: '2rem 1rem', textAlign: 'center' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
             🏠 Crown Heights Community Hub
           </h1>
-          <p style={{ fontSize: '1.2rem', opacity: 0.9, marginBottom: '2rem' }}>
+          <p style={{ fontSize: '1rem', opacity: 0.9, marginBottom: '1.5rem' }}>
             Your one-stop resource for everything in the community
           </p>
           
+          {/* Jewish Date & Parsha Widget */}
+          <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', display: 'inline-block' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.5rem', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>📅 Today</div>
+                <div style={{ fontWeight: 'bold' }}>{gregorianDate}</div>
+              </div>
+              {jewishDate && (
+                <div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>✡️ Hebrew Date</div>
+                  <div style={{ fontWeight: 'bold' }}>{jewishDate}</div>
+                </div>
+              )}
+              {parsha && (
+                <div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>📖 This Week</div>
+                  <div style={{ fontWeight: 'bold' }}>{parsha}</div>
+                </div>
+              )}
+            </div>
+            <a href="https://www.chabad.org/calendar" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '0.75rem', fontSize: '0.85rem', color: '#c9a227' }}>
+              View Full Calendar on Chabad.org →
+            </a>
+          </div>
+          
           {/* Stats */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '1rem 2rem', borderRadius: '12px' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.groups}</div>
-              <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>WhatsApp Groups</div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '0.75rem 1.5rem', borderRadius: '12px' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.groups}</div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Groups</div>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '1rem 2rem', borderRadius: '12px' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.services}</div>
-              <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Services</div>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '0.75rem 1.5rem', borderRadius: '12px' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.services}</div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Services</div>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '1rem 2rem', borderRadius: '12px' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.users}</div>
-              <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Members</div>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '0.75rem 1.5rem', borderRadius: '12px' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.users}</div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Members</div>
             </div>
           </div>
         </div>
@@ -113,114 +178,123 @@ export default function HomePage() {
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
         
         {/* Main Sections Grid */}
-        <section style={{ marginBottom: '3rem' }}>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>Explore Our Community</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+        <section style={{ marginBottom: '2.5rem' }}>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', textAlign: 'center' }}>Explore Our Community</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
             {mainSections.map(section => (
               <Link 
                 key={section.id} 
-                href={section.comingSoon ? '#' : section.href}
+                href={section.href}
                 style={{ 
                   textDecoration: 'none',
-                  position: 'relative',
                   display: 'block',
                   background: 'white',
                   borderRadius: '16px',
-                  padding: '1.5rem',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  border: `3px solid ${section.color}20`,
+                  padding: '1.25rem',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  border: '2px solid ' + section.color + '20',
                   transition: 'transform 0.2s, box-shadow 0.2s',
-                  cursor: section.comingSoon ? 'default' : 'pointer',
-                  opacity: section.comingSoon ? 0.7 : 1,
+                  textAlign: 'center',
                 }}
-                onClick={e => section.comingSoon && e.preventDefault()}
-                onMouseOver={e => !section.comingSoon && (e.currentTarget.style.transform = 'translateY(-4px)')}
-                onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
               >
-                {section.comingSoon && (
-                  <span style={{ position: 'absolute', top: '10px', right: '10px', background: '#f59e0b', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>COMING SOON</span>
-                )}
-                <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>{section.icon}</div>
-                <h3 style={{ color: section.color, margin: '0 0 0.25rem 0', fontSize: '1.25rem' }}>{section.title}</h3>
-                <p style={{ color: '#666', margin: 0, fontSize: '0.9rem' }}>{section.desc}</p>
+                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{section.icon}</div>
+                <h3 style={{ color: section.color, margin: '0 0 0.25rem 0', fontSize: '1rem' }}>{section.title}</h3>
+                <p style={{ color: '#666', margin: 0, fontSize: '0.8rem' }}>{section.desc}</p>
               </Link>
             ))}
           </div>
         </section>
 
-        {/* Quick Links */}
-        <section style={{ marginBottom: '3rem' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Quick Links</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-            {quickLinks.map(link => (
-              <Link 
-                key={link.title} 
-                href={link.comingSoon ? '#' : link.href}
-                onClick={e => link.comingSoon && e.preventDefault()}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '0.5rem', 
-                  background: 'white', 
-                  padding: '0.75rem 1.25rem', 
-                  borderRadius: '25px', 
-                  textDecoration: 'none', 
-                  color: '#333',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  fontSize: '0.95rem',
-                  opacity: link.comingSoon ? 0.6 : 1,
+        {/* Quick Actions */}
+        <section style={{ marginBottom: '2.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            <Link href="/groups" style={{ textDecoration: 'none' }}>
+              <div style={{ background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
+                <h3 style={{ margin: '0 0 0.5rem 0' }}>👥 Browse All Groups</h3>
+                <p style={{ margin: 0, opacity: 0.9, fontSize: '0.9rem' }}>Find WhatsApp, Telegram & more</p>
+              </div>
+            </Link>
+            <Link href="/services" style={{ textDecoration: 'none' }}>
+              <div style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
+                <h3 style={{ margin: '0 0 0.5rem 0' }}>🔧 Find Services</h3>
+                <p style={{ margin: 0, opacity: 0.9, fontSize: '0.9rem' }}>Local professionals & businesses</p>
+              </div>
+            </Link>
+            <Link href="/suggest" style={{ textDecoration: 'none' }}>
+              <div style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
+                <h3 style={{ margin: '0 0 0.5rem 0' }}>➕ Add a Listing</h3>
+                <p style={{ margin: 0, opacity: 0.9, fontSize: '0.9rem' }}>Submit group or service</p>
+              </div>
+            </Link>
+          </div>
+        </section>
+
+        {/* Partners Section */}
+        <section style={{ marginBottom: '2.5rem' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>🤝 Community Partners</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
+            {partners.map(partner => (
+              <a 
+                key={partner.name}
+                href={partner.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  background: 'white',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  textDecoration: 'none',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  transition: 'transform 0.2s',
                 }}
               >
-                <span>{link.icon}</span>
-                <span>{link.title}</span>
-                {link.comingSoon && <span style={{ fontSize: '0.7rem', color: '#f59e0b' }}>Soon</span>}
-              </Link>
+                <span style={{ fontSize: '2rem' }}>{partner.logo}</span>
+                <div>
+                  <div style={{ fontWeight: 'bold', color: '#333' }}>{partner.name}</div>
+                  <div style={{ fontSize: '0.8rem', color: '#666' }}>{partner.desc}</div>
+                </div>
+              </a>
             ))}
           </div>
         </section>
 
-        {/* Recent Groups Preview */}
-        {recentGroups.length > 0 && (
-          <section style={{ marginBottom: '3rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Recent WhatsApp Groups</h2>
-              <Link href="/groups" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '500' }}>View All →</Link>
+        {/* Resources Row */}
+        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          <a href="https://www.chabad.org/parshah" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+            <div style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', borderRadius: '12px', padding: '1.25rem', color: 'white', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📖</div>
+              <div style={{ fontWeight: 'bold' }}>Weekly Parsha</div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>on Chabad.org</div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-              {recentGroups.map(group => {
-                const links = group.whatsappLinks || [group.whatsappLink].filter(Boolean);
-                return (
-                  <div key={group.id} style={{ background: 'white', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem' }}>{group.title}</h4>
-                    <p style={{ color: '#666', fontSize: '0.85rem', margin: '0 0 1rem 0', lineHeight: 1.4 }}>{group.description?.slice(0, 100)}{group.description?.length > 100 ? '...' : ''}</p>
-                    {links[0] && (
-                      <a href={links[0]} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                        Join Group
-                      </a>
-                    )}
-                  </div>
-                );
-              })}
+          </a>
+          <a href="https://www.chabad.org/calendar/zmanim.htm" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+            <div style={{ background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)', borderRadius: '12px', padding: '1.25rem', color: 'white', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🕐</div>
+              <div style={{ fontWeight: 'bold' }}>Zmanim</div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Daily times</div>
             </div>
-          </section>
-        )}
-
-        {/* CTA Section */}
-        <section style={{ background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', borderRadius: '16px', padding: '2rem', textAlign: 'center' }}>
-          <h2 style={{ margin: '0 0 0.5rem 0' }}>Want to contribute?</h2>
-          <p style={{ color: '#666', marginBottom: '1.5rem' }}>Help grow our community by adding groups, services, or businesses</p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-            <Link href="/suggest" style={{ padding: '0.75rem 1.5rem', background: '#2563eb', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
-              ➕ Suggest a Service
-            </Link>
-            <Link href="/contact" style={{ padding: '0.75rem 1.5rem', background: 'white', color: '#2563eb', border: '2px solid #2563eb', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
-              📧 Contact Us
-            </Link>
-          </div>
+          </a>
+          <a href="https://www.chabad.org/dailystudy" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+            <div style={{ background: 'linear-gradient(135deg, #059669 0%, #047857 100%)', borderRadius: '12px', padding: '1.25rem', color: 'white', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📚</div>
+              <div style={{ fontWeight: 'bold' }}>Daily Study</div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Chitas, Rambam</div>
+            </div>
+          </a>
+          <Link href="/news" style={{ textDecoration: 'none' }}>
+            <div style={{ background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', borderRadius: '12px', padding: '1.25rem', color: 'white', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📰</div>
+              <div style={{ fontWeight: 'bold' }}>News</div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Community updates</div>
+            </div>
+          </Link>
         </section>
       </main>
       
       <Footer />
-    </>
+    </div>
   );
 }

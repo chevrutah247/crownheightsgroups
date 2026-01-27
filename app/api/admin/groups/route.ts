@@ -23,6 +23,21 @@ export async function GET() {
   }
 }
 
+function normalizeLink(link: string): string {
+  return link.trim().toLowerCase().replace(/\/$/, '');
+}
+
+function getAllLinks(group: any): string[] {
+  const links: string[] = [];
+  if (group.whatsappLinks) links.push(...group.whatsappLinks);
+  if (group.whatsappLink) links.push(group.whatsappLink);
+  if (group.telegramLink) links.push(group.telegramLink);
+  if (group.facebookLink) links.push(group.facebookLink);
+  if (group.twitterLink) links.push(group.twitterLink);
+  if (group.websiteLink) links.push(group.websiteLink);
+  return links.filter(l => l && l.trim());
+}
+
 export async function POST(request: NextRequest) {
   try {
     const redis = getRedis();
@@ -37,58 +52,58 @@ export async function POST(request: NextRequest) {
       if (!Array.isArray(groups)) groups = [];
     }
     
-    // Get WhatsApp links
+    // Get all links
     let whatsappLinks = newGroup.whatsappLinks || [];
     if (newGroup.whatsappLink && !whatsappLinks.length) {
       whatsappLinks = [newGroup.whatsappLink];
     }
     whatsappLinks = whatsappLinks.filter((link: string) => link && link.trim());
     
-    // CHECK FOR DUPLICATE LINKS (main check - blocks if duplicate)
-    for (const link of whatsappLinks) {
-      const linkClean = link.trim().toLowerCase();
-      const duplicateLink = groups.find(g => {
-        const existingLinks = g.whatsappLinks || [g.whatsappLink].filter(Boolean);
-        return existingLinks.some((l: string) => l && l.toLowerCase().trim() === linkClean);
-      });
-      if (duplicateLink) {
-        return NextResponse.json({ 
-          error: 'This WhatsApp link already exists in group "' + duplicateLink.title + '"',
-          type: 'duplicate_link'
-        }, { status: 400 });
+    const allNewLinks = getAllLinks({ ...newGroup, whatsappLinks });
+    
+    // CHECK FOR DUPLICATE LINKS
+    for (const link of allNewLinks) {
+      const linkNorm = normalizeLink(link);
+      for (const g of groups) {
+        const existingLinks = getAllLinks(g);
+        if (existingLinks.some(l => normalizeLink(l) === linkNorm)) {
+          return NextResponse.json({ 
+            error: 'This link already exists in "' + g.title + '"',
+            type: 'duplicate_link'
+          }, { status: 400 });
+        }
       }
     }
     
-    // CHECK FOR DUPLICATE TITLE (warning only - suggests new name)
+    // CHECK FOR DUPLICATE TITLE
     const titleLower = newGroup.title?.toLowerCase().trim();
     const duplicateTitle = groups.find(g => g.title?.toLowerCase().trim() === titleLower);
     
-    let finalTitle = newGroup.title;
     if (duplicateTitle) {
-      // Find a unique name by adding a number
       let counter = 2;
       let newTitle = newGroup.title + ' ' + counter;
       while (groups.find(g => g.title?.toLowerCase().trim() === newTitle.toLowerCase().trim())) {
         counter++;
         newTitle = newGroup.title + ' ' + counter;
       }
-      finalTitle = newTitle;
-      
-      // Return suggestion instead of error
       return NextResponse.json({ 
-        error: 'A group named "' + newGroup.title + '" already exists. Suggested name: "' + finalTitle + '"',
+        error: 'A group named "' + newGroup.title + '" already exists. Suggested: "' + newTitle + '"',
         type: 'duplicate_title',
-        suggestedTitle: finalTitle
+        suggestedTitle: newTitle
       }, { status: 409 });
     }
     
     const id = String(Date.now());
     const group = {
       id,
-      title: finalTitle,
+      title: newGroup.title || '',
       description: newGroup.description || '',
       whatsappLinks: whatsappLinks,
       whatsappLink: whatsappLinks[0] || '',
+      telegramLink: newGroup.telegramLink || '',
+      facebookLink: newGroup.facebookLink || '',
+      twitterLink: newGroup.twitterLink || '',
+      websiteLink: newGroup.websiteLink || '',
       categoryId: newGroup.categoryId || '1',
       locationId: newGroup.locationId || '1',
       language: newGroup.language || 'English',
@@ -134,23 +149,24 @@ export async function PUT(request: NextRequest) {
     }
     whatsappLinks = whatsappLinks.filter((link: string) => link && link.trim());
     
-    // CHECK FOR DUPLICATE LINKS (excluding current group)
-    for (const link of whatsappLinks) {
-      const linkClean = link.trim().toLowerCase();
-      const duplicateLink = groups.find((g, i) => {
-        if (i === index) return false;
-        const existingLinks = g.whatsappLinks || [g.whatsappLink].filter(Boolean);
-        return existingLinks.some((l: string) => l && l.toLowerCase().trim() === linkClean);
-      });
-      if (duplicateLink) {
-        return NextResponse.json({ 
-          error: 'This WhatsApp link already exists in group "' + duplicateLink.title + '"',
-          type: 'duplicate_link'
-        }, { status: 400 });
+    const allNewLinks = getAllLinks({ ...updated, whatsappLinks });
+    
+    // CHECK FOR DUPLICATE LINKS (excluding current)
+    for (const link of allNewLinks) {
+      const linkNorm = normalizeLink(link);
+      for (let i = 0; i < groups.length; i++) {
+        if (i === index) continue;
+        const existingLinks = getAllLinks(groups[i]);
+        if (existingLinks.some(l => normalizeLink(l) === linkNorm)) {
+          return NextResponse.json({ 
+            error: 'This link already exists in "' + groups[i].title + '"',
+            type: 'duplicate_link'
+          }, { status: 400 });
+        }
       }
     }
     
-    // CHECK FOR DUPLICATE TITLE (excluding current group - warning only)
+    // CHECK FOR DUPLICATE TITLE
     const titleLower = updated.title?.toLowerCase().trim();
     const duplicateTitle = groups.find((g, i) => i !== index && g.title?.toLowerCase().trim() === titleLower);
     
@@ -161,9 +177,8 @@ export async function PUT(request: NextRequest) {
         counter++;
         newTitle = updated.title + ' ' + counter;
       }
-      
       return NextResponse.json({ 
-        error: 'A group named "' + updated.title + '" already exists. Suggested name: "' + newTitle + '"',
+        error: 'A group named "' + updated.title + '" already exists. Suggested: "' + newTitle + '"',
         type: 'duplicate_title',
         suggestedTitle: newTitle
       }, { status: 409 });
