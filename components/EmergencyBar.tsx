@@ -1,32 +1,48 @@
 'use client';
 
-import { emergencyContacts } from '@/lib/data';
+const emergencyContacts = [
+  { name: 'Hatzolah', phone: '718-230-1000', icon: '🚑' },
+  { name: 'Shomrim', phone: '718-774-3333', icon: '🛡️' },
+  { name: 'Chaveirim', phone: '718-431-8181', icon: '🚗' },
+];
 
 export default function EmergencyBar() {
-  const handleCall = (phone: string) => {
-    window.location.href = `tel:${phone.replace(/[^0-9+]/g, '')}`;
-  };
-
   return (
-    <div className="emergency-bar">
-      <div className="emergency-bar-content">
-        <span className="emergency-label">Emergency:</span>
-        <div className="emergency-contacts">
-          {emergencyContacts
-            .sort((a, b) => a.order - b.order)
-            .map(contact => (
-              <button
-                key={contact.id}
-                className="emergency-contact"
-                onClick={() => handleCall(contact.phone)}
-                style={{ '--contact-color': contact.color } as React.CSSProperties}
-              >
-                <span className="emergency-icon">{contact.icon}</span>
-                <span className="emergency-name">{contact.name}</span>
-                <span className="emergency-phone">{contact.phone}</span>
-              </button>
-            ))}
-        </div>
+    <div style={{
+      background: '#f8f9fa',
+      padding: '0.5rem 1rem',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: '0.5rem',
+      flexWrap: 'wrap',
+      borderBottom: '1px solid #e5e7eb'
+    }}>
+      <span style={{ color: '#dc2626', fontWeight: 'bold', marginRight: '0.5rem' }}>EMERGENCY:</span>
+      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+        {emergencyContacts.map((contact) => (
+          
+            key={contact.name}
+            href={`tel:${contact.phone.replace(/-/g, '')}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: '#1e3a5f',
+              color: 'white',
+              padding: '0.4rem 0.75rem',
+              borderRadius: '20px',
+              textDecoration: 'none',
+              fontSize: '0.85rem',
+              fontWeight: '500',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <span>{contact.icon}</span>
+            <span style={{ fontWeight: 'bold' }}>{contact.name}</span>
+            <span>{contact.phone}</span>
+          </a>
+        ))}
       </div>
     </div>
   );
