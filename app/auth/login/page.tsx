@@ -1,42 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Login failed');
-        setLoading(false);
-        return;
-      }
-
-      localStorage.setItem('session_token', data.token);
-      localStorage.setItem('user_email', data.user.email);
-      localStorage.setItem('user_name', data.user.name);
-      localStorage.setItem('user_role', data.user.role);
-
-      window.location.href = '/';
-    } catch (err) {
-      setError('Network error. Please try again.');
+    // Check if password is 770
+    if (password === '770') {
+      // Save that user passed the gate
+      localStorage.setItem('community_verified', 'true');
+      router.push('/auth/register');
+    } else {
+      setError('Incorrect answer. Try again!');
       setLoading(false);
     }
   };
@@ -80,7 +64,7 @@ export default function LoginPage() {
           padding: '1rem', 
           borderRadius: '12px',
           border: '1px solid #bae6fd',
-          marginBottom: '1rem'
+          marginBottom: '1.5rem'
         }}>
           <div style={{ fontWeight: 'bold', color: '#0369a1', fontSize: '0.95rem', marginBottom: '0.25rem' }}>
             🤔 What is the address of this building?
@@ -90,40 +74,60 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {error && <div className="error-message" style={{ marginBottom: '1rem' }}>{error}</div>}
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="your@email.com"
-            />
+        {error && (
+          <div style={{ 
+            background: '#fee2e2', 
+            color: '#dc2626', 
+            padding: '0.75rem', 
+            borderRadius: '8px', 
+            marginBottom: '1rem',
+            textAlign: 'center'
+          }}>
+            {error}
           </div>
+        )}
 
-          <div className="form-group">
-            <label>Password</label>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '1.5rem' }}>
             <input
-              type="password"
+              type="text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="_ _ _"
-              style={{ textAlign: 'center', fontSize: '1.25rem', letterSpacing: '0.5rem' }}
+              maxLength={3}
+              style={{ 
+                width: '100%',
+                textAlign: 'center', 
+                fontSize: '2rem', 
+                letterSpacing: '1rem',
+                padding: '1rem',
+                border: '2px solid #ddd',
+                borderRadius: '12px',
+                boxSizing: 'border-box'
+              }}
             />
           </div>
 
-          <button type="submit" className="auth-btn" disabled={loading}>
+          <button 
+            type="submit" 
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              background: '#2563eb',
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1
+            }}
+          >
             {loading ? 'Checking...' : 'Enter'}
           </button>
         </form>
-
-        <div className="auth-link">
-          New here? <Link href="/auth/register">Create account</Link>
-        </div>
 
         <div style={{ 
           marginTop: '1.5rem', 
