@@ -14,11 +14,41 @@ interface NewsItem {
   pubDate: string;
   source: string;
   sourceColor: string;
+  image?: string;
+  description?: string;
 }
 
 let cachedNews: NewsItem[] = [];
 let lastFetch = 0;
 const CACHE_DURATION = 10 * 60 * 1000;
+
+function extractImage(item: any): string | undefined {
+  // Try thumbnail first
+  if (item.thumbnail) return item.thumbnail;
+  
+  // Try enclosure
+  if (item.enclosure && item.enclosure.link) return item.enclosure.link;
+  
+  // Try to extract from content
+  if (item.content) {
+    const imgMatch = item.content.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (imgMatch) return imgMatch[1];
+  }
+  
+  // Try description
+  if (item.description) {
+    const imgMatch = item.description.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (imgMatch) return imgMatch[1];
+  }
+  
+  return undefined;
+}
+
+function cleanDescription(text: string | undefined): string {
+  if (!text) return '';
+  // Remove HTML tags
+  return text.replace(/<[^>]*>/g, '').slice(0, 150).trim();
+}
 
 async function fetchFeed(feed: typeof RSS_FEEDS[0]): Promise<NewsItem[]> {
   try {
@@ -40,13 +70,15 @@ async function fetchFeed(feed: typeof RSS_FEEDS[0]): Promise<NewsItem[]> {
       return [];
     }
     
-    return data.items.slice(0, 8).map((item: any, index: number) => ({
+    return data.items.slice(0, 10).map((item: any, index: number) => ({
       id: feed.id + '-' + index + '-' + Date.now(),
       title: item.title || 'No title',
       link: item.link || feed.url,
       pubDate: item.pubDate || new Date().toISOString(),
       source: feed.name,
       sourceColor: feed.color,
+      image: extractImage(item),
+      description: cleanDescription(item.description || item.content),
     }));
   } catch (error) {
     console.error('Error fetching ' + feed.name + ':', error);
