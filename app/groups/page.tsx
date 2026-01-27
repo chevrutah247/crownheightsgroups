@@ -58,7 +58,6 @@ export default function GroupsPage() {
         if (Array.isArray(groupsData)) setAllGroups(groupsData.filter((g: Group) => g.status === 'approved'));
         if (Array.isArray(catsData)) {
           setCategories(catsData);
-          // Set category from URL param
           if (categorySlug) {
             const cat = catsData.find((c: Category) => c.slug === categorySlug);
             if (cat) setSelectedCategory(cat.id);
@@ -79,20 +78,30 @@ export default function GroupsPage() {
       const q = searchQuery.toLowerCase();
       result = result.filter(g => g.title.toLowerCase().includes(q) || g.description.toLowerCase().includes(q));
     }
-    const pinned = result.filter(g => g.isPinned).sort((a, b) => (a as any).pinnedOrder - (b as any).pinnedOrder);
+    const pinned = result.filter(g => g.isPinned).sort((a, b) => ((a as any).pinnedOrder || 0) - ((b as any).pinnedOrder || 0));
     const regular = result.filter(g => !g.isPinned);
     if (sortBy === 'popular') regular.sort((a, b) => b.clicksCount - a.clicksCount);
-    else if (sortBy === 'date') regular.sort((a, b) => new Date((b as any).createdAt).getTime() - new Date((a as any).createdAt).getTime());
+    else if (sortBy === 'date') regular.sort((a, b) => new Date((b as any).createdAt || 0).getTime() - new Date((a as any).createdAt || 0).getTime());
     else regular.sort((a, b) => a.title.localeCompare(b.title));
     setFilteredGroups([...pinned, ...regular]);
   }, [allGroups, selectedLocation, selectedCategory, searchQuery, sortBy]);
 
   const handleLogout = () => { localStorage.clear(); window.location.href = '/auth/login'; };
   
+  const getWhatsAppLinks = (group: Group): string[] => {
+    const links: string[] = [];
+    if (group.whatsappLinks && Array.isArray(group.whatsappLinks)) {
+      group.whatsappLinks.forEach(l => { if (l && typeof l === 'string') links.push(l); });
+    } else if (group.whatsappLink && typeof group.whatsappLink === 'string') {
+      links.push(group.whatsappLink);
+    }
+    return links;
+  };
+  
   const handleCopy = async (group: Group) => {
-    const links = group.whatsappLinks || [group.whatsappLink].filter(Boolean);
+    const links = getWhatsAppLinks(group);
     const cat = categories.find(c => c.id === group.categoryId);
-    let text = group.title + '\n' + cat?.icon + ' ' + cat?.name + '\n' + group.description + '\n\n';
+    let text = group.title + '\n' + (cat?.icon || '') + ' ' + (cat?.name || '') + '\n' + group.description + '\n\n';
     if (links.length) text += 'WhatsApp: ' + links.join(', ') + '\n';
     if (group.telegramLink) text += 'Telegram: ' + group.telegramLink + '\n';
     if (group.facebookLink) text += 'Facebook: ' + group.facebookLink + '\n';
@@ -120,9 +129,7 @@ export default function GroupsPage() {
       
       <main className="main">
         <div className="page-header">
-          <h1 className="page-title">
-            {getSelectedCategoryName() || '👥 All Groups'}
-          </h1>
+          <h1 className="page-title">{getSelectedCategoryName() || '👥 All Groups'}</h1>
           <p className="page-subtitle">Find and join community groups</p>
         </div>
 
@@ -164,8 +171,7 @@ export default function GroupsPage() {
             {filteredGroups.map(group => {
               const cat = getCat(group.categoryId);
               const loc = getLoc(group.locationId);
-              const waLinks = group.whatsappLinks || [group.whatsappLink].filter(Boolean);
-              const hasLinks = waLinks.length > 0 || group.telegramLink || group.facebookLink || group.twitterLink || group.websiteLink;
+              const waLinks = getWhatsAppLinks(group);
               
               return (
                 <div key={group.id} style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: group.isPinned ? '2px solid #f59e0b' : '1px solid #eee' }}>
@@ -178,9 +184,8 @@ export default function GroupsPage() {
                   <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{group.title}</h3>
                   <p style={{ color: '#666', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>{group.description}</p>
                   
-                  {/* Links */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                    {waLinks.map((link: string, i: number) => (
+                    {waLinks.map((link, i) => (
                       <a key={i} href={link} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
                         <span>💬</span> WhatsApp {waLinks.length > 1 ? (i + 1) : ''}
                       </a>
