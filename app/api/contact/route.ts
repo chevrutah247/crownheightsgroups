@@ -1,109 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 
-// Email configuration
-const EMAIL_CONFIG = {
-  user: 'contact@edonthego.org',
-  pass: 'qvun irsl zsaf asux', // App password
-  to: 'contact@edonthego.org',
-};
-
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { name, email, subject, message } = body;
+    const { name, email, subject, message } = await request.json();
 
-    // Validate required fields
-    if (!name || !email || !subject || !message) {
-      return NextResponse.json(
-        { error: 'All fields are required' },
-        { status: 400 }
-      );
+    if (!name || !email || !message) {
+      return NextResponse.json({ error: 'Name, email and message are required' }, { status: 400 });
     }
 
-    // Create transporter
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: EMAIL_CONFIG.user,
-        pass: EMAIL_CONFIG.pass,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
-    // Email content
-    const mailOptions = {
-      from: EMAIL_CONFIG.user,
-      to: EMAIL_CONFIG.to,
+    // Email to admin
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER,
       replyTo: email,
-      subject: `[Crown Heights Groups] ${subject}`,
+      subject: `[Crown Heights Groups] ${subject || 'New Contact Form Message'}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1a365d; border-bottom: 2px solid #d69e2e; padding-bottom: 10px;">
-            New Contact Form Submission
-          </h2>
-          
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <tr>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold; width: 120px;">
-                Name:
-              </td>
-              <td style="padding: 10px; border-bottom: 1px solid #eee;">
-                ${name}
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">
-                Email:
-              </td>
-              <td style="padding: 10px; border-bottom: 1px solid #eee;">
-                <a href="mailto:${email}">${email}</a>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">
-                Subject:
-              </td>
-              <td style="padding: 10px; border-bottom: 1px solid #eee;">
-                ${subject}
-              </td>
-            </tr>
-          </table>
-          
-          <div style="background: #f7f5f0; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin: 0 0 10px 0; color: #1a365d;">Message:</h3>
-            <p style="margin: 0; white-space: pre-wrap; line-height: 1.6;">${message}</p>
-          </div>
-          
-          <p style="color: #718096; font-size: 12px; margin-top: 30px;">
-            This message was sent from the Crown Heights Groups contact form.
-          </p>
-        </div>
+        <h2>New Contact Form Submission</h2>
+        <p><strong>From:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Subject:</strong> ${subject || 'N/A'}</p>
+        <hr>
+        <p><strong>Message:</strong></p>
+        <p>${message.replace(/\n/g, '<br>')}</p>
       `,
-      text: `
-New Contact Form Submission
-===========================
+    });
 
-Name: ${name}
-Email: ${email}
-Subject: ${subject}
-
-Message:
-${message}
-
----
-This message was sent from the Crown Heights Groups contact form.
+    // Auto-reply to user
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Thank you for contacting Crown Heights Groups!',
+      html: `
+        <h2>Thank you for reaching out!</h2>
+        <p>Dear ${name},</p>
+        <p>We have received your message and will get back to you as soon as possible.</p>
+        <br>
+        <p>Best regards,</p>
+        <p><strong>Crown Heights Groups Team</strong></p>
+        <p><a href="https://crownheightsgroups.com">crownheightsgroups.com</a></p>
       `,
-    };
-
-    // Send email
-    await transporter.sendMail(mailOptions);
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error sending email:', error);
-    return NextResponse.json(
-      { error: 'Failed to send message' },
-      { status: 500 }
-    );
+    console.error('Email error:', error);
+    return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
   }
 }

@@ -16,10 +16,10 @@ export default function Header({ user, onLogout }: HeaderProps) {
           <span className="logo-text">Crown Heights Groups</span>
         </Link>
         <nav className="nav">
+          <Link href="/" className="nav-link">Home</Link>
           <Link href="/groups" className="nav-link">Groups</Link>
           <Link href="/services" className="nav-link">Services</Link>
           <Link href="/news" className="nav-link">News</Link>
-          <Link href="/suggest" className="nav-link">Suggest</Link>
           <Link href="/contact" className="nav-link">Contact</Link>
           {user?.role === 'admin' && (
             <Link href="/admin" className="nav-link">Admin</Link>

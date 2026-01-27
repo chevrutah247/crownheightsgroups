@@ -12,60 +12,64 @@ const newsSources = [
     id: 'collive', 
     name: 'COLlive', 
     url: 'https://collive.com/', 
-    logo: '📰',
-    description: 'Crown Heights News, Community Updates & Events',
-    color: '#1a365d'
+    logo: '🔵',
+    description: 'Crown Heights News, Community Updates & Breaking Stories',
+    color: '#1a365d',
+    featured: true
   },
   { 
     id: 'chabadinfo', 
     name: 'Chabad.info', 
     url: 'https://chabadinfo.com/', 
-    logo: '📰',
-    description: 'Chabad Lubavitch News & Information',
-    color: '#2d3748'
+    logo: '🟡',
+    description: 'Chabad Lubavitch Worldwide News & Information',
+    color: '#b45309',
+    featured: true
   },
   { 
     id: 'crownheightsinfo', 
     name: 'CrownHeights.info', 
     url: 'https://crownheights.info/', 
-    logo: '📰',
-    description: 'Crown Heights Community News',
-    color: '#744210'
+    logo: '🟢',
+    description: 'Crown Heights Community News & Updates',
+    color: '#047857'
   },
   { 
     id: 'shmais', 
     name: 'Shmais.com', 
     url: 'https://shmais.com/', 
-    logo: '📰',
-    description: 'Jewish News Network',
-    color: '#22543d'
+    logo: '🔴',
+    description: 'Jewish News Network - Breaking News',
+    color: '#b91c1c'
   },
   { 
     id: 'lubavitch', 
     name: 'Lubavitch.com', 
-    url: 'https://lubavitch.com/', 
-    logo: '📰',
-    description: 'Official Chabad-Lubavitch News',
-    color: '#553c9a'
+    url: 'https://lubavitch.com/news', 
+    logo: '🟣',
+    description: 'Official Chabad-Lubavitch News Site',
+    color: '#7c3aed'
   },
   { 
     id: 'chabad', 
-    name: 'Chabad.org', 
+    name: 'Chabad.org News', 
     url: 'https://chabad.org/news', 
-    logo: '📰',
-    description: 'Jewish News & Torah Classes',
-    color: '#2b6cb0'
+    logo: '⚪',
+    description: 'Jewish News, Torah & Encyclopedic Content',
+    color: '#374151'
   },
 ];
 
-const socialMedia = [
-  { name: 'COLlive Instagram', url: 'https://instagram.com/collaborativelive', icon: '📷' },
-  { name: 'Chabad.info Telegram', url: 'https://t.me/chabadinfo', icon: '✈️' },
-  { name: 'Crown Heights WhatsApp', url: 'https://crownheightsgroups.com/groups', icon: '💬' },
+const quickLinks = [
+  { name: 'Tzivos Hashem', url: 'https://tzivoshashem.org', icon: '👦' },
+  { name: 'JEM Media', url: 'https://jemedia.org', icon: '🎬' },
+  { name: 'Sichos in English', url: 'https://sie.org', icon: '📚' },
+  { name: 'Chabad Library', url: 'https://chabadlibrary.org', icon: '📖' },
 ];
 
 export default function NewsPage() {
   const [user, setUser] = useState<UserInfo | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -77,11 +81,17 @@ export default function NewsPage() {
         if (data.valid) setUser({ name: data.user.name, email: data.user.email, role: data.user.role });
         else { localStorage.clear(); window.location.href = '/auth/login'; }
       } catch { window.location.href = '/auth/login'; }
+      finally { setLoading(false); }
     };
     checkAuth();
   }, []);
 
   const handleLogout = () => { localStorage.clear(); window.location.href = '/auth/login'; };
+
+  if (loading) return <div className="auth-container"><div className="loading"><div className="spinner"></div></div></div>;
+
+  const featuredSources = newsSources.filter(s => s.featured);
+  const otherSources = newsSources.filter(s => !s.featured);
 
   return (
     <>
@@ -94,11 +104,47 @@ export default function NewsPage() {
           <p className="page-subtitle">Stay updated with the latest news from our community</p>
         </div>
 
-        {/* Main News Sources */}
-        <section style={{ marginBottom: '3rem' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>News Sources</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-            {newsSources.map(source => (
+        {/* Featured News Sources */}
+        <section style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>⭐ Featured News Sources</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1rem' }}>
+            {featuredSources.map(source => (
+              <a 
+                key={source.id}
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  background: `linear-gradient(135deg, ${source.color} 0%, ${source.color}dd 100%)`,
+                  borderRadius: '16px',
+                  padding: '2rem',
+                  textDecoration: 'none',
+                  color: 'white',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                }}
+                onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)'; }}
+                onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '2.5rem' }}>{source.logo}</span>
+                  <h3 style={{ margin: 0, fontSize: '1.5rem' }}>{source.name}</h3>
+                </div>
+                <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>{source.description}</p>
+                <div style={{ marginTop: '1.5rem', fontSize: '1rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  Visit Site <span>→</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        {/* Other News Sources */}
+        <section style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>📰 More News Sources</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+            {otherSources.map(source => (
               <a 
                 key={source.id}
                 href={source.url}
@@ -112,32 +158,29 @@ export default function NewsPage() {
                   textDecoration: 'none',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                   borderLeft: `4px solid ${source.color}`,
-                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  transition: 'transform 0.2s',
                 }}
-                onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; }}
-                onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'; }}
+                onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '2rem' }}>{source.logo}</span>
-                  <h3 style={{ margin: 0, color: source.color, fontSize: '1.25rem' }}>{source.name}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>{source.logo}</span>
+                  <h3 style={{ margin: 0, color: source.color, fontSize: '1.1rem' }}>{source.name}</h3>
                 </div>
                 <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>{source.description}</p>
-                <div style={{ marginTop: '1rem', color: source.color, fontSize: '0.9rem', fontWeight: 'bold' }}>
-                  Visit Site →
-                </div>
               </a>
             ))}
           </div>
         </section>
 
-        {/* Social Media */}
-        <section style={{ marginBottom: '3rem' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Follow on Social Media</h2>
+        {/* Quick Links */}
+        <section style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>🔗 Quick Links</h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-            {socialMedia.map(social => (
+            {quickLinks.map(link => (
               <a 
-                key={social.name}
-                href={social.url}
+                key={link.name}
+                href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -150,35 +193,48 @@ export default function NewsPage() {
                   textDecoration: 'none',
                   color: '#333',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  fontSize: '0.95rem',
                 }}
               >
-                <span>{social.icon}</span>
-                <span>{social.name}</span>
+                <span>{link.icon}</span>
+                <span>{link.name}</span>
               </a>
             ))}
           </div>
         </section>
 
-        {/* Breaking News Tip */}
-        <section style={{ background: '#fef3c7', borderRadius: '12px', padding: '1.5rem', marginBottom: '2rem' }}>
-          <h3 style={{ margin: '0 0 0.5rem 0', color: '#92400e' }}>🔔 Have a News Tip?</h3>
-          <p style={{ margin: '0 0 1rem 0', color: '#92400e' }}>
-            Did something happen in the community? Share your news tip with local outlets:
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <a href="mailto:news@collive.com" style={{ padding: '0.5rem 1rem', background: '#92400e', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.9rem' }}>📧 COLlive</a>
-            <a href="mailto:news@chabadinfo.com" style={{ padding: '0.5rem 1rem', background: '#92400e', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.9rem' }}>📧 Chabad.info</a>
+        {/* News Tip Section */}
+        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+          <div style={{ background: '#fef3c7', borderRadius: '12px', padding: '1.5rem' }}>
+            <h3 style={{ margin: '0 0 0.75rem 0', color: '#92400e' }}>🔔 Have a News Tip?</h3>
+            <p style={{ margin: '0 0 1rem 0', color: '#92400e', fontSize: '0.9rem' }}>
+              Did something happen in the community? Share your news with local outlets:
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <a href="mailto:news@collive.com" style={{ padding: '0.5rem 1rem', background: '#92400e', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem' }}>📧 COLlive</a>
+              <a href="mailto:news@chabadinfo.com" style={{ padding: '0.5rem 1rem', background: '#92400e', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem' }}>📧 Chabad.info</a>
+            </div>
           </div>
-        </section>
 
-        {/* Weather Widget Placeholder */}
-        <section style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white', marginBottom: '2rem' }}>
-          <h3 style={{ margin: '0 0 0.5rem 0' }}>🌤️ Crown Heights Weather</h3>
-          <p style={{ margin: 0, opacity: 0.9 }}>
-            <a href="https://weather.com/weather/today/l/40.6694,-73.9422" target="_blank" rel="noopener noreferrer" style={{ color: 'white' }}>
-              Check current weather →
+          <div style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
+            <h3 style={{ margin: '0 0 0.5rem 0' }}>🌤️ Crown Heights Weather</h3>
+            <p style={{ margin: '0 0 1rem 0', opacity: 0.9, fontSize: '0.9rem' }}>
+              Check the current weather in Crown Heights
+            </p>
+            <a href="https://weather.com/weather/today/l/40.6694,-73.9422" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.2)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.9rem' }}>
+              View Weather →
             </a>
-          </p>
+          </div>
+
+          <div style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
+            <h3 style={{ margin: '0 0 0.5rem 0' }}>📅 Zmanim</h3>
+            <p style={{ margin: '0 0 1rem 0', opacity: 0.9, fontSize: '0.9rem' }}>
+              Daily halachic times for Crown Heights
+            </p>
+            <a href="https://chabad.org/calendar/zmanim.htm" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.2)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.9rem' }}>
+              View Zmanim →
+            </a>
+          </div>
         </section>
       </main>
 
