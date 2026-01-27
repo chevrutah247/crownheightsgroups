@@ -33,6 +33,8 @@ export default function AdminPage() {
   const [editingGroup, setEditingGroup] = useState<any>(null);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [isNewGroup, setIsNewGroup] = useState(false);
+  const [groupError, setGroupError] = useState<string>('');
+  const [suggestedTitle, setSuggestedTitle] = useState<string>('');
   
   const [editingService, setEditingService] = useState<any>(null);
   const [showServiceModal, setShowServiceModal] = useState(false);
@@ -72,16 +74,68 @@ export default function AdminPage() {
   const handleToggleAdmin = async (u: User) => { if (!confirm('Change role?')) return; await fetch('/api/admin/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: u.email, role: u.role === 'admin' ? 'user' : 'admin' }) }); fetchUsers(); };
   const handleDeleteUser = async (email: string) => { if (!confirm('Delete?')) return; await fetch('/api/admin/users', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }); fetchUsers(); };
 
-  const handleNewGroup = () => { setEditingGroup({ id: '', title: '', description: '', whatsappLinks: [''], categoryId: groupCategories[0]?.id || '1', locationId: locations[0]?.id || '1', language: 'English', status: 'approved', clicksCount: 0 }); setIsNewGroup(true); setShowGroupModal(true); };
-  const handleEditGroup = (g: Group) => { setEditingGroup({ ...g, whatsappLinks: g.whatsappLinks || (g.whatsappLink ? [g.whatsappLink] : ['']) }); setIsNewGroup(false); setShowGroupModal(true); };
-  const handleSaveGroup = async () => { 
-    if (!editingGroup?.title) return alert('Title required'); 
-    setSaving(true); 
-    const res = await fetch('/api/admin/groups', { method: isNewGroup ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...editingGroup, whatsappLinks: editingGroup.whatsappLinks.filter((l: string) => l) }) }); 
-    const data = await res.json();
-    if (!res.ok) { alert(data.error || 'Error'); setSaving(false); return; }
-    await fetchGroups(); setShowGroupModal(false); setSaving(false); 
+  const handleNewGroup = () => { 
+    setEditingGroup({ id: '', title: '', description: '', whatsappLinks: [''], categoryId: groupCategories[0]?.id || '1', locationId: locations[0]?.id || '1', language: 'English', status: 'approved', clicksCount: 0 }); 
+    setIsNewGroup(true); 
+    setGroupError('');
+    setSuggestedTitle('');
+    setShowGroupModal(true); 
   };
+  
+  const handleEditGroup = (g: Group) => { 
+    setEditingGroup({ ...g, whatsappLinks: g.whatsappLinks || (g.whatsappLink ? [g.whatsappLink] : ['']) }); 
+    setIsNewGroup(false); 
+    setGroupError('');
+    setSuggestedTitle('');
+    setShowGroupModal(true); 
+  };
+  
+  const handleSaveGroup = async (useSuggestedTitle = false) => { 
+    if (!editingGroup?.title) return alert('Title required'); 
+    setSaving(true);
+    setGroupError('');
+    
+    const dataToSend = {
+      ...editingGroup,
+      title: useSuggestedTitle && suggestedTitle ? suggestedTitle : editingGroup.title,
+      whatsappLinks: editingGroup.whatsappLinks.filter((l: string) => l)
+    };
+    
+    const res = await fetch('/api/admin/groups', { 
+      method: isNewGroup ? 'POST' : 'PUT', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(dataToSend) 
+    }); 
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      if (data.type === 'duplicate_title' && data.suggestedTitle) {
+        setSuggestedTitle(data.suggestedTitle);
+        setGroupError(data.error);
+      } else {
+        setGroupError(data.error || 'Error saving group');
+        setSuggestedTitle('');
+      }
+      setSaving(false);
+      return;
+    }
+    
+    await fetchGroups(); 
+    setShowGroupModal(false);
+    setGroupError('');
+    setSuggestedTitle('');
+    setSaving(false); 
+  };
+  
+  const handleUseSuggestedTitle = () => {
+    if (suggestedTitle) {
+      setEditingGroup({ ...editingGroup, title: suggestedTitle });
+      setSuggestedTitle('');
+      setGroupError('');
+    }
+  };
+  
   const handleDeleteGroup = async (id: string) => { if (!confirm('Delete?')) return; await fetch('/api/admin/groups', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); fetchGroups(); };
   const handleTogglePin = async (g: Group) => { await fetch('/api/admin/groups', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...g, isPinned: !g.isPinned }) }); fetchGroups(); };
 
@@ -168,7 +222,7 @@ export default function AdminPage() {
         <nav>
           <ul className="admin-nav">
             {navItems.map(item => (
-              <li key={item.id} className={`admin-nav-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => setActiveTab(item.id)}>
+              <li key={item.id} className={'admin-nav-item ' + (activeTab === item.id ? 'active' : '')} onClick={() => setActiveTab(item.id)}>
                 <span>{item.icon}</span><span>{item.label}</span>
                 {item.badge ? <span style={{ marginLeft: 'auto', background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem' }}>{item.badge}</span> : null}
               </li>
@@ -230,7 +284,7 @@ export default function AdminPage() {
                   {locations.sort((a, b) => (a.order || 0) - (b.order || 0)).map(l => (
                     <tr key={l.id}>
                       <td><strong>{l.neighborhood}</strong></td>
-                      <td>{l.city}{l.state ? `, ${l.state}` : ''}</td>
+                      <td>{l.city}{l.state ? ', ' + l.state : ''}</td>
                       <td>{l.country}</td>
                       <td>{groups.filter(g => g.locationId === l.id).length}</td>
                       <td><button className="action-btn edit" onClick={() => handleEditLocation(l)}>Edit</button><button className="action-btn delete" onClick={() => handleDeleteLocation(l.id)}>Delete</button></td>
@@ -321,7 +375,6 @@ export default function AdminPage() {
           <>
             <div className="admin-header"><h1 className="admin-title">Pending Suggestions</h1></div>
             
-            {/* Location Suggestions */}
             <div className="admin-card" style={{ marginBottom: '1rem' }}>
               <h3>📍 Location Suggestions</h3>
               {locationSuggestions.filter(s => s.status === 'pending').length === 0 ? <p style={{ color: '#666' }}>No pending</p> : (
@@ -330,7 +383,7 @@ export default function AdminPage() {
                   <tbody>
                     {locationSuggestions.filter(s => s.status === 'pending').map(s => (
                       <tr key={s.id}>
-                        <td><strong>{s.neighborhood}</strong></td><td>{s.city}{s.state ? `, ${s.state}` : ''}</td><td>{s.country}</td><td>{s.suggestedBy}</td>
+                        <td><strong>{s.neighborhood}</strong></td><td>{s.city}{s.state ? ', ' + s.state : ''}</td><td>{s.country}</td><td>{s.suggestedBy}</td>
                         <td><button className="action-btn edit" onClick={() => handleApproveLocationSuggestion(s)}>✅</button><button className="action-btn delete" onClick={() => handleRejectLocationSuggestion(s.id)}>❌</button></td>
                       </tr>
                     ))}
@@ -339,7 +392,6 @@ export default function AdminPage() {
               )}
             </div>
 
-            {/* Category Suggestions */}
             <div className="admin-card" style={{ marginBottom: '1rem' }}>
               <h3>📁 Category Suggestions</h3>
               {categorySuggestions.filter(s => s.status === 'pending').length === 0 ? <p style={{ color: '#666' }}>No pending</p> : (
@@ -354,7 +406,6 @@ export default function AdminPage() {
               )}
             </div>
 
-            {/* Service Suggestions */}
             <div className="admin-card">
               <h3>🔧 Service Suggestions</h3>
               {serviceSuggestions.filter(s => s.status === 'pending').length === 0 ? <p style={{ color: '#666' }}>No pending</p> : (
@@ -401,6 +452,30 @@ export default function AdminPage() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflow: 'auto' }}>
             <h2>{isNewGroup ? 'Add Group' : 'Edit Group'}</h2>
+            
+            {/* Error/Suggestion Display */}
+            {groupError && (
+              <div style={{ background: suggestedTitle ? '#fef3c7' : '#fee2e2', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                <p style={{ margin: 0, color: suggestedTitle ? '#92400e' : '#dc2626' }}>{groupError}</p>
+                {suggestedTitle && (
+                  <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                    <button 
+                      onClick={handleUseSuggestedTitle}
+                      style={{ padding: '0.5rem 1rem', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                    >
+                      Use "{suggestedTitle}"
+                    </button>
+                    <button 
+                      onClick={() => { setGroupError(''); setSuggestedTitle(''); }}
+                      style={{ padding: '0.5rem 1rem', background: '#e5e7eb', color: '#333', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                    >
+                      Change manually
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
               <input style={inputStyle} placeholder="Title *" value={editingGroup.title} onChange={e => setEditingGroup({ ...editingGroup, title: e.target.value })} />
               <div>
@@ -435,8 +510,8 @@ export default function AdminPage() {
               <label><input type="checkbox" checked={editingGroup.isPinned} onChange={e => setEditingGroup({ ...editingGroup, isPinned: e.target.checked })} /> ⭐ Pin to top</label>
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-              <button onClick={() => setShowGroupModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleSaveGroup} disabled={saving} style={btnStyle(saving)}>{saving ? 'Saving...' : 'Save'}</button>
+              <button onClick={() => { setShowGroupModal(false); setGroupError(''); setSuggestedTitle(''); }} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => handleSaveGroup(false)} disabled={saving} style={btnStyle(saving)}>{saving ? 'Saving...' : 'Save'}</button>
             </div>
           </div>
         </div>

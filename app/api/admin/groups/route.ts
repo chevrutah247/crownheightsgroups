@@ -44,30 +44,48 @@ export async function POST(request: NextRequest) {
     }
     whatsappLinks = whatsappLinks.filter((link: string) => link && link.trim());
     
-    // CHECK FOR DUPLICATES
-    // 1. Check by title (case insensitive)
-    const titleLower = newGroup.title?.toLowerCase().trim();
-    const duplicateTitle = groups.find(g => g.title?.toLowerCase().trim() === titleLower);
-    if (duplicateTitle) {
-      return NextResponse.json({ error: 'A group with this name already exists' }, { status: 400 });
-    }
-    
-    // 2. Check by WhatsApp link
+    // CHECK FOR DUPLICATE LINKS (main check - blocks if duplicate)
     for (const link of whatsappLinks) {
       const linkClean = link.trim().toLowerCase();
       const duplicateLink = groups.find(g => {
         const existingLinks = g.whatsappLinks || [g.whatsappLink].filter(Boolean);
-        return existingLinks.some((l: string) => l?.toLowerCase().trim() === linkClean);
+        return existingLinks.some((l: string) => l && l.toLowerCase().trim() === linkClean);
       });
       if (duplicateLink) {
-        return NextResponse.json({ error: `This WhatsApp link is already used by group "${duplicateLink.title}"` }, { status: 400 });
+        return NextResponse.json({ 
+          error: 'This WhatsApp link already exists in group "' + duplicateLink.title + '"',
+          type: 'duplicate_link'
+        }, { status: 400 });
       }
+    }
+    
+    // CHECK FOR DUPLICATE TITLE (warning only - suggests new name)
+    const titleLower = newGroup.title?.toLowerCase().trim();
+    const duplicateTitle = groups.find(g => g.title?.toLowerCase().trim() === titleLower);
+    
+    let finalTitle = newGroup.title;
+    if (duplicateTitle) {
+      // Find a unique name by adding a number
+      let counter = 2;
+      let newTitle = newGroup.title + ' ' + counter;
+      while (groups.find(g => g.title?.toLowerCase().trim() === newTitle.toLowerCase().trim())) {
+        counter++;
+        newTitle = newGroup.title + ' ' + counter;
+      }
+      finalTitle = newTitle;
+      
+      // Return suggestion instead of error
+      return NextResponse.json({ 
+        error: 'A group named "' + newGroup.title + '" already exists. Suggested name: "' + finalTitle + '"',
+        type: 'duplicate_title',
+        suggestedTitle: finalTitle
+      }, { status: 409 });
     }
     
     const id = String(Date.now());
     const group = {
       id,
-      title: newGroup.title || '',
+      title: finalTitle,
       description: newGroup.description || '',
       whatsappLinks: whatsappLinks,
       whatsappLink: whatsappLinks[0] || '',
@@ -116,23 +134,39 @@ export async function PUT(request: NextRequest) {
     }
     whatsappLinks = whatsappLinks.filter((link: string) => link && link.trim());
     
-    // CHECK FOR DUPLICATES (excluding current group)
-    const titleLower = updated.title?.toLowerCase().trim();
-    const duplicateTitle = groups.find((g, i) => i !== index && g.title?.toLowerCase().trim() === titleLower);
-    if (duplicateTitle) {
-      return NextResponse.json({ error: 'A group with this name already exists' }, { status: 400 });
-    }
-    
+    // CHECK FOR DUPLICATE LINKS (excluding current group)
     for (const link of whatsappLinks) {
       const linkClean = link.trim().toLowerCase();
       const duplicateLink = groups.find((g, i) => {
         if (i === index) return false;
         const existingLinks = g.whatsappLinks || [g.whatsappLink].filter(Boolean);
-        return existingLinks.some((l: string) => l?.toLowerCase().trim() === linkClean);
+        return existingLinks.some((l: string) => l && l.toLowerCase().trim() === linkClean);
       });
       if (duplicateLink) {
-        return NextResponse.json({ error: `This WhatsApp link is already used by group "${duplicateLink.title}"` }, { status: 400 });
+        return NextResponse.json({ 
+          error: 'This WhatsApp link already exists in group "' + duplicateLink.title + '"',
+          type: 'duplicate_link'
+        }, { status: 400 });
       }
+    }
+    
+    // CHECK FOR DUPLICATE TITLE (excluding current group - warning only)
+    const titleLower = updated.title?.toLowerCase().trim();
+    const duplicateTitle = groups.find((g, i) => i !== index && g.title?.toLowerCase().trim() === titleLower);
+    
+    if (duplicateTitle && !updated.forceTitle) {
+      let counter = 2;
+      let newTitle = updated.title + ' ' + counter;
+      while (groups.find((g, i) => i !== index && g.title?.toLowerCase().trim() === newTitle.toLowerCase().trim())) {
+        counter++;
+        newTitle = updated.title + ' ' + counter;
+      }
+      
+      return NextResponse.json({ 
+        error: 'A group named "' + updated.title + '" already exists. Suggested name: "' + newTitle + '"',
+        type: 'duplicate_title',
+        suggestedTitle: newTitle
+      }, { status: 409 });
     }
     
     groups[index] = {
