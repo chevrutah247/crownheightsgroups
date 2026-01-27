@@ -1,83 +1,85 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import GroupCard from '@/components/GroupCard';
-import { Category, Group, Location } from '@/lib/types';
+import { Group, Category } from '@/lib/types';
 
-const GATE_STORAGE_KEY = 'ch_access_granted';
-
-interface Props {
-  category: Category;
-  groups: (Group & { category?: Category; location?: Location })[];
-  locations: Location[];
+interface CategoryPageClientProps {
+  slug: string;
 }
 
-export default function CategoryPageClient({ category, groups, locations }: Props) {
-  const [accessGranted, setAccessGranted] = useState<boolean | null>(null);
+interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
+
+export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [category, setCategory] = useState<Category | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(GATE_STORAGE_KEY);
-    if (stored) {
-      const { expiry } = JSON.parse(stored);
-      if (new Date().getTime() < expiry) {
-        setAccessGranted(true);
-      } else {
-        window.location.href = '/';
-      }
-    } else {
-      window.location.href = '/';
-    }
+    const checkAuth = async () => {
+      const token = localStorage.getItem('session_token');
+      if (!token) { window.location.href = '/auth/login'; return; }
+      try {
+        const response = await fetch('/api/auth/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
+        const data = await response.json();
+        if (data.valid) setUser({ name: data.user.name, email: data.user.email, role: data.user.role });
+        else { localStorage.clear(); window.location.href = '/auth/login'; }
+      } catch { window.location.href = '/auth/login'; }
+    };
+    checkAuth();
   }, []);
 
-  if (accessGranted === null) {
-    return (
-      <div className="gate-container">
-        <div className="loading">
-          <div className="spinner"></div>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [groupsRes, catsRes] = await Promise.all([
+          fetch('/api/admin/groups'),
+          fetch('/api/admin/group-categories')
+        ]);
+        const groupsData = await groupsRes.json();
+        const catsData = await catsRes.json();
+        const cat = catsData.find((c: Category) => c.slug === slug);
+        setCategory(cat || null);
+        if (cat && Array.isArray(groupsData)) {
+          setGroups(groupsData.filter((g: Group) => g.categoryId === cat.id && g.status === 'approved'));
+        }
+      } catch (error) { console.error(error); }
+      finally { setLoading(false); }
+    };
+    fetchData();
+  }, [slug]);
+
+  const handleLogout = () => { localStorage.clear(); window.location.href = '/auth/login'; };
+
+  if (loading) return <div className="auth-container"><div className="loading"><div className="spinner"></div></div></div>;
 
   return (
     <>
-      <Header />
-      
+      <Header user={user} onLogout={handleLogout} />
       <main className="main">
         <div className="page-header">
-          <h1 className="page-title">
-            {category.icon} {category.name}
-          </h1>
-          <p className="page-subtitle">
-            {groups.length} group{groups.length !== 1 ? 's' : ''} in this category
-          </p>
+          <h1 className="page-title">{category?.icon} {category?.name || 'Category'}</h1>
+          <p className="page-subtitle">{groups.length} groups</p>
         </div>
-        
         {groups.length > 0 ? (
-          <div className="groups-grid">
-            {groups.map(group => (
-              <GroupCard
-                key={group.id}
-                group={group}
-                category={group.category}
-                location={group.location}
-              />
-            ))}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+            {groups.map(group => {
+              const links = (group as any).whatsappLinks || [(group as any).whatsappLink].filter(Boolean);
+              return (
+                <div key={group.id} style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                  <h3 style={{ margin: '0 0 0.5rem 0' }}>{group.title}</h3>
+                  <p style={{ color: '#666', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>{group.description}</p>
+                  {links[0] && <a href={links[0]} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>Join Group</a>}
+                </div>
+              );
+            })}
           </div>
         ) : (
-          <div className="empty-state">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-            </svg>
-            <h3>No groups yet</h3>
-            <p>Be the first to suggest a group in this category!</p>
-          </div>
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}><h3>No groups found</h3></div>
         )}
       </main>
-      
       <Footer />
     </>
   );
