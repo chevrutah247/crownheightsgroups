@@ -31,8 +31,18 @@ const newsSources = [
     name: 'CrownHeights.info', 
     url: 'https://crownheights.info/', 
     logo: '🟢',
-    description: 'Crown Heights Community News & Updates',
-    color: '#047857'
+    description: 'Crown Heights Community News & Local Updates',
+    color: '#047857',
+    featured: true
+  },
+  { 
+    id: 'lubavitch', 
+    name: 'Lubavitch.com', 
+    url: 'https://www.lubavitch.com/', 
+    logo: '🟣',
+    description: 'Official Chabad-Lubavitch Headquarters News',
+    color: '#7c3aed',
+    featured: true
   },
   { 
     id: 'shmais', 
@@ -43,20 +53,20 @@ const newsSources = [
     color: '#b91c1c'
   },
   { 
-    id: 'lubavitch', 
-    name: 'Lubavitch.com', 
-    url: 'https://lubavitch.com/news', 
-    logo: '🟣',
-    description: 'Official Chabad-Lubavitch News Site',
-    color: '#7c3aed'
-  },
-  { 
     id: 'chabad', 
     name: 'Chabad.org News', 
     url: 'https://chabad.org/news', 
     logo: '⚪',
     description: 'Jewish News, Torah & Encyclopedic Content',
     color: '#374151'
+  },
+  { 
+    id: 'chabadorg', 
+    name: 'Chabad.org', 
+    url: 'https://chabad.org/', 
+    logo: '🌐',
+    description: 'The Complete encyclopedic Jewish Website',
+    color: '#1e40af'
   },
 ];
 
@@ -65,6 +75,8 @@ const quickLinks = [
   { name: 'JEM Media', url: 'https://jemedia.org', icon: '🎬' },
   { name: 'Sichos in English', url: 'https://sie.org', icon: '📚' },
   { name: 'Chabad Library', url: 'https://chabadlibrary.org', icon: '📖' },
+  { name: 'The Rebbe\'s Letters', url: 'https://igros.com', icon: '✉️' },
+  { name: 'Living Torah', url: 'https://jemedia.org/living-torah', icon: '🎥' },
 ];
 
 export default function NewsPage() {
@@ -106,8 +118,8 @@ export default function NewsPage() {
 
         {/* Featured News Sources */}
         <section style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>⭐ Featured News Sources</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1rem' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>⭐ Main News Sources</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
             {featuredSources.map(source => (
               <a 
                 key={source.id}
@@ -118,7 +130,7 @@ export default function NewsPage() {
                   display: 'block',
                   background: `linear-gradient(135deg, ${source.color} 0%, ${source.color}dd 100%)`,
                   borderRadius: '16px',
-                  padding: '2rem',
+                  padding: '1.5rem',
                   textDecoration: 'none',
                   color: 'white',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
@@ -127,12 +139,12 @@ export default function NewsPage() {
                 onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)'; }}
                 onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <span style={{ fontSize: '2.5rem' }}>{source.logo}</span>
-                  <h3 style={{ margin: 0, fontSize: '1.5rem' }}>{source.name}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '2rem' }}>{source.logo}</span>
+                  <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{source.name}</h3>
                 </div>
-                <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>{source.description}</p>
-                <div style={{ marginTop: '1.5rem', fontSize: '1rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <p style={{ margin: 0, opacity: 0.9, fontSize: '0.9rem' }}>{source.description}</p>
+                <div style={{ marginTop: '1rem', fontSize: '0.9rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   Visit Site <span>→</span>
                 </div>
               </a>
@@ -141,37 +153,39 @@ export default function NewsPage() {
         </section>
 
         {/* Other News Sources */}
-        <section style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>📰 More News Sources</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-            {otherSources.map(source => (
-              <a 
-                key={source.id}
-                href={source.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'block',
-                  background: 'white',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  textDecoration: 'none',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  borderLeft: `4px solid ${source.color}`,
-                  transition: 'transform 0.2s',
-                }}
-                onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '1.5rem' }}>{source.logo}</span>
-                  <h3 style={{ margin: 0, color: source.color, fontSize: '1.1rem' }}>{source.name}</h3>
-                </div>
-                <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>{source.description}</p>
-              </a>
-            ))}
-          </div>
-        </section>
+        {otherSources.length > 0 && (
+          <section style={{ marginBottom: '2rem' }}>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>📰 More Resources</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+              {otherSources.map(source => (
+                <a 
+                  key={source.id}
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'block',
+                    background: 'white',
+                    borderRadius: '12px',
+                    padding: '1.25rem',
+                    textDecoration: 'none',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    borderLeft: `4px solid ${source.color}`,
+                    transition: 'transform 0.2s',
+                  }}
+                  onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                  onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{source.logo}</span>
+                    <h3 style={{ margin: 0, color: source.color, fontSize: '1rem' }}>{source.name}</h3>
+                  </div>
+                  <p style={{ margin: 0, color: '#666', fontSize: '0.85rem' }}>{source.description}</p>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Quick Links */}
         <section style={{ marginBottom: '2rem' }}>
@@ -193,7 +207,7 @@ export default function NewsPage() {
                   textDecoration: 'none',
                   color: '#333',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  fontSize: '0.95rem',
+                  fontSize: '0.9rem',
                 }}
               >
                 <span>{link.icon}</span>
@@ -203,12 +217,12 @@ export default function NewsPage() {
           </div>
         </section>
 
-        {/* News Tip Section */}
+        {/* Info Cards */}
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
           <div style={{ background: '#fef3c7', borderRadius: '12px', padding: '1.5rem' }}>
             <h3 style={{ margin: '0 0 0.75rem 0', color: '#92400e' }}>🔔 Have a News Tip?</h3>
             <p style={{ margin: '0 0 1rem 0', color: '#92400e', fontSize: '0.9rem' }}>
-              Did something happen in the community? Share your news with local outlets:
+              Share your news with local outlets:
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               <a href="mailto:news@collive.com" style={{ padding: '0.5rem 1rem', background: '#92400e', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem' }}>📧 COLlive</a>
@@ -219,9 +233,9 @@ export default function NewsPage() {
           <div style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
             <h3 style={{ margin: '0 0 0.5rem 0' }}>🌤️ Crown Heights Weather</h3>
             <p style={{ margin: '0 0 1rem 0', opacity: 0.9, fontSize: '0.9rem' }}>
-              Check the current weather in Crown Heights
+              Check the current weather
             </p>
-            <a href="https://weather.com/weather/today/l/40.6694,-73.9422" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.2)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.9rem' }}>
+            <a href="https://weather.com/weather/today/l/40.6694,-73.9422" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.2)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem' }}>
               View Weather →
             </a>
           </div>
@@ -229,9 +243,9 @@ export default function NewsPage() {
           <div style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
             <h3 style={{ margin: '0 0 0.5rem 0' }}>📅 Zmanim</h3>
             <p style={{ margin: '0 0 1rem 0', opacity: 0.9, fontSize: '0.9rem' }}>
-              Daily halachic times for Crown Heights
+              Daily halachic times
             </p>
-            <a href="https://chabad.org/calendar/zmanim.htm" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.2)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.9rem' }}>
+            <a href="https://chabad.org/calendar/zmanim.htm" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.2)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem' }}>
               View Zmanim →
             </a>
           </div>
