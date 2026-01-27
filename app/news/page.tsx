@@ -56,7 +56,6 @@ export default function NewsPage() {
       }
     };
     fetchNews();
-    // Refresh every 10 minutes
     const interval = setInterval(fetchNews, 10 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
@@ -70,21 +69,24 @@ export default function NewsPage() {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 60) return diffMins + 'm ago';
+    if (diffHours < 24) return diffHours + 'h ago';
+    if (diffDays < 7) return diffDays + 'd ago';
     return date.toLocaleDateString();
   };
 
-  if (loading) return <div className="auth-container"><div className="loading"><div className="spinner"></div></div></div>;
+  if (loading) return (<div className="auth-container"><div className="loading"><div className="spinner"></div></div></div>);
 
   return (
-    <>
+    <div>
+      <style>{`
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+      `}</style>
+      
       <EmergencyBar />
       <Header user={user} onLogout={handleLogout} />
       
-      {/* Breaking News Ticker */}
       {news.length > 0 && (
         <div style={{ background: '#1a1a2e', color: 'white', padding: '0.5rem 0', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -92,22 +94,9 @@ export default function NewsPage() {
               🔴 LATEST
             </span>
             <div style={{ overflow: 'hidden', flex: 1 }}>
-              <div 
-                style={{ 
-                  display: 'flex', 
-                  gap: '3rem',
-                  animation: 'scroll 60s linear infinite',
-                  whiteSpace: 'nowrap'
-                }}
-              >
+              <div style={{ display: 'flex', gap: '3rem', animation: 'scroll 60s linear infinite', whiteSpace: 'nowrap' }}>
                 {[...news.slice(0, 15), ...news.slice(0, 15)].map((item, i) => (
-                  <a 
-                    key={`${item.id}-${i}`}
-                    href={item.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                  >
+                  <a key={item.id + '-' + i} href={item.link} target="_blank" rel="noopener noreferrer" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ color: item.sourceColor, fontWeight: 'bold', fontSize: '0.8rem' }}>{item.source}</span>
                     <span style={{ fontSize: '0.9rem' }}>{item.title}</span>
                   </a>
@@ -118,20 +107,12 @@ export default function NewsPage() {
         </div>
       )}
 
-      <style jsx global>{`
-        @keyframes scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
-
       <main className="main">
         <div className="page-header">
           <h1 className="page-title">📰 Community News</h1>
-          <p className="page-subtitle">Stay updated with the latest news from our community</p>
+          <p className="page-subtitle">Stay updated with the latest news</p>
         </div>
 
-        {/* Live News Feed */}
         <section style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h2 style={{ fontSize: '1.25rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -140,35 +121,11 @@ export default function NewsPage() {
             </h2>
             {loadingNews && <span style={{ fontSize: '0.85rem', color: '#666' }}>Loading...</span>}
           </div>
-          
-          <style jsx>{`
-            @keyframes pulse {
-              0%, 100% { opacity: 1; }
-              50% { opacity: 0.5; }
-            }
-          `}</style>
 
           {news.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '500px', overflowY: 'auto' }}>
               {news.slice(0, 20).map(item => (
-                
-                  key={item.id}
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'block',
-                    background: 'white',
-                    borderRadius: '8px',
-                    padding: '1rem',
-                    textDecoration: 'none',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    borderLeft: `4px solid ${item.sourceColor}`,
-                    transition: 'transform 0.2s',
-                  }}
-                  onMouseOver={e => e.currentTarget.style.transform = 'translateX(4px)'}
-                  onMouseOut={e => e.currentTarget.style.transform = 'translateX(0)'}
-                >
+                <a key={item.id} href={item.link} target="_blank" rel="noopener noreferrer" style={{ display: 'block', background: 'white', borderRadius: '8px', padding: '1rem', textDecoration: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid ' + item.sourceColor }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
@@ -176,7 +133,6 @@ export default function NewsPage() {
                         <span style={{ color: '#999', fontSize: '0.8rem' }}>• {formatTime(item.pubDate)}</span>
                       </div>
                       <h3 style={{ margin: 0, fontSize: '1rem', color: '#333', lineHeight: 1.4 }}>{item.title}</h3>
-                      {item.snippet && <p style={{ margin: '0.5rem 0 0', color: '#666', fontSize: '0.85rem', lineHeight: 1.4 }}>{item.snippet}...</p>}
                     </div>
                     <span style={{ color: '#999', fontSize: '1.25rem' }}>→</span>
                   </div>
@@ -185,34 +141,16 @@ export default function NewsPage() {
             </div>
           ) : !loadingNews ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: '#666', background: 'white', borderRadius: '12px' }}>
-              <p>Unable to load news at this time. Visit the sources directly below.</p>
+              <p>Unable to load news. Visit sources below.</p>
             </div>
           ) : null}
         </section>
 
-        {/* News Sources */}
         <section style={{ marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>⭐ News Sources</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
             {newsSources.map(source => (
-              <a 
-                key={source.id}
-                href={source.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'block',
-                  background: `linear-gradient(135deg, ${source.color} 0%, ${source.color}dd 100%)`,
-                  borderRadius: '12px',
-                  padding: '1.25rem',
-                  textDecoration: 'none',
-                  color: 'white',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  transition: 'transform 0.2s',
-                }}
-                onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-              >
+              <a key={source.id} href={source.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', background: 'linear-gradient(135deg, ' + source.color + ' 0%, ' + source.color + 'dd 100%)', borderRadius: '12px', padding: '1.25rem', textDecoration: 'none', color: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                   <span style={{ fontSize: '1.5rem' }}>{source.logo}</span>
                   <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{source.name}</h3>
@@ -223,29 +161,11 @@ export default function NewsPage() {
           </div>
         </section>
 
-        {/* Quick Links */}
         <section style={{ marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>🔗 More Resources</h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
             {quickLinks.map(link => (
-              <a 
-                key={link.name}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  background: 'white',
-                  padding: '0.75rem 1.25rem',
-                  borderRadius: '25px',
-                  textDecoration: 'none',
-                  color: '#333',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  fontSize: '0.9rem',
-                }}
-              >
+              <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'white', padding: '0.75rem 1.25rem', borderRadius: '25px', textDecoration: 'none', color: '#333', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', fontSize: '0.9rem' }}>
                 <span>{link.icon}</span>
                 <span>{link.name}</span>
               </a>
@@ -253,32 +173,23 @@ export default function NewsPage() {
           </div>
         </section>
 
-        {/* Info Cards */}
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
           <div style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
             <h3 style={{ margin: '0 0 0.5rem 0' }}>🌤️ Weather</h3>
-            <a href="https://weather.com/weather/today/l/40.6694,-73.9422" target="_blank" rel="noopener noreferrer" style={{ color: 'white', opacity: 0.9 }}>
-              Crown Heights Weather →
-            </a>
+            <a href="https://weather.com/weather/today/l/40.6694,-73.9422" target="_blank" rel="noopener noreferrer" style={{ color: 'white', opacity: 0.9 }}>Crown Heights Weather →</a>
           </div>
-
           <div style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
             <h3 style={{ margin: '0 0 0.5rem 0' }}>📅 Zmanim</h3>
-            <a href="https://chabad.org/calendar/zmanim.htm" target="_blank" rel="noopener noreferrer" style={{ color: 'white', opacity: 0.9 }}>
-              Today's Times →
-            </a>
+            <a href="https://chabad.org/calendar/zmanim.htm" target="_blank" rel="noopener noreferrer" style={{ color: 'white', opacity: 0.9 }}>Todays Times →</a>
           </div>
-
           <div style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
             <h3 style={{ margin: '0 0 0.5rem 0' }}>🔔 News Tip?</h3>
-            <a href="mailto:news@collive.com" style={{ color: 'white', opacity: 0.9 }}>
-              Submit to COLlive →
-            </a>
+            <a href="mailto:news@collive.com" style={{ color: 'white', opacity: 0.9 }}>Submit to COLlive →</a>
           </div>
         </section>
       </main>
 
       <Footer />
-    </>
+    </div>
   );
 }
