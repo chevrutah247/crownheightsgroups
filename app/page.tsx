@@ -1,33 +1,38 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EmergencyBar from '@/components/EmergencyBar';
-import { bannerConfig } from '@/lib/data';
-import { Group } from '@/lib/types';
 
 interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
-interface Category { id: string; name: string; icon: string; slug: string; order?: number; }
-interface Location { id: string; neighborhood: string; city: string; country: string; status: string; order?: number; }
+interface Stats { groups: number; services: number; users: number; }
+
+const mainSections = [
+  { id: 'groups', title: 'WhatsApp Groups', titleRu: 'WhatsApp группы', icon: '👥', color: '#25D366', href: '/groups', desc: 'Find and join community groups' },
+  { id: 'services', title: 'Services', titleRu: 'Услуги', icon: '🔧', color: '#2563eb', href: '/services', desc: 'Find local professionals' },
+  { id: 'jobs', title: 'Jobs', titleRu: 'Работа', icon: '💼', color: '#7c3aed', href: '/jobs', desc: 'Job listings & resumes', comingSoon: true },
+  { id: 'housing', title: 'Housing', titleRu: 'Жильё', icon: '🏠', color: '#ea580c', href: '/housing', desc: 'Apartments & rooms for rent', comingSoon: true },
+  { id: 'classifieds', title: 'Buy & Sell', titleRu: 'Купля-продажа', icon: '🛒', color: '#16a34a', href: '/classifieds', desc: 'Classifieds & marketplace', comingSoon: true },
+  { id: 'events', title: 'Events', titleRu: 'События', icon: '📅', color: '#dc2626', href: '/events', desc: 'Community events & shiurim', comingSoon: true },
+  { id: 'free', title: 'Free Items', titleRu: 'Бесплатно', icon: '🆓', color: '#0891b2', href: '/free', desc: 'Free stuff & gemach', comingSoon: true },
+  { id: 'rides', title: 'Rides', titleRu: 'Поездки', icon: '🚗', color: '#4f46e5', href: '/rides', desc: 'Carpool & ride sharing', comingSoon: true },
+];
+
+const quickLinks = [
+  { title: 'Lost & Found', icon: '🔍', href: '/lost-found', comingSoon: true },
+  { title: 'Kosher Restaurants', icon: '🍽️', href: '/restaurants', comingSoon: true },
+  { title: 'Minyan Times', icon: '🕐', href: '/minyanim', comingSoon: true },
+  { title: 'Deals & Coupons', icon: '💰', href: '/deals', comingSoon: true },
+];
 
 export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<UserInfo | null>(null);
-  const [allGroups, setAllGroups] = useState<Group[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [filteredGroups, setFilteredGroups] = useState<Group[]>([]);
+  const [stats, setStats] = useState<Stats>({ groups: 0, services: 0, users: 0 });
+  const [recentGroups, setRecentGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [sortBy, setSortBy] = useState<'date' | 'popular' | 'alpha'>('popular');
-  const [reportingGroup, setReportingGroup] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [newLocation, setNewLocation] = useState({ neighborhood: '', city: '', state: '', country: 'USA' });
-  const [submittingLocation, setSubmittingLocation] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -46,99 +51,29 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [groupsRes, catsRes, locsRes] = await Promise.all([
+        const [groupsRes, servicesRes, usersRes] = await Promise.all([
           fetch('/api/admin/groups'),
-          fetch('/api/admin/group-categories'),
-          fetch('/api/admin/locations')
+          fetch('/api/admin/services'),
+          fetch('/api/admin/users')
         ]);
-        const groupsData = await groupsRes.json();
-        const catsData = await catsRes.json();
-        const locsData = await locsRes.json();
-        if (Array.isArray(groupsData)) setAllGroups(groupsData.filter((g: Group) => g.status === 'approved'));
-        if (Array.isArray(catsData)) setCategories(catsData);
-        if (Array.isArray(locsData)) setLocations(locsData.filter((l: Location) => l.status === 'approved'));
-      } catch (error) { console.error('Error:', error); }
+        const groups = await groupsRes.json();
+        const services = await servicesRes.json();
+        const users = await usersRes.json();
+        
+        const approvedGroups = Array.isArray(groups) ? groups.filter((g: any) => g.status === 'approved') : [];
+        setStats({
+          groups: approvedGroups.length,
+          services: Array.isArray(services) ? services.length : 0,
+          users: Array.isArray(users) ? users.length : 0
+        });
+        setRecentGroups(approvedGroups.slice(0, 4));
+      } catch (error) { console.error(error); }
       finally { setLoading(false); }
     };
     fetchData();
   }, []);
 
-  useEffect(() => {
-    let result = [...allGroups];
-    if (selectedLocation) result = result.filter(g => g.locationId === selectedLocation);
-    if (selectedCategory) result = result.filter(g => g.categoryId === selectedCategory);
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(g => g.title.toLowerCase().includes(query) || g.description.toLowerCase().includes(query));
-    }
-    const pinnedGroups = result.filter(g => g.isPinned).sort((a, b) => (a.pinnedOrder || 999) - (b.pinnedOrder || 999));
-    const regularGroups = result.filter(g => !g.isPinned);
-    switch (sortBy) {
-      case 'popular': regularGroups.sort((a, b) => b.clicksCount - a.clicksCount); break;
-      case 'date': regularGroups.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break;
-      case 'alpha': regularGroups.sort((a, b) => a.title.localeCompare(b.title)); break;
-    }
-    setFilteredGroups([...pinnedGroups, ...regularGroups]);
-  }, [allGroups, selectedLocation, selectedCategory, searchQuery, sortBy]);
-
   const handleLogout = () => { localStorage.clear(); window.location.href = '/auth/login'; };
-
-  const handleReportGroup = async (groupId: string) => {
-    if (!user) return;
-    setReportingGroup(groupId);
-    try {
-      const res = await fetch('/api/reports', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupId, userEmail: user.email, reason: 'Link not working' }) });
-      const data = await res.json();
-      if (res.ok) alert('Thank you for reporting!');
-      else alert(data.error || 'Error');
-    } catch (e) { alert('Error'); }
-    finally { setReportingGroup(null); }
-  };
-
-  const handleShare = async (group: Group) => {
-    const url = `https://crownheightsgroups.com`;
-    const links = (group as any).whatsappLinks || [(group as any).whatsappLink].filter(Boolean);
-    const text = `${group.title}\n\n${group.description}\n\nJoin: ${links[0]}\n\nMore groups at: ${url}`;
-    
-    if (navigator.share) {
-      try { await navigator.share({ title: group.title, text: text, url: url }); } catch (e) {}
-    } else {
-      await navigator.clipboard.writeText(text);
-      setCopiedId(group.id + '-share');
-      setTimeout(() => setCopiedId(null), 2000);
-    }
-  };
-
-  const handleCopy = async (group: Group) => {
-    const links = (group as any).whatsappLinks || [(group as any).whatsappLink].filter(Boolean);
-    const cat = categories.find(c => c.id === group.categoryId);
-    const text = `${group.title}\n${cat?.icon} ${cat?.name}\n${group.description}\n\n${links.join('\n')}\n\nMore groups at: https://crownheightsgroups.com`;
-    
-    await navigator.clipboard.writeText(text);
-    setCopiedId(group.id + '-copy');
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleSuggestLocation = async () => {
-    if (!newLocation.neighborhood) return alert('Neighborhood/Area name is required');
-    setSubmittingLocation(true);
-    try {
-      const res = await fetch('/api/location-suggestions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newLocation, suggestedBy: user?.email })
-      });
-      if (res.ok) {
-        alert('Thank you! Your location suggestion will be reviewed.');
-        setShowLocationModal(false);
-        setNewLocation({ neighborhood: '', city: '', state: '', country: 'USA' });
-      } else { alert('Error submitting'); }
-    } catch (e) { alert('Error'); }
-    finally { setSubmittingLocation(false); }
-  };
-
-  const getCategoryById = (id: string) => categories.find(c => c.id === id);
-  const getLocationById = (id: string) => locations.find(l => l.id === id);
 
   if (isAuthenticated === null || loading) return <div className="auth-container"><div className="loading"><div className="spinner"></div></div></div>;
 
@@ -146,130 +81,146 @@ export default function HomePage() {
     <>
       <EmergencyBar />
       <Header user={user} onLogout={handleLogout} />
-      {bannerConfig.enabled && <div className="banner active"><strong>{bannerConfig.title}</strong> {bannerConfig.text}</div>}
       
-      <main className="main">
-        <div className="page-header">
-          <h1 className="page-title">WhatsApp Groups Directory</h1>
-          <p className="page-subtitle">Find and join community groups in Crown Heights and beyond</p>
-        </div>
-
-        <div style={{ marginBottom: '1.5rem' }}>
-          <input type="text" placeholder="🔍 Search groups..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid #ddd', fontSize: '1rem', boxSizing: 'border-box' }} />
-        </div>
-
-        {/* Location Pills */}
-        <div style={{ marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#666' }}>📍 Location</span>
-            <button onClick={() => setShowLocationModal(true)} style={{ fontSize: '0.8rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer' }}>+ Suggest Location</button>
+      {/* Hero Section */}
+      <section style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%)', color: 'white', padding: '3rem 1rem', textAlign: 'center' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', fontWeight: 'bold' }}>
+            🏠 Crown Heights Community Hub
+          </h1>
+          <p style={{ fontSize: '1.2rem', opacity: 0.9, marginBottom: '2rem' }}>
+            Your one-stop resource for everything in the community
+          </p>
+          
+          {/* Stats */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap' }}>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '1rem 2rem', borderRadius: '12px' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.groups}</div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>WhatsApp Groups</div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '1rem 2rem', borderRadius: '12px' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.services}</div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Services</div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '1rem 2rem', borderRadius: '12px' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{stats.users}</div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Members</div>
+            </div>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <button onClick={() => setSelectedLocation('')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: !selectedLocation ? '#2563eb' : '#e5e7eb', color: !selectedLocation ? 'white' : '#333', cursor: 'pointer', fontWeight: !selectedLocation ? 'bold' : 'normal' }}>All</button>
-            {locations.sort((a, b) => (a.order || 0) - (b.order || 0)).map(loc => (
-              <button key={loc.id} onClick={() => setSelectedLocation(loc.id === selectedLocation ? '' : loc.id)} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: selectedLocation === loc.id ? '#2563eb' : '#e5e7eb', color: selectedLocation === loc.id ? 'white' : '#333', cursor: 'pointer', fontWeight: selectedLocation === loc.id ? 'bold' : 'normal' }}>{loc.neighborhood}</button>
+        </div>
+      </section>
+
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+        
+        {/* Main Sections Grid */}
+        <section style={{ marginBottom: '3rem' }}>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>Explore Our Community</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+            {mainSections.map(section => (
+              <Link 
+                key={section.id} 
+                href={section.comingSoon ? '#' : section.href}
+                style={{ 
+                  textDecoration: 'none',
+                  position: 'relative',
+                  display: 'block',
+                  background: 'white',
+                  borderRadius: '16px',
+                  padding: '1.5rem',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  border: `3px solid ${section.color}20`,
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  cursor: section.comingSoon ? 'default' : 'pointer',
+                  opacity: section.comingSoon ? 0.7 : 1,
+                }}
+                onClick={e => section.comingSoon && e.preventDefault()}
+                onMouseOver={e => !section.comingSoon && (e.currentTarget.style.transform = 'translateY(-4px)')}
+                onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                {section.comingSoon && (
+                  <span style={{ position: 'absolute', top: '10px', right: '10px', background: '#f59e0b', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>COMING SOON</span>
+                )}
+                <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>{section.icon}</div>
+                <h3 style={{ color: section.color, margin: '0 0 0.25rem 0', fontSize: '1.25rem' }}>{section.title}</h3>
+                <p style={{ color: '#666', margin: 0, fontSize: '0.9rem' }}>{section.desc}</p>
+              </Link>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Category Pills */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>📁 Category</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <button onClick={() => setSelectedCategory('')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: !selectedCategory ? '#2563eb' : '#e5e7eb', color: !selectedCategory ? 'white' : '#333', cursor: 'pointer', fontWeight: !selectedCategory ? 'bold' : 'normal' }}>All</button>
-            {categories.sort((a, b) => (a.order || 0) - (b.order || 0)).map(cat => (
-              <button key={cat.id} onClick={() => setSelectedCategory(cat.id === selectedCategory ? '' : cat.id)} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: selectedCategory === cat.id ? '#2563eb' : '#e5e7eb', color: selectedCategory === cat.id ? 'white' : '#333', cursor: 'pointer', fontWeight: selectedCategory === cat.id ? 'bold' : 'normal' }}>{cat.icon} {cat.name}</button>
+        {/* Quick Links */}
+        <section style={{ marginBottom: '3rem' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Quick Links</h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+            {quickLinks.map(link => (
+              <Link 
+                key={link.title} 
+                href={link.comingSoon ? '#' : link.href}
+                onClick={e => link.comingSoon && e.preventDefault()}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.5rem', 
+                  background: 'white', 
+                  padding: '0.75rem 1.25rem', 
+                  borderRadius: '25px', 
+                  textDecoration: 'none', 
+                  color: '#333',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  fontSize: '0.95rem',
+                  opacity: link.comingSoon ? 0.6 : 1,
+                }}
+              >
+                <span>{link.icon}</span>
+                <span>{link.title}</span>
+                {link.comingSoon && <span style={{ fontSize: '0.7rem', color: '#f59e0b' }}>Soon</span>}
+              </Link>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Sort & Count */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <span style={{ color: '#666' }}>{filteredGroups.length} group{filteredGroups.length !== 1 ? 's' : ''}</span>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {[{k: 'popular', l: '🔥 Popular'}, {k: 'date', l: '🕐 Recent'}, {k: 'alpha', l: '🔤 A-Z'}].map(s => (
-              <button key={s.k} onClick={() => setSortBy(s.k as any)} style={{ padding: '0.25rem 0.75rem', borderRadius: '4px', border: 'none', background: sortBy === s.k ? '#2563eb' : '#e5e7eb', color: sortBy === s.k ? 'white' : '#333', cursor: 'pointer', fontSize: '0.85rem' }}>{s.l}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* Groups Grid */}
-        {filteredGroups.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
-            {filteredGroups.map(group => {
-              const category = getCategoryById(group.categoryId);
-              const location = getLocationById(group.locationId);
-              const links = (group as any).whatsappLinks || [(group as any).whatsappLink].filter(Boolean);
-              return (
-                <div key={group.id} style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: group.isPinned ? '2px solid #f59e0b' : '1px solid #eee' }}>
-                  {group.isPinned && <div style={{ color: '#f59e0b', fontSize: '0.8rem', marginBottom: '0.5rem' }}>⭐ Featured</div>}
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-                    <span style={{ padding: '2px 8px', background: '#eff6ff', borderRadius: '4px', fontSize: '0.8rem' }}>{category?.icon} {category?.name}</span>
-                    {location && <span style={{ padding: '2px 8px', background: '#f0fdf4', borderRadius: '4px', fontSize: '0.8rem' }}>📍 {location.neighborhood}</span>}
-                    {group.language && group.language !== 'English' && <span style={{ padding: '2px 8px', background: '#fef3c7', borderRadius: '4px', fontSize: '0.8rem' }}>{group.language}</span>}
-                  </div>
-                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{group.title}</h3>
-                  <p style={{ color: '#666', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>{group.description}</p>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                    {links.map((link: string, i: number) => (
-                      <a key={i} href={link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
-                        {links.length > 1 ? `Join Group ${i + 1}` : 'Join WhatsApp Group'}
+        {/* Recent Groups Preview */}
+        {recentGroups.length > 0 && (
+          <section style={{ marginBottom: '3rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Recent WhatsApp Groups</h2>
+              <Link href="/groups" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '500' }}>View All →</Link>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+              {recentGroups.map(group => {
+                const links = group.whatsappLinks || [group.whatsappLink].filter(Boolean);
+                return (
+                  <div key={group.id} style={{ background: 'white', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem' }}>{group.title}</h4>
+                    <p style={{ color: '#666', fontSize: '0.85rem', margin: '0 0 1rem 0', lineHeight: 1.4 }}>{group.description?.slice(0, 100)}{group.description?.length > 100 ? '...' : ''}</p>
+                    {links[0] && (
+                      <a href={links[0]} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                        Join Group
                       </a>
-                    ))}
+                    )}
                   </div>
-
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                    <button onClick={() => handleShare(group)} style={{ flex: 1, padding: '0.5rem', border: '1px solid #2563eb', borderRadius: '8px', background: copiedId === group.id + '-share' ? '#2563eb' : 'white', color: copiedId === group.id + '-share' ? 'white' : '#2563eb', cursor: 'pointer', fontSize: '0.85rem' }}>
-                      {copiedId === group.id + '-share' ? '✓ Copied!' : '📤 Share'}
-                    </button>
-                    <button onClick={() => handleCopy(group)} style={{ flex: 1, padding: '0.5rem', border: '1px solid #10b981', borderRadius: '8px', background: copiedId === group.id + '-copy' ? '#10b981' : 'white', color: copiedId === group.id + '-copy' ? 'white' : '#10b981', cursor: 'pointer', fontSize: '0.85rem' }}>
-                      {copiedId === group.id + '-copy' ? '✓ Copied!' : '📋 Copy'}
-                    </button>
-                  </div>
-
-                  <button onClick={() => handleReportGroup(group.id)} disabled={reportingGroup === group.id} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ef4444', borderRadius: '8px', background: 'white', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem' }}>
-                    {reportingGroup === group.id ? 'Reporting...' : '⚠️ Report - Link Not Working'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}><h3>No groups found</h3></div>
+                );
+              })}
+            </div>
+          </section>
         )}
-      </main>
-      <Footer />
 
-      {showLocationModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '400px' }}>
-            <h2 style={{ marginTop: 0 }}>Suggest a Location</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Neighborhood/Area *</label>
-                <input value={newLocation.neighborhood} onChange={e => setNewLocation({ ...newLocation, neighborhood: e.target.value })} placeholder="e.g. Crown Heights" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
-              </div>
-              <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>City</label>
-                <input value={newLocation.city} onChange={e => setNewLocation({ ...newLocation, city: e.target.value })} placeholder="e.g. Brooklyn" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
-              </div>
-              <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>State/Province</label>
-                <input value={newLocation.state} onChange={e => setNewLocation({ ...newLocation, state: e.target.value })} placeholder="e.g. NY" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
-              </div>
-              <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Country</label>
-                <input value={newLocation.country} onChange={e => setNewLocation({ ...newLocation, country: e.target.value })} placeholder="e.g. USA" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-              <button onClick={() => setShowLocationModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleSuggestLocation} disabled={submittingLocation} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: 'none', background: submittingLocation ? '#ccc' : '#2563eb', color: 'white', cursor: submittingLocation ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>{submittingLocation ? 'Submitting...' : 'Submit'}</button>
-            </div>
+        {/* CTA Section */}
+        <section style={{ background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', borderRadius: '16px', padding: '2rem', textAlign: 'center' }}>
+          <h2 style={{ margin: '0 0 0.5rem 0' }}>Want to contribute?</h2>
+          <p style={{ color: '#666', marginBottom: '1.5rem' }}>Help grow our community by adding groups, services, or businesses</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <Link href="/suggest" style={{ padding: '0.75rem 1.5rem', background: '#2563eb', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
+              ➕ Suggest a Service
+            </Link>
+            <Link href="/contact" style={{ padding: '0.75rem 1.5rem', background: 'white', color: '#2563eb', border: '2px solid #2563eb', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
+              📧 Contact Us
+            </Link>
           </div>
-        </div>
-      )}
+        </section>
+      </main>
+      
+      <Footer />
     </>
   );
 }
