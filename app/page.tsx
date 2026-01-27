@@ -7,30 +7,7 @@ import Footer from '@/components/Footer';
 import EmergencyBar from '@/components/EmergencyBar';
 
 interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
-interface Group { id: string; title: string; description: string; categoryId: string; whatsappLinks?: string[]; whatsappLink?: string; }
-interface Category { id: string; name: string; icon: string; slug: string; }
-
-const categoryMapping: { [key: string]: string } = {
-  'groups': 'all',
-  'jobs': 'business-jobs',
-  'housing': 'real-estate',
-  'buy-sell': 'buy-sell',
-  'events': 'events',
-  'free': 'chesed',
-  'rides': 'rides',
-};
-
-const mainSections = [
-  { id: 'groups', title: 'WhatsApp Groups', icon: '👥', color: '#25D366', href: '/groups', desc: 'Find and join community groups' },
-  { id: 'services', title: 'Services', icon: '🔧', color: '#2563eb', href: '/services', desc: 'Find local professionals' },
-  { id: 'jobs', title: 'Jobs', icon: '💼', color: '#7c3aed', href: '/groups?category=business-jobs', desc: 'Job listings & career' },
-  { id: 'housing', title: 'Housing', icon: '🏠', color: '#ea580c', href: '/groups?category=real-estate', desc: 'Apartments & rooms' },
-  { id: 'buy-sell', title: 'Buy & Sell', icon: '🛒', color: '#16a34a', href: '/groups?category=buy-sell', desc: 'Marketplace' },
-  { id: 'events', title: 'Events', icon: '📅', color: '#dc2626', href: '/groups?category=events', desc: 'Community events' },
-  { id: 'free', title: 'Free / Gemach', icon: '🆓', color: '#0891b2', href: '/groups?category=chesed', desc: 'Free stuff & gemach' },
-  { id: 'rides', title: 'Rides', icon: '🚗', color: '#4f46e5', href: '/groups?category=rides', desc: 'Carpool & rides' },
-  { id: 'news', title: 'News', icon: '📰', color: '#b91c1c', href: '/news', desc: 'Community news' },
-];
+interface Category { id: string; name: string; icon: string; slug: string; order?: number; }
 
 const partners = [
   { name: 'ShabbatHub', url: 'https://shabbathub.com', logo: '🕯️', desc: 'Shabbat hospitality' },
@@ -38,10 +15,24 @@ const partners = [
   { name: 'Custom Glass Brooklyn', url: 'https://customglassbrooklyn.com', logo: '🪟', desc: 'Glass services' },
 ];
 
+// Map display names to category slugs - will be updated dynamically
+const quickAccessItems = [
+  { title: 'WhatsApp Groups', icon: '👥', color: '#25D366', href: '/groups', desc: 'All community groups', isStatic: true },
+  { title: 'Services', icon: '🔧', color: '#2563eb', href: '/services', desc: 'Local professionals', isStatic: true },
+  { title: 'Jobs', icon: '💼', color: '#7c3aed', keywords: ['job', 'business', 'career', 'work'], desc: 'Job listings & career' },
+  { title: 'Housing', icon: '🏠', color: '#ea580c', keywords: ['real estate', 'housing', 'apartment', 'rent'], desc: 'Apartments & rooms' },
+  { title: 'Buy & Sell', icon: '🛒', color: '#16a34a', keywords: ['buy', 'sell', 'marketplace', 'sale'], desc: 'Marketplace' },
+  { title: 'Events', icon: '📅', color: '#dc2626', keywords: ['event', 'shiur', 'class'], desc: 'Community events' },
+  { title: 'Free / Gemach', icon: '🆓', color: '#0891b2', keywords: ['free', 'gemach', 'chesed', 'volunteer'], desc: 'Free stuff & gemach' },
+  { title: 'Rides', icon: '🚗', color: '#4f46e5', keywords: ['ride', 'carpool', 'travel'], desc: 'Carpool & rides' },
+  { title: 'News', icon: '📰', color: '#b91c1c', href: '/news', desc: 'Community news', isStatic: true },
+];
+
 export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<UserInfo | null>(null);
   const [stats, setStats] = useState({ groups: 0, services: 0, users: 0 });
+  const [categories, setCategories] = useState<Category[]>([]);
   const [jewishDate, setJewishDate] = useState<string>('');
   const [parsha, setParsha] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -63,14 +54,16 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [groupsRes, servicesRes, usersRes] = await Promise.all([
+        const [groupsRes, servicesRes, usersRes, catsRes] = await Promise.all([
           fetch('/api/admin/groups'),
           fetch('/api/admin/services'),
-          fetch('/api/admin/users')
+          fetch('/api/admin/users'),
+          fetch('/api/admin/group-categories')
         ]);
         const groups = await groupsRes.json();
         const services = await servicesRes.json();
         const users = await usersRes.json();
+        const cats = await catsRes.json();
         
         const approvedGroups = Array.isArray(groups) ? groups.filter((g: any) => g.status === 'approved') : [];
         setStats({
@@ -78,6 +71,8 @@ export default function HomePage() {
           services: Array.isArray(services) ? services.length : 0,
           users: Array.isArray(users) ? users.length : 0
         });
+        
+        if (Array.isArray(cats)) setCategories(cats);
       } catch (error) { console.error(error); }
       finally { setLoading(false); }
     };
@@ -88,29 +83,37 @@ export default function HomePage() {
   useEffect(() => {
     const fetchJewishInfo = async () => {
       try {
-        // Hebrew date
         const today = new Date();
         const dateRes = await fetch('https://www.hebcal.com/converter?cfg=json&gy=' + today.getFullYear() + '&gm=' + (today.getMonth() + 1) + '&gd=' + today.getDate() + '&g2h=1');
         const dateData = await dateRes.json();
-        if (dateData.hebrew) {
-          setJewishDate(dateData.hebrew);
-        }
+        if (dateData.hebrew) setJewishDate(dateData.hebrew);
         
-        // Parsha
         const parshaRes = await fetch('https://www.hebcal.com/shabbat?cfg=json&geonameid=5110302&M=on');
         const parshaData = await parshaRes.json();
         const parshaItem = parshaData.items?.find((item: any) => item.category === 'parashat');
-        if (parshaItem) {
-          setParsha(parshaItem.title);
-        }
-      } catch (error) {
-        console.error('Failed to fetch Jewish info:', error);
-      }
+        if (parshaItem) setParsha(parshaItem.title);
+      } catch (error) { console.error('Failed to fetch Jewish info:', error); }
     };
     fetchJewishInfo();
   }, []);
 
   const handleLogout = () => { localStorage.clear(); window.location.href = '/auth/login'; };
+
+  // Find matching category slug for quick access items
+  const getCategoryLink = (item: typeof quickAccessItems[0]): string => {
+    if (item.isStatic && item.href) return item.href;
+    if (!item.keywords) return '/groups';
+    
+    // Find category that matches any keyword
+    for (const keyword of item.keywords) {
+      const match = categories.find(c => 
+        c.name.toLowerCase().includes(keyword.toLowerCase()) ||
+        c.slug.toLowerCase().includes(keyword.toLowerCase())
+      );
+      if (match) return '/groups?category=' + match.slug;
+    }
+    return '/groups';
+  };
 
   if (isAuthenticated === null || loading) return <div className="auth-container"><div className="loading"><div className="spinner"></div></div></div>;
 
@@ -177,14 +180,14 @@ export default function HomePage() {
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
         
-        {/* Main Sections Grid */}
+        {/* Quick Access Grid */}
         <section style={{ marginBottom: '2.5rem' }}>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', textAlign: 'center' }}>Explore Our Community</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
-            {mainSections.map(section => (
+            {quickAccessItems.map(item => (
               <Link 
-                key={section.id} 
-                href={section.href}
+                key={item.title} 
+                href={getCategoryLink(item)}
                 style={{ 
                   textDecoration: 'none',
                   display: 'block',
@@ -192,18 +195,48 @@ export default function HomePage() {
                   borderRadius: '16px',
                   padding: '1.25rem',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                  border: '2px solid ' + section.color + '20',
+                  border: '2px solid ' + item.color + '20',
                   transition: 'transform 0.2s, box-shadow 0.2s',
                   textAlign: 'center',
                 }}
               >
-                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{section.icon}</div>
-                <h3 style={{ color: section.color, margin: '0 0 0.25rem 0', fontSize: '1rem' }}>{section.title}</h3>
-                <p style={{ color: '#666', margin: 0, fontSize: '0.8rem' }}>{section.desc}</p>
+                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{item.icon}</div>
+                <h3 style={{ color: item.color, margin: '0 0 0.25rem 0', fontSize: '1rem' }}>{item.title}</h3>
+                <p style={{ color: '#666', margin: 0, fontSize: '0.8rem' }}>{item.desc}</p>
               </Link>
             ))}
           </div>
         </section>
+
+        {/* All Categories */}
+        {categories.length > 0 && (
+          <section style={{ marginBottom: '2.5rem' }}>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>📁 All Group Categories</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {categories.sort((a, b) => (a.order || 0) - (b.order || 0)).map(cat => (
+                <Link 
+                  key={cat.id}
+                  href={'/groups?category=' + cat.slug}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: 'white',
+                    borderRadius: '20px',
+                    textDecoration: 'none',
+                    color: '#333',
+                    fontSize: '0.9rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.name}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Quick Actions */}
         <section style={{ marginBottom: '2.5rem' }}>
