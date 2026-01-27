@@ -47,22 +47,22 @@ export default function LoginPage() {
         {/* 770 Photo */}
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div style={{ 
-            width: '180px', 
-            height: '180px', 
+            width: '200px', 
+            height: '150px', 
             margin: '0 auto 1rem',
-            borderRadius: '16px',
+            borderRadius: '12px',
             overflow: 'hidden',
-            border: '4px solid #c9a227',
+            border: '3px solid #c9a227',
             boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
           }}>
             <img 
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/770_Eastern_Parkway_%2848459822586%29.jpg/1280px-770_Eastern_Parkway_%2848459822586%29.jpg" 
+              src="/770.jpg" 
               alt="770 Eastern Parkway"
               style={{ 
                 width: '100%', 
                 height: '100%', 
                 objectFit: 'cover',
-                objectPosition: 'center 30%'
+                objectPosition: 'center top'
               }}
             />
           </div>
