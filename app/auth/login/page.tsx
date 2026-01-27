@@ -44,25 +44,25 @@ export default function LoginPage() {
   return (
     <div className="auth-container">
       <div className="auth-card" style={{ maxWidth: '420px' }}>
-        {/* 770 Image */}
+        {/* 770 Photo */}
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div style={{ 
-            width: '150px', 
-            height: '150px', 
+            width: '180px', 
+            height: '180px', 
             margin: '0 auto 1rem',
-            borderRadius: '50%',
+            borderRadius: '16px',
             overflow: 'hidden',
             border: '4px solid #c9a227',
             boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
           }}>
             <img 
-              src="/770.jpg" 
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/770_Eastern_Parkway_%2848459822586%29.jpg/1280px-770_Eastern_Parkway_%2848459822586%29.jpg" 
               alt="770 Eastern Parkway"
               style={{ 
                 width: '100%', 
                 height: '100%', 
                 objectFit: 'cover',
-                objectPosition: 'center top'
+                objectPosition: 'center 30%'
               }}
             />
           </div>
@@ -70,11 +70,27 @@ export default function LoginPage() {
             Crown Heights Groups
           </h1>
           <p style={{ color: '#666', fontSize: '0.95rem' }}>
-            Community Directory
+            Community members only
           </p>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {/* Password Hint */}
+        <div style={{ 
+          background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', 
+          padding: '1rem', 
+          borderRadius: '12px',
+          border: '1px solid #bae6fd',
+          marginBottom: '1rem'
+        }}>
+          <div style={{ fontWeight: 'bold', color: '#0369a1', fontSize: '0.95rem', marginBottom: '0.25rem' }}>
+            🤔 What is the address of this building?
+          </div>
+          <div style={{ color: '#0c4a6e', fontSize: '0.9rem' }}>
+            Enter only the number
+          </div>
+        </div>
+
+        {error && <div className="error-message" style={{ marginBottom: '1rem' }}>{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
@@ -95,34 +111,18 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="Enter password"
+              placeholder="_ _ _"
+              style={{ textAlign: 'center', fontSize: '1.25rem', letterSpacing: '0.5rem' }}
             />
           </div>
 
-          {/* Password Hint */}
-          <div style={{ 
-            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', 
-            padding: '0.75rem 1rem', 
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            border: '1px solid #f59e0b'
-          }}>
-            <span style={{ fontSize: '1.5rem' }}>💡</span>
-            <div>
-              <div style={{ fontWeight: 'bold', color: '#92400e', fontSize: '0.85rem' }}>Password Hint</div>
-              <div style={{ color: '#78350f', fontSize: '0.95rem' }}>The address of the building in the picture above</div>
-            </div>
-          </div>
-
           <button type="submit" className="auth-btn" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Checking...' : 'Enter'}
           </button>
         </form>
 
         <div className="auth-link">
-          Don't have an account? <Link href="/auth/register">Register</Link>
+          New here? <Link href="/auth/register">Create account</Link>
         </div>
 
         <div style={{ 
