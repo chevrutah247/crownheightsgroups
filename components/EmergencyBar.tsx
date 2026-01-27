@@ -8,22 +8,24 @@ const emergencyContacts = [
 
 export default function EmergencyBar() {
   return (
-    <div style={{
-      background: '#f8f9fa',
-      padding: '0.5rem 1rem',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: '0.5rem',
-      flexWrap: 'wrap',
-      borderBottom: '1px solid #e5e7eb'
-    }}>
+    <div
+      style={{
+        background: '#f8f9fa',
+        padding: '0.5rem 1rem',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '0.5rem',
+        flexWrap: 'wrap',
+        borderBottom: '1px solid #e5e7eb'
+      }}
+    >
       <span style={{ color: '#dc2626', fontWeight: 'bold', marginRight: '0.5rem' }}>EMERGENCY:</span>
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
         {emergencyContacts.map((contact) => (
           
             key={contact.name}
-            href={`tel:${contact.phone.replace(/-/g, '')}`}
+            href={'tel:' + contact.phone.replace(/-/g, '')}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
