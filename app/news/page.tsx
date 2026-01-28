@@ -100,7 +100,7 @@ export default function NewsPage() {
     }
   };
 
-  const sources = ['all', ...new Set(news.map(n => n.source))];
+  const sources = ['all', ...Array.from(new Set(news.map(n => n.source)))];
   const filteredNews = filter === 'all' ? news : news.filter(n => n.source === filter);
 
   const getSourceColor = (source: string) => {
