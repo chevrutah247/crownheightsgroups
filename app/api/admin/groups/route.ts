@@ -1,30 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
-// Default locations - ONLY used for initial setup via /api/admin/locations/init
-const defaultLocations = [
-  { id: '1', neighborhood: 'Crown Heights', city: 'Brooklyn', state: 'NY', country: 'USA', zipCode: '11213', status: 'approved', order: 1 },
-  { id: '2', neighborhood: 'Williamsburg', city: 'Brooklyn', state: 'NY', country: 'USA', zipCode: '11211', status: 'approved', order: 2 },
-  { id: '3', neighborhood: 'Flatbush', city: 'Brooklyn', state: 'NY', country: 'USA', zipCode: '11230', status: 'approved', order: 3 },
-  { id: '4', neighborhood: 'Boro Park', city: 'Brooklyn', state: 'NY', country: 'USA', zipCode: '11219', status: 'approved', order: 4 },
-  { id: '5', neighborhood: 'Monsey', city: 'Monsey', state: 'NY', country: 'USA', zipCode: '10952', status: 'approved', order: 5 },
-  { id: '6', neighborhood: 'Lakewood', city: 'Lakewood', state: 'NJ', country: 'USA', zipCode: '08701', status: 'approved', order: 6 },
-  { id: '7', neighborhood: 'Five Towns', city: 'Long Island', state: 'NY', country: 'USA', zipCode: '11516', status: 'approved', order: 7 },
-  { id: '8', neighborhood: 'Queens', city: 'Queens', state: 'NY', country: 'USA', zipCode: '11367', status: 'approved', order: 8 },
-  { id: '9', neighborhood: 'Manhattan', city: 'Manhattan', state: 'NY', country: 'USA', zipCode: '10002', status: 'approved', order: 9 },
-  { id: '10', neighborhood: 'Los Angeles', city: 'Los Angeles', state: 'CA', country: 'USA', zipCode: '90035', status: 'approved', order: 10 },
-  { id: '11', neighborhood: 'Miami', city: 'Miami', state: 'FL', country: 'USA', zipCode: '33154', status: 'approved', order: 11 },
-  { id: '12', neighborhood: 'Chicago', city: 'Chicago', state: 'IL', country: 'USA', zipCode: '60659', status: 'approved', order: 12 },
-  { id: '13', neighborhood: 'Jerusalem', city: 'Jerusalem', state: '', country: 'Israel', zipCode: '', status: 'approved', order: 13 },
-  { id: '14', neighborhood: 'Tel Aviv', city: 'Tel Aviv', state: '', country: 'Israel', zipCode: '', status: 'approved', order: 14 },
-  { id: '15', neighborhood: 'Bnei Brak', city: 'Bnei Brak', state: '', country: 'Israel', zipCode: '', status: 'approved', order: 15 },
-  { id: '16', neighborhood: 'London', city: 'London', state: '', country: 'UK', zipCode: 'N16', status: 'approved', order: 16 },
-  { id: '17', neighborhood: 'Toronto', city: 'Toronto', state: 'ON', country: 'Canada', zipCode: 'M3H', status: 'approved', order: 17 },
-  { id: '18', neighborhood: 'Montreal', city: 'Montreal', state: 'QC', country: 'Canada', zipCode: 'H3W', status: 'approved', order: 18 },
-  { id: '19', neighborhood: 'Melbourne', city: 'Melbourne', state: 'VIC', country: 'Australia', zipCode: '3183', status: 'approved', order: 19 },
-  { id: '20', neighborhood: 'Worldwide', city: '', state: '', country: 'Global', zipCode: '', status: 'approved', order: 20 },
-];
-
 function getRedis() {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
@@ -35,22 +11,11 @@ function getRedis() {
 export async function GET(request: NextRequest) {
   try {
     const redis = getRedis();
-    
-    // Check for init parameter (to reset to defaults)
-    const { searchParams } = new URL(request.url);
-    const init = searchParams.get('init');
-    
-    if (init === 'true' && redis) {
-      await redis.set('locations', JSON.stringify(defaultLocations));
-      return NextResponse.json({ message: 'Locations initialized', locations: defaultLocations });
-    }
-    
     if (!redis) {
-      // No Redis - return empty array (not defaults!)
       return NextResponse.json([]);
     }
     
-    const stored = await redis.get('locations');
+    const stored = await redis.get('groups');
     if (stored) {
       const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
       if (Array.isArray(data)) {
@@ -58,10 +23,9 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // No data in Redis - return empty array (don't auto-initialize!)
     return NextResponse.json([]);
   } catch (error) {
-    console.error('GET locations error:', error);
+    console.error('GET groups error:', error);
     return NextResponse.json([]);
   }
 }
@@ -71,33 +35,33 @@ export async function POST(request: NextRequest) {
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     
-    const newLoc = await request.json();
+    const newGroup = await request.json();
     
-    let locations: any[] = [];
-    const stored = await redis.get('locations');
+    let groups: any[] = [];
+    const stored = await redis.get('groups');
     if (stored) {
-      locations = typeof stored === 'string' ? JSON.parse(stored) : stored;
-      if (!Array.isArray(locations)) locations = [];
+      groups = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      if (!Array.isArray(groups)) groups = [];
     }
     
     const id = String(Date.now());
-    const location = {
+    const group = {
       id,
-      neighborhood: newLoc.neighborhood,
-      city: newLoc.city || '',
-      state: newLoc.state || '',
-      country: newLoc.country || 'USA',
-      zipCode: newLoc.zipCode || '',
-      status: newLoc.status || 'approved',
-      order: newLoc.order || locations.length + 1
+      ...newGroup,
+      createdAt: new Date().toISOString(),
+      status: newGroup.status || 'pending',
+      clicksCount: 0,
+      isPinned: false,
+      pinnedOrder: 999,
+      tags: newGroup.tags || [],
     };
     
-    locations.push(location);
-    await redis.set('locations', JSON.stringify(locations));
+    groups.push(group);
+    await redis.set('groups', JSON.stringify(groups));
     
-    return NextResponse.json(location);
+    return NextResponse.json(group);
   } catch (error) {
-    console.error('POST locations error:', error);
+    console.error('POST groups error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -109,34 +73,24 @@ export async function PUT(request: NextRequest) {
     
     const updated = await request.json();
     
-    let locations: any[] = [];
-    const stored = await redis.get('locations');
+    let groups: any[] = [];
+    const stored = await redis.get('groups');
     if (stored) {
-      locations = typeof stored === 'string' ? JSON.parse(stored) : stored;
-      if (!Array.isArray(locations)) locations = [];
+      groups = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      if (!Array.isArray(groups)) groups = [];
     }
     
-    const index = locations.findIndex((l: any) => l.id === updated.id);
+    const index = groups.findIndex((g: any) => g.id === updated.id);
     if (index === -1) {
-      return NextResponse.json({ error: 'Location not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Group not found' }, { status: 404 });
     }
     
-    locations[index] = {
-      ...locations[index],
-      neighborhood: updated.neighborhood ?? locations[index].neighborhood,
-      city: updated.city ?? locations[index].city,
-      state: updated.state ?? locations[index].state,
-      country: updated.country ?? locations[index].country,
-      zipCode: updated.zipCode ?? locations[index].zipCode ?? '',
-      status: updated.status ?? locations[index].status,
-      order: updated.order ?? locations[index].order,
-    };
+    groups[index] = { ...groups[index], ...updated };
+    await redis.set('groups', JSON.stringify(groups));
     
-    await redis.set('locations', JSON.stringify(locations));
-    
-    return NextResponse.json(locations[index]);
+    return NextResponse.json(groups[index]);
   } catch (error) {
-    console.error('PUT locations error:', error);
+    console.error('PUT groups error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
@@ -148,25 +102,25 @@ export async function DELETE(request: NextRequest) {
     
     const { id } = await request.json();
     
-    let locations: any[] = [];
-    const stored = await redis.get('locations');
+    let groups: any[] = [];
+    const stored = await redis.get('groups');
     if (stored) {
-      locations = typeof stored === 'string' ? JSON.parse(stored) : stored;
-      if (!Array.isArray(locations)) locations = [];
+      groups = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      if (!Array.isArray(groups)) groups = [];
     }
     
-    const initialLength = locations.length;
-    locations = locations.filter((l: any) => l.id !== id);
+    const initialLength = groups.length;
+    groups = groups.filter((g: any) => g.id !== id);
     
-    if (locations.length === initialLength) {
-      return NextResponse.json({ error: 'Location not found' }, { status: 404 });
+    if (groups.length === initialLength) {
+      return NextResponse.json({ error: 'Group not found' }, { status: 404 });
     }
     
-    await redis.set('locations', JSON.stringify(locations));
+    await redis.set('groups', JSON.stringify(groups));
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('DELETE locations error:', error);
+    console.error('DELETE groups error:', error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
