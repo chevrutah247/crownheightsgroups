@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
+// Default locations - ONLY used for initial setup via /api/admin/locations/init
 const defaultLocations = [
   { id: '1', neighborhood: 'Crown Heights', city: 'Brooklyn', state: 'NY', country: 'USA', zipCode: '11213', status: 'approved', order: 1 },
   { id: '2', neighborhood: 'Williamsburg', city: 'Brooklyn', state: 'NY', country: 'USA', zipCode: '11211', status: 'approved', order: 2 },
@@ -31,25 +32,37 @@ function getRedis() {
   return null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const redis = getRedis();
-    if (!redis) return NextResponse.json(defaultLocations);
+    
+    // Check for init parameter (to reset to defaults)
+    const { searchParams } = new URL(request.url);
+    const init = searchParams.get('init');
+    
+    if (init === 'true' && redis) {
+      await redis.set('locations', JSON.stringify(defaultLocations));
+      return NextResponse.json({ message: 'Locations initialized', locations: defaultLocations });
+    }
+    
+    if (!redis) {
+      // No Redis - return empty array (not defaults!)
+      return NextResponse.json([]);
+    }
     
     const stored = await redis.get('locations');
     if (stored) {
       const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         return NextResponse.json(data);
       }
     }
     
-    // Initialize with defaults if empty
-    await redis.set('locations', JSON.stringify(defaultLocations));
-    return NextResponse.json(defaultLocations);
+    // No data in Redis - return empty array (don't auto-initialize!)
+    return NextResponse.json([]);
   } catch (error) {
     console.error('GET locations error:', error);
-    return NextResponse.json(defaultLocations);
+    return NextResponse.json([]);
   }
 }
 
@@ -64,8 +77,7 @@ export async function POST(request: NextRequest) {
     const stored = await redis.get('locations');
     if (stored) {
       locations = typeof stored === 'string' ? JSON.parse(stored) : stored;
-    } else {
-      locations = [...defaultLocations];
+      if (!Array.isArray(locations)) locations = [];
     }
     
     const id = String(Date.now());
@@ -76,8 +88,8 @@ export async function POST(request: NextRequest) {
       state: newLoc.state || '',
       country: newLoc.country || 'USA',
       zipCode: newLoc.zipCode || '',
-      status: 'approved',
-      order: locations.length + 1
+      status: newLoc.status || 'approved',
+      order: newLoc.order || locations.length + 1
     };
     
     locations.push(location);
@@ -101,6 +113,7 @@ export async function PUT(request: NextRequest) {
     const stored = await redis.get('locations');
     if (stored) {
       locations = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      if (!Array.isArray(locations)) locations = [];
     }
     
     const index = locations.findIndex((l: any) => l.id === updated.id);
@@ -139,9 +152,16 @@ export async function DELETE(request: NextRequest) {
     const stored = await redis.get('locations');
     if (stored) {
       locations = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      if (!Array.isArray(locations)) locations = [];
     }
     
+    const initialLength = locations.length;
     locations = locations.filter((l: any) => l.id !== id);
+    
+    if (locations.length === initialLength) {
+      return NextResponse.json({ error: 'Location not found' }, { status: 404 });
+    }
+    
     await redis.set('locations', JSON.stringify(locations));
     
     return NextResponse.json({ success: true });
