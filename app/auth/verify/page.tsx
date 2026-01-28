@@ -22,21 +22,17 @@ export default function VerifyPage() {
   ];
 
   useEffect(() => {
-    // Get email from session storage
     const pendingEmail = sessionStorage.getItem('pendingVerification');
     if (pendingEmail) {
       setEmail(pendingEmail);
     } else {
-      // No pending verification, redirect to register
       window.location.href = '/auth/register';
     }
     
-    // Focus first input
     inputRefs[0].current?.focus();
   }, []);
 
   useEffect(() => {
-    // Countdown timer for resend
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
@@ -52,12 +48,10 @@ export default function VerifyPage() {
     setCode(newCode);
     setError('');
     
-    // Auto-focus next input
     if (value && index < 5) {
       inputRefs[index + 1].current?.focus();
     }
     
-    // Auto-submit when complete
     if (index === 5 && value) {
       const fullCode = newCode.join('');
       if (fullCode.length === 6) {
@@ -102,16 +96,13 @@ export default function VerifyPage() {
       
       setSuccess(true);
       
-      // Store session token
       localStorage.setItem('session_token', data.token);
       localStorage.setItem('user_name', data.user.name);
       localStorage.setItem('user_email', data.user.email);
       localStorage.setItem('user_role', data.user.role);
       
-      // Clear pending verification
       sessionStorage.removeItem('pendingVerification');
       
-      // Redirect after short delay
       setTimeout(() => {
         window.location.href = '/';
       }, 2000);
@@ -143,7 +134,7 @@ export default function VerifyPage() {
         throw new Error(data.error || 'Failed to resend code');
       }
       
-      setCountdown(60); // 60 second cooldown
+      setCountdown(60);
     } catch (err: any) {
       setError(err.message || 'Failed to resend code');
     } finally {
@@ -160,13 +151,58 @@ export default function VerifyPage() {
     }
   };
 
+  const containerStyle: React.CSSProperties = {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)',
+    padding: '1rem',
+  };
+
+  const cardStyle: React.CSSProperties = {
+    background: 'white',
+    borderRadius: '16px',
+    padding: '2.5rem',
+    width: '100%',
+    maxWidth: '420px',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+    textAlign: 'center',
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '48px',
+    height: '56px',
+    textAlign: 'center',
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    border: '2px solid #ddd',
+    borderRadius: '8px',
+    outline: 'none',
+    transition: 'border-color 0.2s',
+  };
+
+  const buttonStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '1rem',
+    background: '#10b981',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '1.1rem',
+    fontWeight: 'bold',
+    cursor: loading ? 'not-allowed' : 'pointer',
+    opacity: loading || code.join('').length !== 6 ? 0.7 : 1,
+    marginTop: '1.5rem',
+  };
+
   if (success) {
     return (
-      <div className="auth-container">
-        <div className="auth-box">
-          <div className="auth-success-icon">✓</div>
-          <h1 className="auth-title">Email Verified!</h1>
-          <p className="auth-subtitle">
+      <div style={containerStyle}>
+        <div style={cardStyle}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>✅</div>
+          <h1 style={{ color: '#1e3a5f', marginBottom: '0.5rem' }}>Email Verified!</h1>
+          <p style={{ color: '#666' }}>
             Your account has been verified successfully.<br />
             Redirecting you to the catalog...
           </p>
@@ -176,66 +212,90 @@ export default function VerifyPage() {
   }
 
   return (
-    <div className="auth-container">
-      <div className="auth-box">
-        <div className="auth-logo">✉️</div>
-        <h1 className="auth-title">Check Your Email</h1>
-        <p className="auth-subtitle">
+    <div style={containerStyle}>
+      <div style={cardStyle}>
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✉️</div>
+        <h1 style={{ color: '#1e3a5f', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
+          Check Your Email
+        </h1>
+        <p style={{ color: '#666', marginBottom: '1.5rem' }}>
           We sent a verification code to<br />
-          <strong>{email}</strong>
+          <strong style={{ color: '#1e3a5f' }}>{email}</strong>
         </p>
         
-        <div className="verify-form">
-          {error && (
-            <div className="auth-error">
-              {error}
-            </div>
-          )}
-          
-          <p className="verify-label">Enter the 6-digit code:</p>
-          
-          <div className="verify-inputs" onPaste={handlePaste}>
-            {[0, 1, 2, 3, 4, 5].map(index => (
-              <input
-                key={index}
-                ref={inputRefs[index]}
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                className="verify-input"
-                value={code[index]}
-                onChange={(e) => handleInput(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
-                disabled={loading}
-              />
-            ))}
+        {error && (
+          <div style={{ 
+            background: '#fee2e2', 
+            color: '#dc2626', 
+            padding: '0.75rem', 
+            borderRadius: '8px', 
+            marginBottom: '1rem' 
+          }}>
+            {error}
           </div>
-          
-          <button 
-            className="auth-btn"
-            onClick={handleManualSubmit}
-            disabled={loading || code.join('').length !== 6}
-          >
-            {loading ? 'Verifying...' : 'Verify Email'}
-          </button>
-          
-          <div className="resend-section">
-            <p>Didn't receive the code?</p>
-            <button 
-              className="resend-btn"
-              onClick={handleResend}
-              disabled={resending || countdown > 0}
-            >
-              {resending ? 'Sending...' : countdown > 0 ? `Resend in ${countdown}s` : 'Resend Code'}
-            </button>
-          </div>
+        )}
+        
+        <p style={{ color: '#333', marginBottom: '0.75rem', fontWeight: '500' }}>
+          Enter the 6-digit code:
+        </p>
+        
+        <div 
+          style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '0.5rem' }}
+          onPaste={handlePaste}
+        >
+          {[0, 1, 2, 3, 4, 5].map(index => (
+            <input
+              key={index}
+              ref={inputRefs[index]}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              style={{
+                ...inputStyle,
+                borderColor: code[index] ? '#10b981' : '#ddd',
+              }}
+              value={code[index]}
+              onChange={(e) => handleInput(index, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(index, e)}
+              disabled={loading}
+            />
+          ))}
         </div>
         
-        <p className="auth-footer">
-          <Link href="/auth/register" className="auth-link">
+        <button 
+          style={buttonStyle}
+          onClick={handleManualSubmit}
+          disabled={loading || code.join('').length !== 6}
+        >
+          {loading ? 'Verifying...' : 'Verify Email'}
+        </button>
+        
+        <div style={{ marginTop: '1.5rem' }}>
+          <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+            Didn't receive the code?
+          </p>
+          <button 
+            onClick={handleResend}
+            disabled={resending || countdown > 0}
+            style={{
+              background: 'none',
+              border: '1px solid #ddd',
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              color: countdown > 0 ? '#999' : '#2563eb',
+              cursor: countdown > 0 ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem',
+            }}
+          >
+            {resending ? 'Sending...' : countdown > 0 ? `Resend in ${countdown}s` : 'Resend Code'}
+          </button>
+        </div>
+        
+        <div style={{ marginTop: '1.5rem' }}>
+          <Link href="/auth/register" style={{ color: '#2563eb', textDecoration: 'none', fontSize: '0.9rem' }}>
             ← Back to Registration
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );
