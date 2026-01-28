@@ -3,12 +3,23 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { categories, locations } from '@/lib/data';
+import { categories } from '@/lib/data';
 
 interface UserInfo {
   name: string;
   email: string;
   role: 'user' | 'admin';
+}
+
+interface Location {
+  id: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  country: string;
+  zipCode?: string;
+  status: string;
+  order?: number;
 }
 
 export default function SuggestPage() {
@@ -17,6 +28,13 @@ export default function SuggestPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [suggestNewLocation, setSuggestNewLocation] = useState(false);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [locationsLoading, setLocationsLoading] = useState(true);
+  
+  // Cascading selection state
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedState, setSelectedState] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -27,9 +45,28 @@ export default function SuggestPage() {
     newCity: '',
     newState: '',
     newCountry: 'USA',
+    newZipCode: '',
     description: '',
     contactEmail: '',
   });
+
+  // Load locations from API
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const res = await fetch('/api/admin/locations');
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setLocations(data.filter((l: Location) => l.status === 'approved'));
+        }
+      } catch (error) {
+        console.error('Failed to load locations:', error);
+      } finally {
+        setLocationsLoading(false);
+      }
+    };
+    fetchLocations();
+  }, []);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -52,7 +89,6 @@ export default function SuggestPage() {
         if (data.valid) {
           setIsAuthenticated(true);
           setUser(data.user);
-          // Pre-fill contact email
           setFormData(prev => ({
             ...prev,
             contactEmail: data.user.email
@@ -90,14 +126,55 @@ export default function SuggestPage() {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // In production, this would POST to /api/suggestions
-    console.log('Suggestion submitted:', formData);
-    
-    setSubmitted(true);
-    setLoading(false);
+    try {
+      // If suggesting new location, submit it first
+      if (suggestNewLocation && formData.newNeighborhood) {
+        await fetch('/api/location-suggestions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            neighborhood: formData.newNeighborhood,
+            city: formData.newCity,
+            state: formData.newState,
+            country: formData.newCountry,
+            zipCode: formData.newZipCode,
+            suggestedBy: user?.email || 'anonymous'
+          })
+        });
+      }
+      
+      // Submit group suggestion
+      await fetch('/api/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'group',
+          payload: {
+            title: formData.title,
+            whatsappLink: formData.whatsappLink,
+            categoryId: formData.categoryId,
+            locationId: suggestNewLocation ? 'pending' : formData.locationId,
+            description: formData.description,
+            newLocation: suggestNewLocation ? {
+              neighborhood: formData.newNeighborhood,
+              city: formData.newCity,
+              state: formData.newState,
+              country: formData.newCountry,
+              zipCode: formData.newZipCode,
+            } : null
+          },
+          contactEmail: formData.contactEmail,
+          suggestedBy: user?.email || 'anonymous'
+        })
+      });
+      
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Submit error:', error);
+      alert('Error submitting. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -105,6 +182,24 @@ export default function SuggestPage() {
       ...prev,
       [e.target.name]: e.target.value
     }));
+  };
+
+  // Get unique values for cascading dropdowns
+  const countries = [...new Set(locations.map(l => l.country))].sort();
+  const states = [...new Set(locations.filter(l => l.country === selectedCountry).map(l => l.state))].filter(Boolean).sort();
+  const cities = [...new Set(locations.filter(l => l.country === selectedCountry && (!selectedState || l.state === selectedState)).map(l => l.city))].filter(Boolean).sort();
+  const filteredLocations = locations.filter(l => {
+    if (selectedCountry && l.country !== selectedCountry) return false;
+    if (selectedState && l.state !== selectedState) return false;
+    if (selectedCity && l.city !== selectedCity) return false;
+    return true;
+  }).sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const resetFilters = () => {
+    setSelectedCountry('');
+    setSelectedState('');
+    setSelectedCity('');
+    setFormData(prev => ({ ...prev, locationId: '' }));
   };
 
   if (isAuthenticated === null) {
@@ -116,8 +211,6 @@ export default function SuggestPage() {
       </div>
     );
   }
-
-  const approvedLocations = locations.filter(l => l.status === 'approved');
 
   return (
     <>
@@ -135,12 +228,20 @@ export default function SuggestPage() {
           <div className="form-card">
             {submitted ? (
               <div className="form-success">
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
                 <h3>Thank you for your suggestion!</h3>
                 <p>We'll review it and add it to the directory if approved.</p>
+                {suggestNewLocation && (
+                  <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                    Your new location suggestion will also be reviewed.
+                  </p>
+                )}
                 <button 
                   className="form-btn" 
                   onClick={() => {
                     setSubmitted(false);
+                    setSuggestNewLocation(false);
+                    resetFilters();
                     setFormData({
                       title: '',
                       whatsappLink: '',
@@ -150,11 +251,12 @@ export default function SuggestPage() {
                       newCity: '',
                       newState: '',
                       newCountry: 'USA',
+                      newZipCode: '',
                       description: '',
-                      contactEmail: '',
+                      contactEmail: user?.email || '',
                     });
                   }}
-                  style={{ marginTop: '1rem' }}
+                  style={{ marginTop: '1.5rem' }}
                 >
                   Suggest Another Group
                 </button>
@@ -216,10 +318,66 @@ export default function SuggestPage() {
                 
                 <div className="form-group">
                   <label className="form-label">
-                    Neighborhood <span className="required">*</span>
+                    Location <span className="required">*</span>
                   </label>
-                  {!suggestNewLocation ? (
-                    <>
+                  
+                  {locationsLoading ? (
+                    <p style={{ color: '#666' }}>Loading locations...</p>
+                  ) : !suggestNewLocation ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {/* Country filter */}
+                      <select
+                        className="form-select"
+                        value={selectedCountry}
+                        onChange={(e) => {
+                          setSelectedCountry(e.target.value);
+                          setSelectedState('');
+                          setSelectedCity('');
+                          setFormData(prev => ({ ...prev, locationId: '' }));
+                        }}
+                      >
+                        <option value="">🌍 All Countries</option>
+                        {countries.map(country => (
+                          <option key={country} value={country}>{country}</option>
+                        ))}
+                      </select>
+                      
+                      {/* State filter (if country selected and has states) */}
+                      {selectedCountry && states.length > 0 && (
+                        <select
+                          className="form-select"
+                          value={selectedState}
+                          onChange={(e) => {
+                            setSelectedState(e.target.value);
+                            setSelectedCity('');
+                            setFormData(prev => ({ ...prev, locationId: '' }));
+                          }}
+                        >
+                          <option value="">📍 All States/Regions</option>
+                          {states.map(state => (
+                            <option key={state} value={state}>{state}</option>
+                          ))}
+                        </select>
+                      )}
+                      
+                      {/* City filter (if applicable) */}
+                      {selectedCountry && cities.length > 1 && (
+                        <select
+                          className="form-select"
+                          value={selectedCity}
+                          onChange={(e) => {
+                            setSelectedCity(e.target.value);
+                            setFormData(prev => ({ ...prev, locationId: '' }));
+                          }}
+                        >
+                          <option value="">🏙️ All Cities</option>
+                          {cities.map(city => (
+                            <option key={city} value={city}>{city}</option>
+                          ))}
+                        </select>
+                      )}
+                      
+                      {/* Neighborhood selection */}
                       <select
                         name="locationId"
                         className="form-select"
@@ -228,84 +386,144 @@ export default function SuggestPage() {
                         required={!suggestNewLocation}
                       >
                         <option value="">Select a neighborhood</option>
-                        {approvedLocations.map(loc => (
+                        {filteredLocations.map(loc => (
                           <option key={loc.id} value={loc.id}>
-                            {loc.neighborhood}, {loc.city}
+                            {loc.neighborhood}{loc.city ? `, ${loc.city}` : ''}{loc.state ? `, ${loc.state}` : ''}
                           </option>
                         ))}
                       </select>
+                      
+                      {selectedCountry && (
+                        <button
+                          type="button"
+                          onClick={resetFilters}
+                          style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            color: '#666',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            padding: 0,
+                            fontSize: '0.85rem',
+                            textAlign: 'left'
+                          }}
+                        >
+                          Clear filters
+                        </button>
+                      )}
+                      
                       <button
                         type="button"
-                        className="form-hint"
                         style={{ 
-                          background: 'none', 
-                          border: 'none', 
-                          color: 'var(--primary)',
+                          background: '#f0f9ff', 
+                          border: '1px dashed #2563eb', 
+                          color: '#2563eb',
                           cursor: 'pointer',
-                          textDecoration: 'underline',
-                          padding: 0,
-                          marginTop: '0.5rem'
+                          padding: '0.75rem',
+                          borderRadius: '8px',
+                          marginTop: '0.5rem',
+                          fontWeight: '500'
                         }}
                         onClick={() => setSuggestNewLocation(true)}
                       >
-                        Don't see your neighborhood? Suggest a new one
+                        ➕ Don't see your location? Suggest a new one
                       </button>
-                    </>
+                    </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <input
-                        type="text"
-                        name="newNeighborhood"
-                        className="form-input"
-                        placeholder="Neighborhood name"
-                        value={formData.newNeighborhood}
-                        onChange={handleChange}
-                        required={suggestNewLocation}
-                      />
-                      <input
-                        type="text"
-                        name="newCity"
-                        className="form-input"
-                        placeholder="City"
-                        value={formData.newCity}
-                        onChange={handleChange}
-                        required={suggestNewLocation}
-                      />
-                      <input
-                        type="text"
-                        name="newState"
-                        className="form-input"
-                        placeholder="State"
-                        value={formData.newState}
-                        onChange={handleChange}
-                        required={suggestNewLocation}
-                      />
-                      <select
-                        name="newCountry"
-                        className="form-select"
-                        value={formData.newCountry}
-                        onChange={handleChange}
-                      >
-                        <option value="USA">USA</option>
-                        <option value="Israel">Israel</option>
-                        <option value="Canada">Canada</option>
-                        <option value="UK">UK</option>
-                        <option value="Other">Other</option>
-                      </select>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '0.75rem',
+                      background: '#f0fdf4',
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      border: '1px solid #86efac'
+                    }}>
+                      <p style={{ margin: 0, fontWeight: 'bold', color: '#166534' }}>
+                        📍 Suggest New Location
+                      </p>
+                      
+                      <div>
+                        <label style={{ fontSize: '0.85rem', color: '#666' }}>Neighborhood *</label>
+                        <input
+                          type="text"
+                          name="newNeighborhood"
+                          className="form-input"
+                          placeholder="e.g., Crown Heights"
+                          value={formData.newNeighborhood}
+                          onChange={handleChange}
+                          required={suggestNewLocation}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label style={{ fontSize: '0.85rem', color: '#666' }}>City *</label>
+                        <input
+                          type="text"
+                          name="newCity"
+                          className="form-input"
+                          placeholder="e.g., Brooklyn"
+                          value={formData.newCity}
+                          onChange={handleChange}
+                          required={suggestNewLocation}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label style={{ fontSize: '0.85rem', color: '#666' }}>State/Region</label>
+                        <input
+                          type="text"
+                          name="newState"
+                          className="form-input"
+                          placeholder="e.g., NY"
+                          value={formData.newState}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label style={{ fontSize: '0.85rem', color: '#666' }}>Country *</label>
+                        <select
+                          name="newCountry"
+                          className="form-select"
+                          value={formData.newCountry}
+                          onChange={handleChange}
+                        >
+                          <option value="USA">🇺🇸 USA</option>
+                          <option value="Israel">🇮🇱 Israel</option>
+                          <option value="Canada">🇨🇦 Canada</option>
+                          <option value="UK">🇬🇧 UK</option>
+                          <option value="Australia">🇦🇺 Australia</option>
+                          <option value="Other">🌍 Other</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label style={{ fontSize: '0.85rem', color: '#666' }}>ZIP Code (optional)</label>
+                        <input
+                          type="text"
+                          name="newZipCode"
+                          className="form-input"
+                          placeholder="e.g., 11213"
+                          value={formData.newZipCode}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      
                       <button
                         type="button"
-                        className="form-hint"
                         style={{ 
                           background: 'none', 
                           border: 'none', 
-                          color: 'var(--primary)',
+                          color: '#2563eb',
                           cursor: 'pointer',
                           textDecoration: 'underline',
-                          padding: 0
+                          padding: 0,
+                          textAlign: 'left'
                         }}
                         onClick={() => setSuggestNewLocation(false)}
                       >
-                        Choose from existing neighborhoods
+                        ← Choose from existing locations
                       </button>
                     </div>
                   )}
@@ -322,6 +540,7 @@ export default function SuggestPage() {
                     value={formData.description}
                     onChange={handleChange}
                     required
+                    rows={3}
                   />
                 </div>
                 
@@ -344,6 +563,7 @@ export default function SuggestPage() {
                   type="submit" 
                   className="form-btn"
                   disabled={loading}
+                  style={{ marginTop: '0.5rem' }}
                 >
                   {loading ? 'Submitting...' : 'Submit Suggestion'}
                 </button>

@@ -4,30 +4,39 @@ export interface Location {
   city: string;
   state: string;
   country: string;
+  zipCode?: string;
   status: 'approved' | 'pending';
+  order?: number;
 }
 
 export interface Category {
   id: string;
   name: string;
+  nameRu?: string;
   slug: string;
   icon?: string;
+  order?: number;
 }
 
 export interface Group {
   id: string;
   title: string;
   description: string;
-  whatsappLink: string;
+  whatsappLink?: string;
+  whatsappLinks?: string[];
+  telegramLink?: string;
+  facebookLink?: string;
+  twitterLink?: string;
+  websiteLink?: string;
   categoryId: string;
   locationId: string;
   language?: string;
   tags?: string[];
-  status: 'approved' | 'pending' | 'rejected';
+  status: 'approved' | 'pending' | 'rejected' | 'broken';
   clicksCount: number;
   createdAt: string;
   isPinned?: boolean;
-  pinnedOrder?: number; // Lower number = higher priority
+  pinnedOrder?: number;
 }
 
 export interface Suggestion {
@@ -47,11 +56,10 @@ export interface BannerConfig {
   buttonLink?: string;
 }
 
-// Service/Professional contacts
 export interface ServiceCategory {
   id: string;
   name: string;
-  nameRu?: string; // Russian name
+  nameRu?: string;
   slug: string;
   icon: string;
   order: number;
@@ -78,4 +86,16 @@ export interface EmergencyContact {
   icon: string;
   color: string;
   order: number;
+}
+
+export interface LocationSuggestion {
+  id: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  country: string;
+  zipCode?: string;
+  suggestedBy: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
 }
