@@ -86,16 +86,16 @@ export default function EventsPage() {
       const hours = Math.floor(diff / (1000 * 60 * 60));
       
       if (hours < 1) return 'Just now';
-      if (hours < 24) return `${hours}h ago`;
+      if (hours < 24) return hours + 'h ago';
       if (hours < 48) return 'Yesterday';
       
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    } catch {
+    } catch (e) {
       return '';
     }
   };
 
-  const sources = ['all', ...Array.from(new Set(news.map(n => n.source)))];
+  const sources = ['all'].concat(Array.from(new Set(news.map(n => n.source))));
   const filteredNews = filter === 'all' ? news : news.filter(n => n.source === filter);
 
   const getSourceColor = (source: string) => {
@@ -108,14 +108,23 @@ export default function EventsPage() {
     return colors[source] || 'bg-gray-500';
   };
 
+  const getSourceBgColor = (source: string) => {
+    const colors: Record<string, string> = {
+      'COLlive': '#ef4444',
+      'CrownHeights.info': '#2563eb',
+      'Anash.org': '#16a34a',
+      'Lubavitch.com': '#9333ea',
+    };
+    return colors[source] || '#6b7280';
+  };
+
   return (
     <div className="app-container">
       <Header user={user} onLogout={handleLogout} />
       
       <main className="main-content" style={{ paddingTop: '120px', minHeight: '100vh', background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)' }}>
-        <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
           
-          {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <h1 style={{ fontSize: '2.5rem', fontWeight: '800', color: '#1e3a5f', marginBottom: '10px' }}>
               🎉 Community Events
@@ -125,7 +134,6 @@ export default function EventsPage() {
             </p>
           </div>
 
-          {/* Source Filter */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', marginBottom: '30px' }}>
             {sources.map(source => (
               <button
@@ -149,16 +157,14 @@ export default function EventsPage() {
             ))}
           </div>
 
-          {/* Loading */}
           {loading && (
             <div style={{ textAlign: 'center', padding: '60px' }}>
-              <div className="spinner" style={{ width: '50px', height: '50px', border: '4px solid #e2e8f0', borderTop: '4px solid #f59e0b', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 20px' }}></div>
+              <div style={{ width: '50px', height: '50px', border: '4px solid #e2e8f0', borderTop: '4px solid #f59e0b', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 20px' }}></div>
               <p style={{ color: '#64748b' }}>Loading events...</p>
             </div>
           )}
 
-          {/* News Grid */}
-          {!loading && (
+          {!loading && filteredNews.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '25px', marginBottom: '50px' }}>
               {filteredNews.map((item, index) => (
                 
@@ -176,16 +182,7 @@ export default function EventsPage() {
                     display: 'flex',
                     flexDirection: 'column'
                   }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-5px)';
-                    e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.15)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
-                  }}
                 >
-                  {/* Image */}
                   {item.image && (
                     <div style={{ height: '180px', overflow: 'hidden' }}>
                       <img
@@ -197,11 +194,9 @@ export default function EventsPage() {
                     </div>
                   )}
                   
-                  {/* Content */}
                   <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    {/* Source & Date */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span className={getSourceColor(item.source)} style={{ padding: '4px 12px', borderRadius: '20px', color: 'white', fontSize: '12px', fontWeight: '600' }}>
+                      <span style={{ padding: '4px 12px', borderRadius: '20px', color: 'white', fontSize: '12px', fontWeight: '600', background: getSourceBgColor(item.source) }}>
                         {item.source}
                       </span>
                       <span style={{ color: '#94a3b8', fontSize: '13px' }}>
@@ -209,19 +204,16 @@ export default function EventsPage() {
                       </span>
                     </div>
                     
-                    {/* Title */}
                     <h3 style={{ margin: '0 0 10px 0', fontSize: '17px', fontWeight: '700', color: '#1e3a5f', lineHeight: '1.4' }}>
                       {item.title}
                     </h3>
                     
-                    {/* Description */}
                     {item.description && (
                       <p style={{ margin: '0', color: '#64748b', fontSize: '14px', lineHeight: '1.5', flex: 1 }}>
                         {item.description.slice(0, 120)}{item.description.length > 120 ? '...' : ''}
                       </p>
                     )}
                     
-                    {/* Read More */}
                     <div style={{ marginTop: '15px', color: '#f59e0b', fontWeight: '600', fontSize: '14px' }}>
                       Read more →
                     </div>
@@ -231,7 +223,6 @@ export default function EventsPage() {
             </div>
           )}
 
-          {/* No Results */}
           {!loading && filteredNews.length === 0 && (
             <div style={{ textAlign: 'center', padding: '60px', background: 'white', borderRadius: '16px' }}>
               <div style={{ fontSize: '60px', marginBottom: '20px' }}>📭</div>
@@ -240,7 +231,6 @@ export default function EventsPage() {
             </div>
           )}
 
-          {/* CTA */}
           <div style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', borderRadius: '20px', padding: '40px', textAlign: 'center', marginBottom: '40px' }}>
             <h2 style={{ color: 'white', marginBottom: '15px', fontSize: '1.5rem' }}>
               📅 Looking for Event Groups?
