@@ -11,18 +11,13 @@ function getRedis() {
 export async function GET(request: NextRequest) {
   try {
     const redis = getRedis();
-    if (!redis) {
-      return NextResponse.json([]);
-    }
+    if (!redis) return NextResponse.json([]);
     
     const stored = await redis.get('groups');
     if (stored) {
       const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
-      if (Array.isArray(data)) {
-        return NextResponse.json(data);
-      }
+      if (Array.isArray(data)) return NextResponse.json(data);
     }
-    
     return NextResponse.json([]);
   } catch (error) {
     console.error('GET groups error:', error);
@@ -42,6 +37,36 @@ export async function POST(request: NextRequest) {
     if (stored) {
       groups = typeof stored === 'string' ? JSON.parse(stored) : stored;
       if (!Array.isArray(groups)) groups = [];
+    }
+    
+    // Check for duplicate title
+    const duplicateTitle = groups.find(g => 
+      g.title.toLowerCase().trim() === newGroup.title?.toLowerCase().trim()
+    );
+    if (duplicateTitle) {
+      return NextResponse.json({ 
+        error: 'A group with this title already exists', 
+        duplicate: true,
+        existingGroup: duplicateTitle.title
+      }, { status: 400 });
+    }
+    
+    // Check for duplicate WhatsApp link
+    const newLinks = newGroup.whatsappLinks || (newGroup.whatsappLink ? [newGroup.whatsappLink] : []);
+    for (const link of newLinks) {
+      if (!link) continue;
+      const cleanLink = link.replace(/[?#].*$/, '').toLowerCase();
+      const duplicateLink = groups.find(g => {
+        const existingLinks = g.whatsappLinks || (g.whatsappLink ? [g.whatsappLink] : []);
+        return existingLinks.some((l: string) => l && l.replace(/[?#].*$/, '').toLowerCase() === cleanLink);
+      });
+      if (duplicateLink) {
+        return NextResponse.json({ 
+          error: 'A group with this WhatsApp link already exists', 
+          duplicate: true,
+          existingGroup: duplicateLink.title
+        }, { status: 400 });
+      }
     }
     
     const id = String(Date.now());
