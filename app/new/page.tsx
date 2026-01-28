@@ -19,6 +19,12 @@ interface Group {
   clicksCount: number;
 }
 
+interface UserInfo {
+  name: string;
+  email: string;
+  role: 'user' | 'admin';
+}
+
 type Period = 'today' | 'yesterday' | 'week' | 'month';
 
 export default function NewGroupsPage() {
@@ -26,6 +32,30 @@ export default function NewGroupsPage() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>('week');
   const [count, setCount] = useState(0);
+  const [user, setUser] = useState<UserInfo | null>(null);
+
+  useEffect(() => {
+    // Check auth
+    const checkAuth = async () => {
+      const token = localStorage.getItem('session_token');
+      if (token) {
+        try {
+          const response = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+          const data = await response.json();
+          if (data.valid) {
+            setUser(data.user);
+          }
+        } catch (error) {
+          console.error('Auth check failed:', error);
+        }
+      }
+    };
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     fetchGroups(period);
@@ -44,6 +74,22 @@ export default function NewGroupsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogout = async () => {
+    const token = localStorage.getItem('session_token');
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    localStorage.removeItem('session_token');
+    setUser(null);
+    window.location.href = '/auth/login';
   };
 
   const getCategoryById = (id: string) => {
@@ -76,7 +122,7 @@ export default function NewGroupsPage() {
 
   return (
     <>
-      <Header />
+      <Header user={user} onLogout={handleLogout} />
       
       <main className="main">
         <div className="page-header">

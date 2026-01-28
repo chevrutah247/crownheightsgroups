@@ -1,9 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+
+interface UserInfo {
+  name: string;
+  email: string;
+  role: 'user' | 'admin';
+}
 
 export default function SubscribePage() {
   const [email, setEmail] = useState('');
@@ -12,6 +18,48 @@ export default function SubscribePage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [user, setUser] = useState<UserInfo | null>(null);
+
+  useEffect(() => {
+    // Check auth
+    const checkAuth = async () => {
+      const token = localStorage.getItem('session_token');
+      if (token) {
+        try {
+          const response = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+          const data = await response.json();
+          if (data.valid) {
+            setUser(data.user);
+            setEmail(data.user.email);
+            setName(data.user.name);
+          }
+        } catch (error) {
+          console.error('Auth check failed:', error);
+        }
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleLogout = async () => {
+    const token = localStorage.getItem('session_token');
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    localStorage.removeItem('session_token');
+    setUser(null);
+    window.location.href = '/auth/login';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +89,7 @@ export default function SubscribePage() {
 
   return (
     <>
-      <Header />
+      <Header user={user} onLogout={handleLogout} />
       
       <main className="main">
         <div style={{ 
