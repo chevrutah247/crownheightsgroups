@@ -31,7 +31,7 @@ export default function RegisterPage() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password: '770' }),
+        body: JSON.stringify({ name, email, password: '770770' }),
       });
 
       const data = await response.json();
@@ -42,13 +42,9 @@ export default function RegisterPage() {
         return;
       }
 
-      localStorage.setItem('session_token', data.token);
-      localStorage.setItem('user_email', data.user.email);
-      localStorage.setItem('user_name', data.user.name);
-      localStorage.setItem('user_role', data.user.role);
-      localStorage.removeItem('community_verified');
-
-      window.location.href = '/';
+      // Registration successful - redirect to verify page
+      localStorage.setItem('pending_email', email);
+      window.location.href = '/auth/verify';
     } catch (err) {
       setError('Network error. Please try again.');
       setLoading(false);
