@@ -14,15 +14,12 @@ function getRedis() {
   return null;
 }
 
-// This endpoint can be called by a cron job (e.g., Vercel Cron)
-// Add to vercel.json: { "crons": [{ "path": "/api/newsletter/send?secret=YOUR_SECRET", "schedule": "0 9 * * 0" }] }
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const secret = searchParams.get('secret');
     const frequency = searchParams.get('frequency') || 'weekly';
     
-    // Simple security check - in production use a proper secret
     if (secret !== process.env.CRON_SECRET && secret !== 'manual-trigger') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -32,7 +29,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
     
-    // Get subscribers for this frequency
     const subscribersStored = await redis.get('newsletter_subscribers');
     let subscribers: any[] = [];
     if (subscribersStored) {
@@ -47,14 +43,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'No subscribers for this frequency', sent: 0 });
     }
     
-    // Get new groups from the past week/day/month
     const groupsStored = await redis.get('groups');
     let groups: any[] = [];
     if (groupsStored) {
       groups = typeof groupsStored === 'string' ? JSON.parse(groupsStored) : groupsStored;
     }
     
-    // Calculate date range based on frequency
     const now = new Date();
     let startDate: Date;
     
@@ -82,64 +76,90 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'No new groups to report', sent: 0 });
     }
     
-    // Get locations for group names
     const locationsStored = await redis.get('locations');
     let locations: any[] = [];
     if (locationsStored) {
       locations = typeof locationsStored === 'string' ? JSON.parse(locationsStored) : locationsStored;
     }
     
-    // Create email content
     const periodText = frequency === 'daily' ? 'today' : frequency === 'weekly' ? 'this week' : 'this month';
     
-    const groupsHtml = newGroups.slice(0, 10).map(g => {
+    const groupsHtml = newGroups.slice(0, 10).map((g, index) => {
       const location = locations.find(l => l.id === g.locationId);
       const link = g.whatsappLinks?.[0] || g.whatsappLink || '#';
+      const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'];
+      const bgColor = colors[index % colors.length];
       return `
-        <div style="background: #f8fafc; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
-          <h3 style="margin: 0 0 5px 0; color: #1e3a5f;">${g.title}</h3>
-          <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px;">
-            ${g.description?.slice(0, 100)}${g.description?.length > 100 ? '...' : ''}
-          </p>
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #94a3b8; font-size: 13px;">📍 ${location?.neighborhood || 'Unknown'}</span>
-            <a href="${link}" style="background: #25D366; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px;">Join</a>
-          </div>
+        <div style="background: linear-gradient(135deg, ${bgColor}22 0%, ${bgColor}11 100%); border-left: 4px solid ${bgColor}; border-radius: 12px; padding: 20px; margin-bottom: 15px;">
+          <h3 style="margin: 0 0 8px 0; color: #1a1a2e; font-size: 18px; font-weight: 700;">${g.title}</h3>
+          ${g.description ? `<p style="margin: 0 0 12px 0; color: #4a4a68; font-size: 14px;">${g.description.slice(0, 100)}${g.description.length > 100 ? '...' : ''}</p>` : ''}
+          <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+            <td style="color: #6b7280; font-size: 13px;">📍 ${location?.neighborhood || 'Worldwide'}</td>
+            <td align="right"><a href="${link}" style="background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); color: white; padding: 10px 24px; border-radius: 25px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">Join Group →</a></td>
+          </tr></table>
         </div>
       `;
     }).join('');
     
     const emailHtml = `
-      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #1e3a5f; margin: 0;">🆕 New Groups ${periodText.charAt(0).toUpperCase() + periodText.slice(1)}</h1>
-          <p style="color: #64748b;">Crown Heights Groups Weekly Update</p>
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="margin: 0; padding: 0; background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);">
+        <div style="font-family: 'Segoe UI', -apple-system, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+          
+          <div style="background: white; border-radius: 20px 20px 0 0; padding: 40px 30px; text-align: center;">
+            <div style="font-size: 60px; margin-bottom: 15px;">🎉</div>
+            <h1 style="color: #1a1a2e; margin: 0 0 10px 0; font-size: 28px; font-weight: 800;">
+              ${newGroups.length} New Groups ${periodText.charAt(0).toUpperCase() + periodText.slice(1)}!
+            </h1>
+            <p style="color: #6b7280; margin: 0; font-size: 16px;">Fresh WhatsApp groups just for you</p>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px 30px; text-align: center;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+              <td align="center" style="color: white;">
+                <div style="font-size: 32px; font-weight: 800;">${newGroups.length}</div>
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">New Groups</div>
+              </td>
+              <td align="center" style="color: white;">
+                <div style="font-size: 32px; font-weight: 800;">80+</div>
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Total Groups</div>
+              </td>
+              <td align="center" style="color: white;">
+                <div style="font-size: 32px; font-weight: 800;">15+</div>
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Categories</div>
+              </td>
+            </tr></table>
+          </div>
+          
+          <div style="background: white; padding: 30px;">
+            <h2 style="color: #1a1a2e; margin: 0 0 20px 0; font-size: 20px; font-weight: 700;">🔥 Latest Groups</h2>
+            ${groupsHtml}
+            ${newGroups.length > 10 ? `<p style="text-align: center; color: #6b7280; font-size: 15px; margin: 20px 0 0 0;">... and <strong>${newGroups.length - 10}</strong> more waiting for you!</p>` : ''}
+          </div>
+          
+          <div style="background: #f8fafc; border-radius: 0 0 20px 20px; padding: 30px; text-align: center;">
+            <a href="https://crownheightsgroups.com/new" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 40px; border-radius: 30px; text-decoration: none; font-weight: 700; font-size: 16px; display: inline-block;">
+              🚀 View All New Groups
+            </a>
+            <p style="color: #9ca3af; font-size: 13px; margin: 20px 0 0 0;">
+              Browse all categories at <a href="https://crownheightsgroups.com" style="color: #667eea; text-decoration: none; font-weight: 600;">CrownHeightsGroups.com</a>
+            </p>
+          </div>
+          
+          <div style="text-align: center; padding: 30px 20px;">
+            <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 0 0 10px 0;">
+              You're receiving this because you subscribed to ${frequency} updates.
+            </p>
+            <a href="https://crownheightsgroups.com/unsubscribe" style="color: rgba(255,255,255,0.6); font-size: 12px;">Unsubscribe</a>
+          </div>
+          
         </div>
-        
-        <p style="color: #475569; margin-bottom: 20px;">
-          We found <strong>${newGroups.length}</strong> new group${newGroups.length !== 1 ? 's' : ''} ${periodText}!
-        </p>
-        
-        ${groupsHtml}
-        
-        ${newGroups.length > 10 ? `<p style="text-align: center; color: #64748b;">... and ${newGroups.length - 10} more</p>` : ''}
-        
-        <div style="text-align: center; margin-top: 30px;">
-          <a href="https://crownheightsgroups.com/new" style="background: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-            View All New Groups
-          </a>
-        </div>
-        
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-        
-        <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-          You're receiving this because you subscribed to ${frequency} updates.<br>
-          <a href="https://crownheightsgroups.com/unsubscribe" style="color: #64748b;">Unsubscribe</a>
-        </p>
-      </div>
+      </body>
+      </html>
     `;
     
-    // Send emails
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -156,13 +176,12 @@ export async function GET(request: NextRequest) {
         await transporter.sendMail({
           from: `"Crown Heights Groups" <${EMAIL_CONFIG.user}>`,
           to: subscriber.email,
-          subject: `🆕 ${newGroups.length} New Groups Added ${periodText.charAt(0).toUpperCase() + periodText.slice(1)}`,
-          html: emailHtml.replace('{{name}}', subscriber.name || 'Friend'),
+          subject: `🎉 ${newGroups.length} New Groups Added ${periodText.charAt(0).toUpperCase() + periodText.slice(1)}!`,
+          html: emailHtml,
         });
         
         sentCount++;
         
-        // Update lastSentAt
         const subIndex = subscribers.findIndex(s => s.id === subscriber.id);
         if (subIndex !== -1) {
           subscribers[subIndex].lastSentAt = new Date().toISOString();
@@ -172,7 +191,6 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Save updated subscribers
     await redis.set('newsletter_subscribers', JSON.stringify(subscribers));
     
     return NextResponse.json({ 
