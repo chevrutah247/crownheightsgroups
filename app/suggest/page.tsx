@@ -185,9 +185,9 @@ export default function SuggestPage() {
   };
 
   // Get unique values for cascading dropdowns
-  const countries = [...new Set(locations.map(l => l.country))].sort();
-  const states = [...new Set(locations.filter(l => l.country === selectedCountry).map(l => l.state))].filter(Boolean).sort();
-  const cities = [...new Set(locations.filter(l => l.country === selectedCountry && (!selectedState || l.state === selectedState)).map(l => l.city))].filter(Boolean).sort();
+  const countries = Array.from(new Set(locations.map(l => l.country))).sort();
+  const states = Array.from(new Set(locations.filter(l => l.country === selectedCountry).map(l => l.state))).filter(Boolean).sort();
+  const cities = Array.from(new Set(locations.filter(l => l.country === selectedCountry && (!selectedState || l.state === selectedState)).map(l => l.city))).filter(Boolean).sort();
   const filteredLocations = locations.filter(l => {
     if (selectedCountry && l.country !== selectedCountry) return false;
     if (selectedState && l.state !== selectedState) return false;
