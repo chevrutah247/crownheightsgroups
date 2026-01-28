@@ -5,11 +5,8 @@ export const metadata: Metadata = {
   title: "Crown Heights Groups - Community Directory",
   description: "Find and join WhatsApp groups, services, and resources in Crown Heights and beyond",
   icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/icon.svg', sizes: '32x32', type: 'image/svg+xml' },
-    ],
-    apple: '/favicon.svg',
+    icon: '/favicon.png',
+    apple: '/favicon.png',
   },
   openGraph: {
     title: 'Crown Heights Groups',
@@ -28,8 +25,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/favicon.svg" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
       </head>
       <body>
         {children}
