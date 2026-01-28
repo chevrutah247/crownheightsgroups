@@ -20,9 +20,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    // Changed: accept password from 3 characters (for 770)
+    if (password.length < 3) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
+        { error: 'Password must be at least 3 characters' },
         { status: 400 }
       );
     }
