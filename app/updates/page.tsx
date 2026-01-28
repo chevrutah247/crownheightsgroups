@@ -27,7 +27,7 @@ interface UserInfo {
 
 type Period = 'today' | 'yesterday' | 'week' | 'month';
 
-export default function NewGroupsPage() {
+export default function UpdatesPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>('week');
@@ -126,7 +126,7 @@ export default function NewGroupsPage() {
       
       <main className="main">
         <div className="page-header">
-          <h1 className="page-title">🆕 New Groups</h1>
+          <h1 className="page-title">🆕 Recent Updates</h1>
           <p className="page-subtitle">
             Recently added WhatsApp groups
           </p>

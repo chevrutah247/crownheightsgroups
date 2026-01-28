@@ -18,7 +18,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
         <nav className="nav">
           <Link href="/" className="nav-link">Home</Link>
           <Link href="/groups" className="nav-link">Groups</Link>
-          <Link href="/new" className="nav-link" style={{ color: '#10b981' }}>🆕 New</Link>
+          <Link href="/updates" className="nav-link" style={{ color: '#10b981' }}>📢 Updates</Link>
           <Link href="/events" className="nav-link" style={{ color: '#f59e0b' }}>🎉 Events</Link>
           <Link href="/services" className="nav-link">Services</Link>
           <Link href="/news" className="nav-link">News</Link>
