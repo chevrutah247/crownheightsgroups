@@ -31,7 +31,7 @@ export default function RegisterPage() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password: '770770' }),
+        body: JSON.stringify({ name, email, password: '770' }),
       });
 
       const data = await response.json();
@@ -42,8 +42,10 @@ export default function RegisterPage() {
         return;
       }
 
-      // Registration successful - redirect to verify page
-      localStorage.setItem('pending_email', email);
+      // Save email for verification page
+      sessionStorage.setItem('pendingVerification', email);
+      
+      // Redirect to verify page
       window.location.href = '/auth/verify';
     } catch (err) {
       setError('Network error. Please try again.');
