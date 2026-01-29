@@ -15,7 +15,6 @@ const partners = [
   { name: 'Custom Glass Brooklyn', url: 'https://customglassbrooklyn.com', logo: '🪟', desc: 'Glass services' },
 ];
 
-// Map display names to category slugs - will be updated dynamically
 const quickAccessItems = [
   { title: 'WhatsApp Groups', icon: '👥', color: '#25D366', href: '/groups', desc: 'All community groups', isStatic: true },
   { title: 'Services', icon: '🔧', color: '#2563eb', href: '/services', desc: 'Local professionals', isStatic: true },
@@ -26,6 +25,15 @@ const quickAccessItems = [
   { title: 'Free / Gemach', icon: '🆓', color: '#0891b2', keywords: ['free', 'gemach', 'chesed', 'volunteer'], desc: 'Free stuff & gemach' },
   { title: 'Rides', icon: '🚗', color: '#4f46e5', keywords: ['ride', 'carpool', 'travel'], desc: 'Carpool & rides' },
   { title: 'News', icon: '📰', color: '#b91c1c', href: '/news', desc: 'Community news', isStatic: true },
+];
+
+const addItems = [
+  { title: 'Add Group', icon: '👥', color: '#25D366', href: '/add/group', desc: 'WhatsApp, Telegram, FB' },
+  { title: 'Add Charity', icon: '💝', color: '#e11d48', href: '/add/charity', desc: 'Fundraising campaign' },
+  { title: 'Add Event', icon: '🎉', color: '#f59e0b', href: '/add/event', desc: 'Simcha, Shiur, Farbrengen' },
+  { title: 'Add Business', icon: '🏪', color: '#8b5cf6', href: '/add/business', desc: 'Local business listing' },
+  { title: 'Host Shabbos', icon: '🕯️', color: '#c9a227', href: '/add/shabbos', desc: 'Invite guests for Shabbat' },
+  { title: 'Post News', icon: '📰', color: '#dc2626', href: '/add/news', desc: 'Community announcement' },
 ];
 
 export default function HomePage() {
@@ -79,7 +87,6 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-  // Fetch Jewish date and Parsha
   useEffect(() => {
     const fetchJewishInfo = async () => {
       try {
@@ -99,12 +106,9 @@ export default function HomePage() {
 
   const handleLogout = () => { localStorage.clear(); window.location.href = '/auth/login'; };
 
-  // Find matching category slug for quick access items
   const getCategoryLink = (item: typeof quickAccessItems[0]): string => {
     if (item.isStatic && item.href) return item.href;
     if (!item.keywords) return '/groups';
-    
-    // Find category that matches any keyword
     for (const keyword of item.keywords) {
       const match = categories.find(c => 
         c.name.toLowerCase().includes(keyword.toLowerCase()) ||
@@ -155,9 +159,6 @@ export default function HomePage() {
                 </div>
               )}
             </div>
-            <a href="https://www.chabad.org/calendar" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '0.75rem', fontSize: '0.85rem', color: '#c9a227' }}>
-              View Full Calendar on Chabad.org →
-            </a>
           </div>
           
           {/* Stats */}
@@ -180,9 +181,38 @@ export default function HomePage() {
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
         
+        {/* ADD SECTION - NEW! */}
+        <section style={{ marginBottom: '2.5rem' }}>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', textAlign: 'center', color: '#1e3a5f' }}>
+            ➕ Share With The Community
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
+            {addItems.map(item => (
+              <Link 
+                key={item.title} 
+                href={item.href}
+                style={{ 
+                  textDecoration: 'none',
+                  display: 'block',
+                  background: item.color + '15',
+                  borderRadius: '16px',
+                  padding: '1.25rem',
+                  border: '2px solid ' + item.color + '40',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{item.icon}</div>
+                <h3 style={{ color: item.color, margin: '0 0 0.25rem 0', fontSize: '0.95rem', fontWeight: 'bold' }}>{item.title}</h3>
+                <p style={{ color: '#666', margin: 0, fontSize: '0.75rem' }}>{item.desc}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         {/* Quick Access Grid */}
         <section style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', textAlign: 'center' }}>Explore Our Community</h2>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', textAlign: 'center' }}>🔍 Explore Our Community</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
             {quickAccessItems.map(item => (
               <Link 
@@ -238,30 +268,6 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Quick Actions */}
-        <section style={{ marginBottom: '2.5rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-            <Link href="/groups" style={{ textDecoration: 'none' }}>
-              <div style={{ background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
-                <h3 style={{ margin: '0 0 0.5rem 0' }}>👥 Browse All Groups</h3>
-                <p style={{ margin: 0, opacity: 0.9, fontSize: '0.9rem' }}>Find WhatsApp, Telegram & more</p>
-              </div>
-            </Link>
-            <Link href="/services" style={{ textDecoration: 'none' }}>
-              <div style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
-                <h3 style={{ margin: '0 0 0.5rem 0' }}>🔧 Find Services</h3>
-                <p style={{ margin: 0, opacity: 0.9, fontSize: '0.9rem' }}>Local professionals & businesses</p>
-              </div>
-            </Link>
-            <Link href="/suggest" style={{ textDecoration: 'none' }}>
-              <div style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
-                <h3 style={{ margin: '0 0 0.5rem 0' }}>➕ Add a Listing</h3>
-                <p style={{ margin: 0, opacity: 0.9, fontSize: '0.9rem' }}>Submit group or service</p>
-              </div>
-            </Link>
-          </div>
-        </section>
-
         {/* Partners Section */}
         <section style={{ marginBottom: '2.5rem' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>🤝 Community Partners</h2>
@@ -281,7 +287,6 @@ export default function HomePage() {
                   padding: '1rem',
                   textDecoration: 'none',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                  transition: 'transform 0.2s',
                 }}
               >
                 <span style={{ fontSize: '2rem' }}>{partner.logo}</span>
@@ -300,28 +305,24 @@ export default function HomePage() {
             <div style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', borderRadius: '12px', padding: '1.25rem', color: 'white', textAlign: 'center' }}>
               <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📖</div>
               <div style={{ fontWeight: 'bold' }}>Weekly Parsha</div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>on Chabad.org</div>
             </div>
           </a>
           <a href="https://www.chabad.org/calendar/zmanim.htm" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
             <div style={{ background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)', borderRadius: '12px', padding: '1.25rem', color: 'white', textAlign: 'center' }}>
               <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🕐</div>
               <div style={{ fontWeight: 'bold' }}>Zmanim</div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Daily times</div>
             </div>
           </a>
           <a href="https://www.chabad.org/dailystudy" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
             <div style={{ background: 'linear-gradient(135deg, #059669 0%, #047857 100%)', borderRadius: '12px', padding: '1.25rem', color: 'white', textAlign: 'center' }}>
               <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📚</div>
               <div style={{ fontWeight: 'bold' }}>Daily Study</div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Chitas, Rambam</div>
             </div>
           </a>
           <Link href="/news" style={{ textDecoration: 'none' }}>
             <div style={{ background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', borderRadius: '12px', padding: '1.25rem', color: 'white', textAlign: 'center' }}>
               <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📰</div>
               <div style={{ fontWeight: 'bold' }}>News</div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Community updates</div>
             </div>
           </Link>
         </section>

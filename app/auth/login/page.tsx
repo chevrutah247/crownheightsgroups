@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -14,9 +15,7 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    // Check if password is 770
     if (password === '770') {
-      // Save that user passed the gate
       localStorage.setItem('community_verified', 'true');
       router.push('/auth/register');
     } else {
@@ -28,25 +27,32 @@ export default function LoginPage() {
   return (
     <div className="auth-container">
       <div className="auth-card" style={{ maxWidth: '420px' }}>
-        {/* 770 Photo */}
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div style={{ 
-            width: '200px', 
-            height: '150px', 
+            width: '220px', 
+            height: '160px', 
             margin: '0 auto 1rem',
             borderRadius: '12px',
             overflow: 'hidden',
             border: '3px solid #c9a227',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            background: '#1e3a5f',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}>
+            {!imageLoaded && <span style={{ fontSize: '4rem' }}>🏛️</span>}
             <img 
               src="/770.jpg" 
               alt="770 Eastern Parkway"
+              onLoad={() => setImageLoaded(true)}
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
               style={{ 
                 width: '100%', 
                 height: '100%', 
                 objectFit: 'cover',
-                objectPosition: 'center top'
+                objectPosition: 'center top',
+                display: imageLoaded ? 'block' : 'none'
               }}
             />
           </div>
@@ -58,19 +64,18 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Password Hint */}
         <div style={{ 
           background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', 
-          padding: '1rem', 
+          padding: '1.25rem', 
           borderRadius: '12px',
           border: '1px solid #bae6fd',
           marginBottom: '1.5rem'
         }}>
-          <div style={{ fontWeight: 'bold', color: '#0369a1', fontSize: '0.95rem', marginBottom: '0.25rem' }}>
-            🤔 What is the address of this building?
+          <div style={{ fontWeight: 'bold', color: '#0369a1', fontSize: '1rem', marginBottom: '0.5rem' }}>
+            🏠 What is the address of Chabad Headquarters on Eastern Parkway, Crown Heights?
           </div>
           <div style={{ color: '#0c4a6e', fontSize: '0.9rem' }}>
-            Enter only the number
+            Enter only the building number
           </div>
         </div>
 
