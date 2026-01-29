@@ -38,7 +38,7 @@ export default function GatePage() {
         }}>
           {!imageError ? (
             <img 
-              src="/770.jpg?v=2" 
+              src="/770-building.jpg?v=2" 
               alt="770 Eastern Parkway"
               onError={() => setImageError(true)}
               style={{ 
