@@ -13,7 +13,7 @@ export default function GatePage() {
     e.preventDefault();
     if (code === '770') {
       document.cookie = 'gate_passed=true; path=/; max-age=2592000';
-      router.push('/auth/login');
+      router.push('/auth/register');
     } else {
       setError('Incorrect answer. Hint: The famous address!');
       setCode('');
