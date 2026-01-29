@@ -45,7 +45,7 @@ export default function LoginPage() {
           }}>
             {!imageError ? (
               <img 
-                src="/770.jpg" 
+                src="/770.jpg?v=2" 
                 alt="770 Eastern Parkway"
                 onError={() => setImageError(true)}
                 style={{ 
