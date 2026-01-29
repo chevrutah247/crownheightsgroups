@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,7 +19,7 @@ export default function LoginPage() {
       localStorage.setItem('community_verified', 'true');
       router.push('/auth/register');
     } else {
-      setError('Incorrect answer. Try again!');
+      setError('Incorrect answer. Hint: The famous address!');
       setLoading(false);
     }
   };
@@ -27,9 +28,11 @@ export default function LoginPage() {
     <div className="auth-container">
       <div className="auth-card" style={{ maxWidth: '420px' }}>
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          {/* 770 Image with fallback */}
           <div style={{ 
-            width: '220px', 
-            height: '160px', 
+            width: '100%', 
+            maxWidth: '300px',
+            height: '180px', 
             margin: '0 auto 1rem',
             borderRadius: '12px',
             overflow: 'hidden',
@@ -38,46 +41,32 @@ export default function LoginPage() {
             background: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative'
+            justifyContent: 'center'
           }}>
-            <img 
-              src="/770.jpg" 
-              alt="770 Eastern Parkway"
-              onError={(e) => { 
-                e.currentTarget.style.display = 'none';
-                const parent = e.currentTarget.parentElement;
-                if (parent) {
-                  const fallback = parent.querySelector('.fallback-icon') as HTMLElement;
-                  if (fallback) fallback.style.display = 'flex';
-                }
-              }}
-              style={{ 
-                width: '100%', 
-                height: '100%', 
-                objectFit: 'cover',
-                objectPosition: 'center top'
-              }}
-            />
-            <div 
-              className="fallback-icon"
-              style={{ 
-                display: 'none',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'column',
-                color: 'white'
-              }}
-            >
-              <span style={{ fontSize: '4rem' }}>🏛️</span>
-              <span style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>770 Eastern Parkway</span>
-            </div>
+            {!imageError ? (
+              <img 
+                src="/770.jpg" 
+                alt="770 Eastern Parkway"
+                onError={() => setImageError(true)}
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'cover'
+                }}
+              />
+            ) : (
+              <div style={{ 
+                textAlign: 'center',
+                color: 'white',
+                padding: '1rem'
+              }}>
+                <div style={{ fontSize: '4rem', marginBottom: '0.5rem' }}>🏛️</div>
+                <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>770 Eastern Parkway</div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Chabad World Headquarters</div>
+              </div>
+            )}
           </div>
+          
           <h1 style={{ color: '#1e3a5f', marginBottom: '0.25rem', fontSize: '1.75rem' }}>
             Crown Heights Groups
           </h1>
@@ -142,14 +131,13 @@ export default function LoginPage() {
             style={{
               width: '100%',
               padding: '1rem',
-              background: '#2563eb',
+              background: loading ? '#94a3b8' : '#2563eb',
               color: 'white',
               border: 'none',
               borderRadius: '12px',
               fontSize: '1.1rem',
               fontWeight: 'bold',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1
+              cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
             {loading ? 'Checking...' : 'Enter Community'}
