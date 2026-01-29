@@ -20,6 +20,8 @@ interface Campaign {
   refereeRole?: string;
   status: string;
   createdAt: string;
+  likes?: number;
+  likedBy?: string[];
 }
 
 export default function CharityPage() {
@@ -29,6 +31,7 @@ export default function CharityPage() {
   const [archived, setArchived] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('session_token');
@@ -67,6 +70,49 @@ export default function CharityPage() {
     return days > 0 ? days : 0;
   };
 
+  const handleLike = async (campaignId: string) => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch('/api/charity/like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignId, userEmail: user.email })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCampaigns(prev => prev.map(c => 
+          c.id === campaignId ? { ...c, likes: data.likes, likedBy: data.likedBy } : c
+        ));
+      }
+    } catch (err) {
+      console.error('Like failed:', err);
+    }
+  };
+
+  const shareViaEmail = (campaign: Campaign) => {
+    const subject = encodeURIComponent(`Help Support: ${campaign.campaignName}`);
+    const body = encodeURIComponent(`I wanted to share this important fundraising campaign with you:\n\n${campaign.campaignName}\n\n${campaign.description.slice(0, 200)}...\n\nGoal: $${campaign.goalAmount.toLocaleString()}\n\nDonate here: ${campaign.websiteLink || campaign.whatsappLink || window.location.href}`);
+    window.open(`mailto:?subject=${subject}&body=${body}`);
+  };
+
+  const shareViaWhatsApp = (campaign: Campaign) => {
+    const text = encodeURIComponent(`💝 *${campaign.campaignName}*\n\n${campaign.description.slice(0, 150)}...\n\n🎯 Goal: $${campaign.goalAmount.toLocaleString()}\n\n👉 Donate: ${campaign.websiteLink || campaign.whatsappLink || window.location.href}`);
+    window.open(`https://wa.me/?text=${text}`);
+  };
+
+  const copyLink = (campaign: Campaign) => {
+    const link = campaign.websiteLink || `${window.location.origin}/charity#${campaign.id}`;
+    navigator.clipboard.writeText(link);
+    setCopiedId(campaign.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const isLikedByUser = (campaign: Campaign) => {
+    return user && campaign.likedBy?.includes(user.email);
+  };
+
   const displayCampaigns = showArchived ? archived : campaigns;
 
   return (
@@ -77,6 +123,9 @@ export default function CharityPage() {
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <h1 style={{ fontSize: '2rem', color: '#e11d48', marginBottom: '0.5rem' }}>💝 Charity Campaigns</h1>
             <p style={{ color: '#666' }}>Help families and individuals in our community</p>
+            <p style={{ color: '#e11d48', fontSize: '1.25rem', fontWeight: 'bold', marginTop: '0.5rem' }}>
+              {campaigns.length} Active Campaign{campaigns.length !== 1 ? 's' : ''}
+            </p>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
@@ -107,7 +156,7 @@ export default function CharityPage() {
                 cursor: 'pointer'
               }}
             >
-              {showArchived ? '← Active Campaigns' : '📁 View Archive'}
+              {showArchived ? '← Active Campaigns' : '📁 View Archive (' + archived.length + ')'}
             </button>
           </div>
 
@@ -130,6 +179,7 @@ export default function CharityPage() {
               {displayCampaigns.map(campaign => (
                 <div
                   key={campaign.id}
+                  id={campaign.id}
                   style={{
                     background: 'white',
                     borderRadius: '16px',
@@ -184,7 +234,8 @@ export default function CharityPage() {
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      {/* Action Buttons */}
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                         {campaign.websiteLink && (
                           <a
                             href={campaign.websiteLink}
@@ -225,6 +276,79 @@ export default function CharityPage() {
                             📱 WhatsApp
                           </a>
                         )}
+                      </div>
+
+                      {/* Like & Share Section */}
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        paddingTop: '1rem',
+                        borderTop: '1px solid #f1f5f9'
+                      }}>
+                        {/* Like Button */}
+                        <button
+                          onClick={() => handleLike(campaign.id)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.5rem 1rem',
+                            background: isLikedByUser(campaign) ? '#fee2e2' : '#f1f5f9',
+                            border: 'none',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            color: isLikedByUser(campaign) ? '#e11d48' : '#666'
+                          }}
+                        >
+                          {isLikedByUser(campaign) ? '❤️' : '🤍'} {campaign.likes || 0}
+                        </button>
+
+                        {/* Share Buttons */}
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            onClick={() => shareViaEmail(campaign)}
+                            title="Share via Email"
+                            style={{
+                              padding: '0.5rem',
+                              background: '#f1f5f9',
+                              border: 'none',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '1.2rem'
+                            }}
+                          >
+                            📧
+                          </button>
+                          <button
+                            onClick={() => shareViaWhatsApp(campaign)}
+                            title="Share via WhatsApp"
+                            style={{
+                              padding: '0.5rem',
+                              background: '#dcfce7',
+                              border: 'none',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '1.2rem'
+                            }}
+                          >
+                            💬
+                          </button>
+                          <button
+                            onClick={() => copyLink(campaign)}
+                            title="Copy Link"
+                            style={{
+                              padding: '0.5rem',
+                              background: copiedId === campaign.id ? '#dcfce7' : '#f1f5f9',
+                              border: 'none',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '1.2rem'
+                            }}
+                          >
+                            {copiedId === campaign.id ? '✅' : '🔗'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

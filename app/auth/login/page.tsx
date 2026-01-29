@@ -7,7 +7,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,25 +35,48 @@ export default function LoginPage() {
             overflow: 'hidden',
             border: '3px solid #c9a227',
             boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-            background: '#1e3a5f',
+            background: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            position: 'relative'
           }}>
-            {!imageLoaded && <span style={{ fontSize: '4rem' }}>🏛️</span>}
             <img 
               src="/770.jpg" 
               alt="770 Eastern Parkway"
-              onLoad={() => setImageLoaded(true)}
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              onError={(e) => { 
+                e.currentTarget.style.display = 'none';
+                const parent = e.currentTarget.parentElement;
+                if (parent) {
+                  const fallback = parent.querySelector('.fallback-icon') as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }
+              }}
               style={{ 
                 width: '100%', 
                 height: '100%', 
                 objectFit: 'cover',
-                objectPosition: 'center top',
-                display: imageLoaded ? 'block' : 'none'
+                objectPosition: 'center top'
               }}
             />
+            <div 
+              className="fallback-icon"
+              style={{ 
+                display: 'none',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                color: 'white'
+              }}
+            >
+              <span style={{ fontSize: '4rem' }}>🏛️</span>
+              <span style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>770 Eastern Parkway</span>
+            </div>
           </div>
           <h1 style={{ color: '#1e3a5f', marginBottom: '0.25rem', fontSize: '1.75rem' }}>
             Crown Heights Groups
@@ -72,7 +94,7 @@ export default function LoginPage() {
           marginBottom: '1.5rem'
         }}>
           <div style={{ fontWeight: 'bold', color: '#0369a1', fontSize: '1rem', marginBottom: '0.5rem' }}>
-            🏠 What is the address of Chabad Headquarters on Eastern Parkway, Crown Heights?
+            🏠 What is the address of Chabad World Headquarters on Eastern Parkway?
           </div>
           <div style={{ color: '#0c4a6e', fontSize: '0.9rem' }}>
             Enter only the building number
@@ -130,7 +152,7 @@ export default function LoginPage() {
               opacity: loading ? 0.7 : 1
             }}
           >
-            {loading ? 'Checking...' : 'Enter'}
+            {loading ? 'Checking...' : 'Enter Community'}
           </button>
         </form>
 

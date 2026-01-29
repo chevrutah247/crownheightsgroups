@@ -21,7 +21,7 @@ const quickAccessItems = [
   { title: 'Jobs', icon: '💼', color: '#7c3aed', keywords: ['job', 'business', 'career', 'work'], desc: 'Job listings & career' },
   { title: 'Housing', icon: '🏠', color: '#ea580c', keywords: ['real estate', 'housing', 'apartment', 'rent'], desc: 'Apartments & rooms' },
   { title: 'Buy & Sell', icon: '🛒', color: '#16a34a', keywords: ['buy', 'sell', 'marketplace', 'sale'], desc: 'Marketplace' },
-  { title: 'Events', icon: '📅', color: '#dc2626', keywords: ['event', 'shiur', 'class'], desc: 'Community events' },
+  { title: 'Events', icon: '📅', color: '#dc2626', href: '/events', desc: 'Community events', isStatic: true },
   { title: 'Free / Gemach', icon: '🆓', color: '#0891b2', keywords: ['free', 'gemach', 'chesed', 'volunteer'], desc: 'Free stuff & gemach' },
   { title: 'Rides', icon: '🚗', color: '#4f46e5', keywords: ['ride', 'carpool', 'travel'], desc: 'Carpool & rides' },
   { title: 'News', icon: '📰', color: '#b91c1c', href: '/news', desc: 'Community news', isStatic: true },
@@ -41,7 +41,7 @@ const SUPERADMIN_EMAIL = 'chevrutah24x7@gmail.com';
 export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<UserInfo | null>(null);
-  const [stats, setStats] = useState({ groups: 0, services: 0, users: 0 });
+  const [stats, setStats] = useState({ groups: 0, services: 0, users: 0, businesses: 0 });
   const [categories, setCategories] = useState<Category[]>([]);
   const [jewishDate, setJewishDate] = useState<string>('');
   const [parsha, setParsha] = useState<string>('');
@@ -66,22 +66,25 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [groupsRes, servicesRes, usersRes, catsRes] = await Promise.all([
+        const [groupsRes, servicesRes, usersRes, catsRes, bizRes] = await Promise.all([
           fetch('/api/admin/groups'),
           fetch('/api/admin/services'),
           fetch('/api/admin/users'),
-          fetch('/api/admin/group-categories')
+          fetch('/api/admin/group-categories'),
+          fetch('/api/business')
         ]);
         const groups = await groupsRes.json();
         const services = await servicesRes.json();
         const users = await usersRes.json();
         const cats = await catsRes.json();
+        const businesses = await bizRes.json();
         
         const approvedGroups = Array.isArray(groups) ? groups.filter((g: any) => g.status === 'approved') : [];
         setStats({
           groups: approvedGroups.length,
           services: Array.isArray(services) ? services.length : 0,
-          users: Array.isArray(users) ? users.length : 0
+          users: Array.isArray(users) ? users.length : 0,
+          businesses: Array.isArray(businesses) ? businesses.length : 0
         });
         
         if (Array.isArray(cats)) setCategories(cats);
@@ -165,18 +168,22 @@ export default function HomePage() {
             </div>
           </div>
           
-          {/* Stats - Groups & Services visible to all, Users only for superadmin */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '0.75rem 1.5rem', borderRadius: '12px' }}>
+          {/* Stats - visible to all except users count */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '0.75rem 1.25rem', borderRadius: '12px' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.groups}</div>
               <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Groups</div>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '0.75rem 1.5rem', borderRadius: '12px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '0.75rem 1.25rem', borderRadius: '12px' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.services}</div>
               <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Services</div>
             </div>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '0.75rem 1.25rem', borderRadius: '12px' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.businesses}</div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Businesses</div>
+            </div>
             {isSuperAdmin && (
-              <div style={{ background: 'rgba(255,255,255,0.15)', padding: '0.75rem 1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.3)' }}>
+              <div style={{ background: 'rgba(255,255,255,0.2)', padding: '0.75rem 1.25rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.3)' }}>
                 <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.users}</div>
                 <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>👑 Members</div>
               </div>
