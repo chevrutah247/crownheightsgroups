@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ShareButtons from '@/components/ShareButtons';
 
 interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
 interface Event {
@@ -118,7 +119,6 @@ export default function EventsPage() {
             </Link>
           </div>
 
-          {/* Filter */}
           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem' }}>
             {eventTypes.map(type => (
               <button
@@ -160,104 +160,79 @@ export default function EventsPage() {
                     borderRadius: '16px',
                     overflow: 'hidden',
                     boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-                    border: '1px solid #fef3c7',
-                    display: 'flex',
-                    flexDirection: event.imageUrl ? 'row' : 'column'
+                    border: '1px solid #fef3c7'
                   }}
                 >
-                  {event.imageUrl && (
-                    <div style={{ 
-                      width: '200px',
-                      minHeight: '150px',
-                      backgroundImage: `url(${event.imageUrl})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      flexShrink: 0
-                    }} />
-                  )}
-                  <div style={{ padding: '1.5rem', flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
-                      <div>
-                        <span style={{
-                          display: 'inline-block',
-                          background: '#fef3c7',
-                          color: '#92400e',
-                          padding: '0.25rem 0.75rem',
-                          borderRadius: '20px',
-                          fontSize: '0.8rem',
-                          marginBottom: '0.5rem'
-                        }}>
-                          {eventTypeLabels[event.eventType]?.icon} {eventTypeLabels[event.eventType]?.name || event.eventType}
-                        </span>
-                        <h2 style={{ margin: 0, color: '#1e3a5f', fontSize: '1.25rem' }}>{event.title}</h2>
+                  <div style={{ display: 'flex', flexDirection: event.imageUrl ? 'row' : 'column' }}>
+                    {event.imageUrl && (
+                      <div style={{ 
+                        width: '200px',
+                        minHeight: '150px',
+                        backgroundImage: `url(${event.imageUrl})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        flexShrink: 0
+                      }} />
+                    )}
+                    <div style={{ padding: '1.5rem', flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
+                        <div>
+                          <span style={{
+                            display: 'inline-block',
+                            background: '#fef3c7',
+                            color: '#92400e',
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '20px',
+                            fontSize: '0.8rem',
+                            marginBottom: '0.5rem'
+                          }}>
+                            {eventTypeLabels[event.eventType]?.icon} {eventTypeLabels[event.eventType]?.name || event.eventType}
+                          </span>
+                          <h2 style={{ margin: 0, color: '#1e3a5f', fontSize: '1.25rem' }}>{event.title}</h2>
+                        </div>
+                        {event.date && (
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontWeight: 'bold', color: '#f59e0b' }}>{formatDate(event.date)}</div>
+                            {event.time && <div style={{ fontSize: '0.85rem', color: '#666' }}>{formatTime(event.time)}</div>}
+                          </div>
+                        )}
                       </div>
-                      {event.date && (
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 'bold', color: '#f59e0b' }}>{formatDate(event.date)}</div>
-                          {event.time && <div style={{ fontSize: '0.85rem', color: '#666' }}>{formatTime(event.time)}</div>}
+
+                      <p style={{ color: '#666', marginBottom: '1rem', lineHeight: '1.5' }}>
+                        {event.description.length > 200 ? event.description.slice(0, 200) + '...' : event.description}
+                      </p>
+
+                      {event.address && (
+                        <div style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '0.5rem' }}>
+                          📍 {event.address}
                         </div>
                       )}
-                    </div>
 
-                    <p style={{ color: '#666', marginBottom: '1rem', lineHeight: '1.5' }}>
-                      {event.description.length > 200 ? event.description.slice(0, 200) + '...' : event.description}
-                    </p>
-
-                    {event.address && (
-                      <div style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '0.5rem' }}>
-                        📍 {event.address}
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                        {event.link && (
+                          <a href={event.link} target="_blank" rel="noopener noreferrer" style={{ padding: '0.5rem 1rem', background: '#f59e0b', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                            🔗 More Info
+                          </a>
+                        )}
+                        {event.contactPhone && (
+                          <a href={`tel:${event.contactPhone}`} style={{ padding: '0.5rem 1rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem' }}>
+                            📞 Call
+                          </a>
+                        )}
+                        {event.contactEmail && (
+                          <a href={`mailto:${event.contactEmail}`} style={{ padding: '0.5rem 1rem', background: '#2563eb', color: 'white', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem' }}>
+                            ✉️ Email
+                          </a>
+                        )}
                       </div>
-                    )}
 
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
-                      {event.link && (
-                        <a
-                          href={event.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            padding: '0.5rem 1rem',
-                            background: '#f59e0b',
-                            color: 'white',
-                            borderRadius: '8px',
-                            textDecoration: 'none',
-                            fontSize: '0.85rem',
-                            fontWeight: 'bold'
-                          }}
-                        >
-                          🔗 More Info
-                        </a>
-                      )}
-                      {event.contactPhone && (
-                        <a
-                          href={`tel:${event.contactPhone}`}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            background: '#25D366',
-                            color: 'white',
-                            borderRadius: '8px',
-                            textDecoration: 'none',
-                            fontSize: '0.85rem'
-                          }}
-                        >
-                          📞 Call
-                        </a>
-                      )}
-                      {event.contactEmail && (
-                        <a
-                          href={`mailto:${event.contactEmail}`}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            background: '#2563eb',
-                            color: 'white',
-                            borderRadius: '8px',
-                            textDecoration: 'none',
-                            fontSize: '0.85rem'
-                          }}
-                        >
-                          ✉️ Email
-                        </a>
-                      )}
+                      <div style={{ paddingTop: '0.75rem', borderTop: '1px solid #f1f5f9' }}>
+                        <ShareButtons 
+                          title={event.title} 
+                          description={`${event.date ? formatDate(event.date) : ''} ${event.time ? formatTime(event.time) : ''} - ${event.description}`} 
+                          url={event.link || `https://crownheightsgroups.com/events`}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

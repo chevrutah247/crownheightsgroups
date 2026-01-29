@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ShareButtons from '@/components/ShareButtons';
 
 interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
 interface Hosting {
@@ -20,7 +21,6 @@ interface Hosting {
   dietary?: string;
   status: string;
   createdAt: string;
-  hebrewDate?: string;
 }
 
 export default function ShabbosPage() {
@@ -51,7 +51,6 @@ export default function ShabbosPage() {
         const active = Array.isArray(data) ? data.filter((h: Hosting) => h.status === 'active') : [];
         setHostings(active);
         
-        // Fetch Hebrew dates for each hosting
         active.forEach((h: Hosting) => {
           if (h.shabbosDate) {
             const date = new Date(h.shabbosDate);
@@ -94,6 +93,9 @@ export default function ShabbosPage() {
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <h1 style={{ fontSize: '2rem', color: '#c9a227', marginBottom: '0.5rem' }}>🕯️ Shabbos Hospitality</h1>
             <p style={{ color: '#666' }}>Find hosts or invite guests for Shabbos meals</p>
+            <p style={{ color: '#c9a227', fontSize: '1.25rem', fontWeight: 'bold', marginTop: '0.5rem' }}>
+              {hostings.length} Host{hostings.length !== 1 ? 's' : ''} Available
+            </p>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
@@ -210,7 +212,7 @@ export default function ShabbosPage() {
                     <p style={{ color: '#666', marginBottom: '1rem' }}>{hosting.description}</p>
                   )}
 
-                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                     {hosting.phone && (
                       <a
                         href={`tel:${hosting.phone}`}
@@ -247,6 +249,14 @@ export default function ShabbosPage() {
                         ✉️ Email
                       </a>
                     )}
+                  </div>
+
+                  <div style={{ paddingTop: '0.75rem', borderTop: '1px solid #f1f5f9' }}>
+                    <ShareButtons 
+                      title={`Shabbos Hosting by ${hosting.hostName}`} 
+                      description={`${formatDate(hosting.shabbosDate)} - ${hosting.meals.map(m => getMealLabel(m)).join(', ')}. ${hosting.description || ''}`} 
+                      url={`https://crownheightsgroups.com/shabbos`}
+                    />
                   </div>
                 </div>
               ))}

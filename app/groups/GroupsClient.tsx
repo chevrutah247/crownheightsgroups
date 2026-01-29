@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EmergencyBar from '@/components/EmergencyBar';
+import ShareButtons from '@/components/ShareButtons';
 
 interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
 interface Category { id: string; name: string; icon: string; slug: string; order?: number; }
@@ -30,7 +31,6 @@ export default function GroupsClient() {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'popular' | 'alpha'>('popular');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -72,42 +72,23 @@ export default function GroupsClient() {
 
   useEffect(() => {
     let result = [...allGroups];
-    
-    // Filter by location
-    if (selectedLocation) {
-      result = result.filter(g => g.locationId === selectedLocation);
-    }
-    
-    // Filter by category
-    if (selectedCategory) {
-      result = result.filter(g => g.categoryId === selectedCategory);
-    }
-    
-    // Improved search - search in title first, then check category name
+    if (selectedLocation) result = result.filter(g => g.locationId === selectedLocation);
+    if (selectedCategory) result = result.filter(g => g.categoryId === selectedCategory);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       const words = q.split(/\s+/);
-      
       result = result.filter(g => {
         const title = g.title.toLowerCase();
         const cat = categories.find(c => c.id === g.categoryId);
         const catName = cat?.name?.toLowerCase() || '';
-        
-        // Check if ALL search words match in title OR category name
-        return words.every(word => 
-          title.includes(word) || catName.includes(word)
-        );
+        return words.every(word => title.includes(word) || catName.includes(word));
       });
     }
-    
-    // Sort: pinned first, then by selected sort
     const pinned = result.filter(g => g.isPinned).sort((a, b) => ((a as any).pinnedOrder || 0) - ((b as any).pinnedOrder || 0));
     const regular = result.filter(g => !g.isPinned);
-    
     if (sortBy === 'popular') regular.sort((a, b) => b.clicksCount - a.clicksCount);
     else if (sortBy === 'date') regular.sort((a, b) => new Date((b as any).createdAt || 0).getTime() - new Date((a as any).createdAt || 0).getTime());
     else regular.sort((a, b) => a.title.localeCompare(b.title));
-    
     setFilteredGroups([...pinned, ...regular]);
   }, [allGroups, categories, selectedLocation, selectedCategory, searchQuery, sortBy]);
 
@@ -121,20 +102,6 @@ export default function GroupsClient() {
       links.push(group.whatsappLink);
     }
     return links;
-  };
-  
-  const handleCopy = async (group: Group) => {
-    const links = getWhatsAppLinks(group);
-    const cat = categories.find(c => c.id === group.categoryId);
-    let text = group.title + '\n' + (cat?.icon || '') + ' ' + (cat?.name || '') + '\n' + group.description + '\n\n';
-    if (links.length) text += 'WhatsApp: ' + links.join(', ') + '\n';
-    if (group.telegramLink) text += 'Telegram: ' + group.telegramLink + '\n';
-    if (group.facebookLink) text += 'Facebook: ' + group.facebookLink + '\n';
-    if (group.websiteLink) text += 'Website: ' + group.websiteLink + '\n';
-    text += '\nMore at: https://crownheightsgroups.com';
-    await navigator.clipboard.writeText(text);
-    setCopiedId(group.id);
-    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const getCat = (id: string) => categories.find(c => c.id === id);
@@ -159,18 +126,8 @@ export default function GroupsClient() {
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <input 
-            type="text" 
-            placeholder="🔍 Search by group name or category..." 
-            value={searchQuery} 
-            onChange={e => setSearchQuery(e.target.value)} 
-            style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid #ddd', fontSize: '1rem', boxSizing: 'border-box' }} 
-          />
-          {searchQuery && (
-            <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#666' }}>
-              Searching for "{searchQuery}" in group names and categories
-            </div>
-          )}
+          <input type="text" placeholder="🔍 Search by group name or category..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid #ddd', fontSize: '1rem', boxSizing: 'border-box' }} />
+          {searchQuery && <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#666' }}>Searching for "{searchQuery}" in group names and categories</div>}
         </div>
 
         <div style={{ marginBottom: '1rem' }}>
@@ -243,9 +200,13 @@ export default function GroupsClient() {
                     )}
                   </div>
                   
-                  <button onClick={() => handleCopy(group)} style={{ width: '100%', padding: '0.5rem', background: copiedId === group.id ? '#10b981' : '#f3f4f6', color: copiedId === group.id ? 'white' : '#666', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
-                    {copiedId === group.id ? '✓ Copied!' : '📋 Copy & Share'}
-                  </button>
+                  <div style={{ paddingTop: '0.75rem', borderTop: '1px solid #f1f5f9' }}>
+                    <ShareButtons 
+                      title={group.title} 
+                      description={group.description || ''} 
+                      url={`https://crownheightsgroups.com/groups?search=${encodeURIComponent(group.title)}`}
+                    />
+                  </div>
                 </div>
               );
             })}

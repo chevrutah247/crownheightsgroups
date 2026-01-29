@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ShareButtons from '@/components/ShareButtons';
 
 interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
 interface Business {
@@ -97,6 +98,9 @@ export default function BusinessPage() {
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <h1 style={{ fontSize: '2rem', color: '#8b5cf6', marginBottom: '0.5rem' }}>🏪 Business Directory</h1>
             <p style={{ color: '#666' }}>Support local Jewish-owned businesses</p>
+            <p style={{ color: '#8b5cf6', fontSize: '1.25rem', fontWeight: 'bold', marginTop: '0.5rem' }}>
+              {businesses.length} Business{businesses.length !== 1 ? 'es' : ''} Listed
+            </p>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -118,7 +122,6 @@ export default function BusinessPage() {
             </Link>
           </div>
 
-          {/* Search */}
           <div style={{ marginBottom: '1.5rem' }}>
             <input
               type="text"
@@ -138,7 +141,6 @@ export default function BusinessPage() {
             />
           </div>
 
-          {/* Category Filter */}
           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem' }}>
             {categories.map(cat => (
               <button
@@ -250,85 +252,35 @@ export default function BusinessPage() {
                       </div>
                     )}
 
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                       {business.phone && (
-                        <a
-                          href={`tel:${business.phone}`}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            padding: '0.5rem 0.75rem',
-                            background: '#25D366',
-                            color: 'white',
-                            borderRadius: '6px',
-                            textDecoration: 'none',
-                            fontSize: '0.85rem'
-                          }}
-                        >
+                        <a href={`tel:${business.phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.5rem 0.75rem', background: '#25D366', color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.85rem' }}>
                           📞 Call
                         </a>
                       )}
                       {business.website && (
-                        <a
-                          href={business.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            padding: '0.5rem 0.75rem',
-                            background: '#2563eb',
-                            color: 'white',
-                            borderRadius: '6px',
-                            textDecoration: 'none',
-                            fontSize: '0.85rem'
-                          }}
-                        >
+                        <a href={business.website} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.5rem 0.75rem', background: '#2563eb', color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.85rem' }}>
                           🌐 Website
                         </a>
                       )}
                       {business.instagram && (
-                        <a
-                          href={`https://instagram.com/${business.instagram.replace('@', '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            padding: '0.5rem 0.75rem',
-                            background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
-                            color: 'white',
-                            borderRadius: '6px',
-                            textDecoration: 'none',
-                            fontSize: '0.85rem'
-                          }}
-                        >
-                          📸 Instagram
+                        <a href={`https://instagram.com/${business.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.5rem 0.75rem', background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.85rem' }}>
+                          📸 IG
                         </a>
                       )}
                       {business.whatsapp && (
-                        <a
-                          href={business.whatsapp}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            padding: '0.5rem 0.75rem',
-                            background: '#25D366',
-                            color: 'white',
-                            borderRadius: '6px',
-                            textDecoration: 'none',
-                            fontSize: '0.85rem'
-                          }}
-                        >
-                          💬 WhatsApp
+                        <a href={business.whatsapp} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.5rem 0.75rem', background: '#25D366', color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '0.85rem' }}>
+                          💬 WA
                         </a>
                       )}
+                    </div>
+
+                    <div style={{ paddingTop: '0.75rem', borderTop: '1px solid #f1f5f9' }}>
+                      <ShareButtons 
+                        title={business.businessName} 
+                        description={business.description} 
+                        url={`https://crownheightsgroups.com/business?search=${encodeURIComponent(business.businessName)}`}
+                      />
                     </div>
                   </div>
                 </div>
