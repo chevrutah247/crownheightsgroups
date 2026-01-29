@@ -62,7 +62,6 @@ export async function GET() {
       { url: 'https://anash.org/feed/', source: 'Anash.org', category: 'community' },
       { url: 'https://collive.com/feed/', source: 'COLlive', category: 'community' },
       { url: 'https://crownheights.info/feed/', source: 'CrownHeights.info', category: 'community' },
-      { url: 'https://www.lubavitch.com/feed/', source: 'Lubavitch.com', category: 'community' },
       { url: 'https://www.chabad.org/tools/rss/magazine_rss.xml', source: 'Chabad.org', category: 'religious' },
       { url: 'https://www.jpost.com/rss/rssfeedsfrontpage.aspx', source: 'Jerusalem Post', category: 'world' },
     ];
