@@ -3,6 +3,13 @@ import { Redis } from '@upstash/redis';
 
 export const dynamic = 'force-dynamic';
 
+interface Campaign {
+  id: string;
+  likes?: number;
+  likedBy?: string[];
+  [key: string]: any;
+}
+
 function getRedis() {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
@@ -22,21 +29,19 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await redis.get('charity_campaigns');
-    let campaigns = data ? (typeof data === 'string' ? JSON.parse(data) : data) : [];
+    let campaigns: Campaign[] = data ? (typeof data === 'string' ? JSON.parse(data) : data) : [];
 
-    let updatedCampaign = null;
+    let updatedCampaign: Campaign | null = null;
 
-    campaigns = campaigns.map((c: any) => {
+    campaigns = campaigns.map((c: Campaign) => {
       if (c.id === campaignId) {
         const likedBy = c.likedBy || [];
         const alreadyLiked = likedBy.includes(userEmail);
         
         if (alreadyLiked) {
-          // Unlike
           c.likedBy = likedBy.filter((e: string) => e !== userEmail);
           c.likes = Math.max(0, (c.likes || 1) - 1);
         } else {
-          // Like
           c.likedBy = [...likedBy, userEmail];
           c.likes = (c.likes || 0) + 1;
         }
