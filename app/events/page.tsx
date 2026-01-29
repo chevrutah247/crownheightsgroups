@@ -84,7 +84,7 @@ export default function EventsPage() {
     ? events 
     : events.filter(e => e.eventType === filter);
 
-  const eventTypes = ['all', ...new Set(events.map(e => e.eventType))];
+  const eventTypes = ['all', ...Array.from(new Set(events.map(e => e.eventType)))];
 
   return (
     <div>
