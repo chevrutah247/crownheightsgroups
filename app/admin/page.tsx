@@ -616,18 +616,34 @@ export default function AdminPage() {
 
       {/* Location Modal */}
       {showLocationModal && editingLocation && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '400px' }}>
-            <h2>{isNewLocation ? 'Add' : 'Edit'} Location</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-              <div><label style={labelStyle}>Neighborhood *</label><input style={inputStyle} value={editingLocation.neighborhood} onChange={e => setEditingLocation({ ...editingLocation, neighborhood: e.target.value })} /></div>
-              <div><label style={labelStyle}>City</label><input style={inputStyle} value={editingLocation.city} onChange={e => setEditingLocation({ ...editingLocation, city: e.target.value })} /></div>
-              <div><label style={labelStyle}>State</label><input style={inputStyle} value={editingLocation.state} onChange={e => setEditingLocation({ ...editingLocation, state: e.target.value })} /></div>
-              <div><label style={labelStyle}>Country</label><input style={inputStyle} value={editingLocation.country} onChange={e => setEditingLocation({ ...editingLocation, country: e.target.value })} /></div>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: "white", borderRadius: "12px", padding: "2rem", width: "90%", maxWidth: "450px" }}>
+            <h2>{isNewLocation ? "Add" : "Edit"} Location</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "1rem" }}>
+              <div style={{ background: "#f0f9ff", padding: "1rem", borderRadius: "8px", border: "1px solid #bae6fd" }}>
+                <label style={labelStyle}>🔍 ZIP Code (auto-fill)</label>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <input style={{ ...inputStyle, flex: 1 }} placeholder="e.g. 11213" id="zip-lookup" />
+                  <button type="button" onClick={async () => {
+                    const zip = (document.getElementById("zip-lookup") as HTMLInputElement)?.value;
+                    if (!zip) return alert("Enter ZIP code");
+                    try {
+                      const r = await fetch("/api/lookup-zip?zip=" + zip);
+                      const d = await r.json();
+                      if (d.error) return alert(d.error);
+                      setEditingLocation({ ...editingLocation, city: d.city, state: d.state, country: d.countryCode === "US" ? "USA" : d.country });
+                    } catch (e) { alert("Lookup failed"); }
+                  }} style={{ padding: "0.5rem 1rem", background: "#2563eb", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>Lookup</button>
+                </div>
+              </div>
+              <div><label style={labelStyle}>Neighborhood *</label><input style={inputStyle} value={editingLocation.neighborhood} onChange={e => setEditingLocation({ ...editingLocation, neighborhood: e.target.value })} placeholder="e.g. Crown Heights" /></div>
+              <div><label style={labelStyle}>City</label><input style={inputStyle} value={editingLocation.city} onChange={e => setEditingLocation({ ...editingLocation, city: e.target.value })} placeholder="e.g. Brooklyn" /></div>
+              <div><label style={labelStyle}>State</label><input style={inputStyle} value={editingLocation.state} onChange={e => setEditingLocation({ ...editingLocation, state: e.target.value })} placeholder="e.g. NY" /></div>
+              <div><label style={labelStyle}>Country</label><input style={inputStyle} value={editingLocation.country} onChange={e => setEditingLocation({ ...editingLocation, country: e.target.value })} placeholder="e.g. USA" /></div>
             </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-              <button onClick={() => setShowLocationModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleSaveLocation} disabled={saving} style={btnStyle(saving)}>{saving ? 'Saving...' : 'Save'}</button>
+            <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
+              <button onClick={() => setShowLocationModal(false)} style={{ flex: 1, padding: "0.75rem", borderRadius: "8px", border: "1px solid #ddd", background: "white", cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleSaveLocation} disabled={saving} style={btnStyle(saving)}>{saving ? "Saving..." : "Save"}</button>
             </div>
           </div>
         </div>
