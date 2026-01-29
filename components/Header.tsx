@@ -15,16 +15,17 @@ export default function Header({ user, onLogout }: HeaderProps) {
           <span className="logo-icon">CH</span>
           <span className="logo-text">Crown Heights Groups</span>
         </Link>
-        <nav className="nav">
+        <nav className="nav" style={{ flexWrap: 'wrap', gap: '0.25rem 0.5rem' }}>
           <Link href="/" className="nav-link">Home</Link>
           <Link href="/groups" className="nav-link">Groups</Link>
-          <Link href="/updates" className="nav-link" style={{ color: '#10b981' }}>📢 Updates</Link>
-          <Link href="/events" className="nav-link" style={{ color: '#f59e0b' }}>🎉 Events</Link>
-          <Link href="/services" className="nav-link">Services</Link>
+          <Link href="/charity" className="nav-link" style={{ color: '#e11d48' }}>💝 Charity</Link>
+          <Link href="/shabbos" className="nav-link" style={{ color: '#c9a227' }}>🕯️ Shabbos</Link>
+          <Link href="/business" className="nav-link" style={{ color: '#8b5cf6' }}>🏪 Business</Link>
+          <Link href="/events" className="nav-link" style={{ color: '#f59e0b' }}>Events</Link>
           <Link href="/news" className="nav-link">News</Link>
-          <Link href="/contact" className="nav-link">Contact</Link>
+          <Link href="/services" className="nav-link">Services</Link>
           {user?.role === 'admin' && (
-            <Link href="/admin" className="nav-link">Admin</Link>
+            <Link href="/admin" className="nav-link" style={{ color: '#dc2626' }}>Admin</Link>
           )}
           {user && (
             <>
