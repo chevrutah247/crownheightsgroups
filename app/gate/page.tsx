@@ -37,7 +37,7 @@ export default function GatePage() {
         }}>
           {!imageError ? (
             <img 
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/770_Eastern_Parkway_-_Chabad_Lubavitch_World_Headquarters.jpg/1280px-770_Eastern_Parkway_-_Chabad_Lubavitch_World_Headquarters.jpg" 
+              src="https://i.ibb.co/tw9cxZfq/770-building.jpg" 
               alt="770 Eastern Parkway"
               onError={() => setImageError(true)}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
