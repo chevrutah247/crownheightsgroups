@@ -3,13 +3,6 @@ import { Redis } from '@upstash/redis';
 
 export const dynamic = 'force-dynamic';
 
-interface Campaign {
-  id: string;
-  likes?: number;
-  likedBy?: string[];
-  [key: string]: any;
-}
-
 function getRedis() {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
@@ -29,13 +22,14 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await redis.get('charity_campaigns');
-    let campaigns: Campaign[] = data ? (typeof data === 'string' ? JSON.parse(data) : data) : [];
+    const campaigns = data ? (typeof data === 'string' ? JSON.parse(data) : data) : [];
 
-    let updatedCampaign: Campaign | null = null;
+    let finalLikes = 0;
+    let finalLikedBy: string[] = [];
 
-    campaigns = campaigns.map((c: Campaign) => {
+    const updated = campaigns.map((c: any) => {
       if (c.id === campaignId) {
-        const likedBy = c.likedBy || [];
+        const likedBy: string[] = c.likedBy || [];
         const alreadyLiked = likedBy.includes(userEmail);
         
         if (alreadyLiked) {
@@ -45,17 +39,18 @@ export async function POST(request: NextRequest) {
           c.likedBy = [...likedBy, userEmail];
           c.likes = (c.likes || 0) + 1;
         }
-        updatedCampaign = c;
+        finalLikes = c.likes;
+        finalLikedBy = c.likedBy;
       }
       return c;
     });
 
-    await redis.set('charity_campaigns', JSON.stringify(campaigns));
+    await redis.set('charity_campaigns', JSON.stringify(updated));
 
     return NextResponse.json({ 
       success: true, 
-      likes: updatedCampaign?.likes || 0,
-      likedBy: updatedCampaign?.likedBy || []
+      likes: finalLikes,
+      likedBy: finalLikedBy
     });
   } catch (error) {
     console.error('Like error:', error);
