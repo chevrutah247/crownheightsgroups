@@ -6,7 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EmergencyBar from '@/components/EmergencyBar';
 
-interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
+interface UserInfo { name: string; email: string; role: 'user' | 'admin' | 'superadmin'; }
 interface Category { id: string; name: string; icon: string; slug: string; order?: number; }
 
 const partners = [
@@ -36,6 +36,8 @@ const addItems = [
   { title: 'Post News', icon: '📰', color: '#dc2626', href: '/add/news', desc: 'Community announcement' },
 ];
 
+const SUPERADMIN_EMAIL = 'chevrutah24x7@gmail.com';
+
 export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -44,6 +46,8 @@ export default function HomePage() {
   const [jewishDate, setJewishDate] = useState<string>('');
   const [parsha, setParsha] = useState<string>('');
   const [loading, setLoading] = useState(true);
+
+  const isSuperAdmin = user?.email === SUPERADMIN_EMAIL;
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -161,7 +165,7 @@ export default function HomePage() {
             </div>
           </div>
           
-          {/* Stats */}
+          {/* Stats - Groups & Services visible to all, Users only for superadmin */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
             <div style={{ background: 'rgba(255,255,255,0.1)', padding: '0.75rem 1.5rem', borderRadius: '12px' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.groups}</div>
@@ -171,17 +175,19 @@ export default function HomePage() {
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.services}</div>
               <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Services</div>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '0.75rem 1.5rem', borderRadius: '12px' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.users}</div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Members</div>
-            </div>
+            {isSuperAdmin && (
+              <div style={{ background: 'rgba(255,255,255,0.15)', padding: '0.75rem 1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.3)' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{stats.users}</div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>👑 Members</div>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
         
-        {/* ADD SECTION - NEW! */}
+        {/* ADD SECTION */}
         <section style={{ marginBottom: '2.5rem' }}>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', textAlign: 'center', color: '#1e3a5f' }}>
             ➕ Share With The Community
