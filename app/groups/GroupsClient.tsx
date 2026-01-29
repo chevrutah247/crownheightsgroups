@@ -72,19 +72,44 @@ export default function GroupsClient() {
 
   useEffect(() => {
     let result = [...allGroups];
-    if (selectedLocation) result = result.filter(g => g.locationId === selectedLocation);
-    if (selectedCategory) result = result.filter(g => g.categoryId === selectedCategory);
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(g => g.title.toLowerCase().includes(q) || g.description.toLowerCase().includes(q));
+    
+    // Filter by location
+    if (selectedLocation) {
+      result = result.filter(g => g.locationId === selectedLocation);
     }
+    
+    // Filter by category
+    if (selectedCategory) {
+      result = result.filter(g => g.categoryId === selectedCategory);
+    }
+    
+    // Improved search - search in title first, then check category name
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const words = q.split(/\s+/);
+      
+      result = result.filter(g => {
+        const title = g.title.toLowerCase();
+        const cat = categories.find(c => c.id === g.categoryId);
+        const catName = cat?.name?.toLowerCase() || '';
+        
+        // Check if ALL search words match in title OR category name
+        return words.every(word => 
+          title.includes(word) || catName.includes(word)
+        );
+      });
+    }
+    
+    // Sort: pinned first, then by selected sort
     const pinned = result.filter(g => g.isPinned).sort((a, b) => ((a as any).pinnedOrder || 0) - ((b as any).pinnedOrder || 0));
     const regular = result.filter(g => !g.isPinned);
+    
     if (sortBy === 'popular') regular.sort((a, b) => b.clicksCount - a.clicksCount);
     else if (sortBy === 'date') regular.sort((a, b) => new Date((b as any).createdAt || 0).getTime() - new Date((a as any).createdAt || 0).getTime());
     else regular.sort((a, b) => a.title.localeCompare(b.title));
+    
     setFilteredGroups([...pinned, ...regular]);
-  }, [allGroups, selectedLocation, selectedCategory, searchQuery, sortBy]);
+  }, [allGroups, categories, selectedLocation, selectedCategory, searchQuery, sortBy]);
 
   const handleLogout = () => { localStorage.clear(); window.location.href = '/auth/login'; };
   
@@ -134,7 +159,18 @@ export default function GroupsClient() {
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <input type="text" placeholder="🔍 Search groups..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid #ddd', fontSize: '1rem', boxSizing: 'border-box' }} />
+          <input 
+            type="text" 
+            placeholder="🔍 Search by group name or category..." 
+            value={searchQuery} 
+            onChange={e => setSearchQuery(e.target.value)} 
+            style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid #ddd', fontSize: '1rem', boxSizing: 'border-box' }} 
+          />
+          {searchQuery && (
+            <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#666' }}>
+              Searching for "{searchQuery}" in group names and categories
+            </div>
+          )}
         </div>
 
         <div style={{ marginBottom: '1rem' }}>
@@ -186,42 +222,43 @@ export default function GroupsClient() {
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
                     {waLinks.map((link, i) => (
-                      <a key={i} href={link} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                        <span>💬</span> WhatsApp {waLinks.length > 1 ? (i + 1) : ''}
+                      <a key={i} href={link} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
+                        <span>💬</span> WhatsApp{waLinks.length > 1 ? ` ${i + 1}` : ''}
                       </a>
                     ))}
                     {group.telegramLink && (
-                      <a href={group.telegramLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', background: '#0088cc', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                      <a href={group.telegramLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#0088cc', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
                         <span>✈️</span> Telegram
                       </a>
                     )}
                     {group.facebookLink && (
-                      <a href={group.facebookLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', background: '#1877f2', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                      <a href={group.facebookLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#1877F2', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
                         <span>📘</span> Facebook
                       </a>
                     )}
-                    {group.twitterLink && (
-                      <a href={group.twitterLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', background: '#000000', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                        <span>𝕏</span> X / Twitter
-                      </a>
-                    )}
                     {group.websiteLink && (
-                      <a href={group.websiteLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', background: '#6366f1', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                      <a href={group.websiteLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#6366f1', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
                         <span>🌐</span> Website
                       </a>
                     )}
                   </div>
-
-                  <button onClick={() => handleCopy(group)} style={{ width: '100%', padding: '0.5rem', border: '1px solid #10b981', borderRadius: '8px', background: copiedId === group.id ? '#10b981' : 'white', color: copiedId === group.id ? 'white' : '#10b981', cursor: 'pointer', fontSize: '0.85rem' }}>
-                    {copiedId === group.id ? '✓ Copied!' : '📋 Copy Info'}
+                  
+                  <button onClick={() => handleCopy(group)} style={{ width: '100%', padding: '0.5rem', background: copiedId === group.id ? '#10b981' : '#f3f4f6', color: copiedId === group.id ? 'white' : '#666', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    {copiedId === group.id ? '✓ Copied!' : '📋 Copy & Share'}
                   </button>
                 </div>
               );
             })}
           </div>
-        ) : <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}><h3>No groups found</h3></div>}
+        ) : (
+          <div style={{ textAlign: 'center', padding: '3rem', background: '#f9fafb', borderRadius: '12px' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+            <h3 style={{ color: '#6b7280' }}>No groups found</h3>
+            <p style={{ color: '#9ca3af' }}>Try adjusting your search or filters</p>
+          </div>
+        )}
       </main>
-
+      
       <Footer />
     </div>
   );
