@@ -8,11 +8,9 @@ import Footer from '@/components/Footer';
 interface NewsItem {
   title: string;
   link: string;
-  description: string;
   pubDate: string;
   source: string;
-  category: string;
-  image?: string;
+  sourceIcon: string;
 }
 
 interface UserInfo {
@@ -26,7 +24,6 @@ export default function NewsPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserInfo | null>(null);
   const [filter, setFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('community');
 
   useEffect(() => {
     const token = localStorage.getItem('session_token');
@@ -68,23 +65,17 @@ export default function NewsPage() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const categories = [
-    { id: 'community', name: 'Community' },
-    { id: 'religious', name: 'Torah' },
-    { id: 'world', name: 'World News' }
-  ];
-
-  const categoryFiltered = news.filter(n => n.category === categoryFilter);
-  const sources = ['all', ...Array.from(new Set(categoryFiltered.map(n => n.source)))];
-  const filteredNews = filter === 'all' ? categoryFiltered : categoryFiltered.filter(n => n.source === filter);
+  const sources = ['all', ...Array.from(new Set(news.map(n => n.source)))];
+  const filteredNews = filter === 'all' ? news : news.filter(n => n.source === filter);
 
   const getSourceColor = (source: string) => {
     const colors: Record<string, string> = {
-      'Anash.org': '#1e3a5f',
-      'Chabad.org': '#c9a227',
       'COLlive': '#dc2626',
       'CrownHeights.info': '#16a34a',
-      'Jerusalem Post': '#0066cc'
+      'Chabad.info': '#f59e0b',
+      'Lubavitch.com': '#8b5cf6',
+      'Yeshiva World': '#3b82f6',
+      'Chabad.org': '#c9a227',
     };
     return colors[source] || '#666';
   };
@@ -94,28 +85,8 @@ export default function NewsPage() {
       <Header user={user} onLogout={handleLogout} />
       <main className="main">
         <div className="page-header">
-          <h1 className="page-title">Community News</h1>
+          <h1 className="page-title">📰 Community News</h1>
           <p className="page-subtitle">Latest updates from Jewish news sources</p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1rem', padding: '0 1rem' }}>
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => { setCategoryFilter(cat.id); setFilter('all'); }}
-              style={{
-                padding: '0.75rem 1.5rem',
-                borderRadius: '25px',
-                border: 'none',
-                background: categoryFilter === cat.id ? '#1e3a5f' : '#f1f5f9',
-                color: categoryFilter === cat.id ? 'white' : '#475569',
-                fontWeight: categoryFilter === cat.id ? 'bold' : 'normal',
-                cursor: 'pointer'
-              }}
-            >
-              {cat.name}
-            </button>
-          ))}
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem', padding: '0 1rem' }}>
@@ -124,17 +95,17 @@ export default function NewsPage() {
               key={source}
               onClick={() => setFilter(source)}
               style={{
-                padding: '0.4rem 0.8rem',
-                borderRadius: '15px',
+                padding: '0.5rem 1rem',
+                borderRadius: '20px',
                 border: 'none',
-                background: filter === source ? '#10b981' : '#e5e7eb',
+                background: filter === source ? getSourceColor(source === 'all' ? 'COLlive' : source) : '#e5e7eb',
                 color: filter === source ? 'white' : '#475569',
                 fontWeight: filter === source ? 'bold' : 'normal',
                 cursor: 'pointer',
-                fontSize: '0.85rem'
+                fontSize: '0.9rem'
               }}
             >
-              {source === 'all' ? 'All Sources' : source}
+              {source === 'all' ? '📰 All Sources' : source}
             </button>
           ))}
         </div>
@@ -143,6 +114,7 @@ export default function NewsPage() {
           {loading ? (
             <div style={{ textAlign: 'center', padding: '3rem' }}>
               <div className="spinner"></div>
+              <p style={{ marginTop: '1rem', color: '#666' }}>Loading news...</p>
             </div>
           ) : filteredNews.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem', background: '#f8fafc', borderRadius: '12px' }}>
@@ -151,7 +123,7 @@ export default function NewsPage() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
               {filteredNews.map((item, index) => (
-                <a
+                
                   key={index}
                   href={item.link}
                   target="_blank"
@@ -163,19 +135,41 @@ export default function NewsPage() {
                     overflow: 'hidden',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                     border: '1px solid #e2e8f0',
-                    textDecoration: 'none'
+                    textDecoration: 'none',
+                    transition: 'transform 0.2s, box-shadow 0.2s'
                   }}
+                  onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'; }}
                 >
-                  {item.image && (
-                    <div style={{ height: '160px', backgroundImage: 'url(' + item.image + ')', backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#f1f5f9' }} />
-                  )}
-                  <div style={{ padding: '1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <span style={{ background: getSourceColor(item.source) + '20', color: getSourceColor(item.source), padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>{item.source}</span>
+                  <div style={{ padding: '1.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <span style={{ 
+                        background: getSourceColor(item.source) + '20', 
+                        color: getSourceColor(item.source), 
+                        padding: '0.25rem 0.75rem', 
+                        borderRadius: '12px', 
+                        fontSize: '0.8rem', 
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem'
+                      }}>
+                        {item.sourceIcon} {item.source}
+                      </span>
                       <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{formatDate(item.pubDate)}</span>
                     </div>
-                    <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e3a5f', fontSize: '1rem', lineHeight: '1.4' }}>{item.title}</h3>
-                    {item.description && <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>{item.description.replace(/<[^>]*>/g, '').slice(0, 120)}</p>}
+                    <h3 style={{ 
+                      margin: 0, 
+                      color: '#1e3a5f', 
+                      fontSize: '1rem', 
+                      lineHeight: '1.5',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}>
+                      {item.title.replace(/&#8217;/g, "'").replace(/&#8216;/g, "'").replace(/&#8220;/g, '"').replace(/&#8221;/g, '"').replace(/&#038;/g, '&').replace(/&amp;/g, '&')}
+                    </h3>
                   </div>
                 </a>
               ))}
