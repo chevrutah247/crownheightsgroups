@@ -43,9 +43,9 @@ export default function NewsPage() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/rss')
+    fetch('/api/news')
       .then(r => r.json())
-      .then(data => setNews(data.items || []))
+      .then(data => setNews(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);

@@ -39,8 +39,7 @@ export default function AdminPage() {
     await Promise.all([
       fetch('/api/admin/groups').then(r => r.json()).then(d => setGroups(Array.isArray(d) ? d : [])).catch(() => {}),
       fetch('/api/admin/services').then(r => r.json()).then(d => setServices(Array.isArray(d) ? d : [])).catch(() => {}),
-      fetch('/api/events?all=true').then(r => r.json())
-[])).catch(() => {}),
+      fetch('/api/events?all=true').then(r => r.json()).then(d => setEvents(Array.isArray(d) ? d : [])).catch(() => {}),
       fetch('/api/campaigns').then(r => r.json()).then(d => setCampaigns(Array.isArray(d) ? d : [])).catch(() => {}),
       fetch('/api/admin/users').then(r => r.json()).then(d => setUsers(Array.isArray(d) ? d : [])).catch(() => {}),
       fetch('/api/admin/group-categories').then(r => r.json()).then(d => setGroupCategories(Array.isArray(d) ? d : [])).catch(() => {}),
