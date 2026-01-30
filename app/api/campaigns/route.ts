@@ -98,3 +98,34 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
+export async function DELETE(request: NextRequest) {
+  try {
+    const redis = getRedis();
+    if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    const { id } = await request.json();
+    
+    // Delete from campaigns
+    let campaigns: any[] = [];
+    const stored = await redis.get('campaigns');
+    if (stored) {
+      campaigns = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      if (!Array.isArray(campaigns)) campaigns = [];
+    }
+    campaigns = campaigns.filter((c: any) => c.id !== id);
+    await redis.set('campaigns', JSON.stringify(campaigns));
+    
+    // Also delete from suggestions if exists
+    let suggestions: any[] = [];
+    const suggestionsStored = await redis.get('campaignSuggestions');
+    if (suggestionsStored) {
+      suggestions = typeof suggestionsStored === 'string' ? JSON.parse(suggestionsStored) : suggestionsStored;
+      if (!Array.isArray(suggestions)) suggestions = [];
+    }
+    suggestions = suggestions.filter((s: any) => s.id !== id);
+    await redis.set('campaignSuggestions', JSON.stringify(suggestions));
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
+}
