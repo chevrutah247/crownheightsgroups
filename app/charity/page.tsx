@@ -1,363 +1,203 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
-interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
 interface Campaign {
   id: string;
-  campaignName: string;
+  title: string;
   description: string;
-  imageUrl?: string;
-  whatsappLink?: string;
-  websiteLink?: string;
-  goalAmount: number;
-  expiresAt: string;
-  refereeName: string;
-  refereeRole?: string;
+  goal: number;
+  raised: number;
+  donationLink: string;
+  imageUrl: string;
+  organizer: string;
   status: string;
-  createdAt: string;
-  likes?: number;
-  likedBy?: string[];
 }
 
 export default function CharityPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<UserInfo | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [archived, setArchived] = useState<Campaign[]>([]);
+  const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showArchived, setShowArchived] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+  
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [goal, setGoal] = useState('');
+  const [donationLink, setDonationLink] = useState('');
+  const [organizer, setOrganizer] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('session_token');
-    if (!token) { router.push('/auth/login'); return; }
-    
-    fetch('/api/auth/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token })
-    })
-      .then(r => r.json())
-      .then(data => { if (data.valid) setUser(data.user); else router.push('/auth/login'); })
-      .catch(() => router.push('/auth/login'));
-  }, [router]);
-
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/charity').then(r => r.json()),
-      fetch('/api/charity?archived=true').then(r => r.json())
-    ])
-      .then(([active, arch]) => {
-        setCampaigns(Array.isArray(active) ? active : []);
-        setArchived(Array.isArray(arch) ? arch : []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    fetchCampaigns();
   }, []);
 
-  const handleLogout = () => { localStorage.clear(); router.push('/auth/login'); };
-
-  const getDaysLeft = (expiresAt: string) => {
-    const now = new Date();
-    const expires = new Date(expiresAt);
-    const diff = expires.getTime() - now.getTime();
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return days > 0 ? days : 0;
-  };
-
-  const handleLike = async (campaignId: string) => {
-    if (!user) return;
-    
+  const fetchCampaigns = async () => {
     try {
-      const response = await fetch('/api/charity/like', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campaignId, userEmail: user.email })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setCampaigns(prev => prev.map(c => 
-          c.id === campaignId ? { ...c, likes: data.likes, likedBy: data.likedBy } : c
-        ));
-      }
-    } catch (err) {
-      console.error('Like failed:', err);
+      const res = await fetch('/api/campaigns');
+      const data = await res.json();
+      setCampaigns(Array.isArray(data) ? data.filter((c: Campaign) => c.status === 'active') : []);
+    } catch (e) {
+      console.error('Failed to fetch campaigns');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const shareViaEmail = (campaign: Campaign) => {
-    const subject = encodeURIComponent(`Help Support: ${campaign.campaignName}`);
-    const body = encodeURIComponent(`I wanted to share this important fundraising campaign with you:\n\n${campaign.campaignName}\n\n${campaign.description.slice(0, 200)}...\n\nGoal: $${campaign.goalAmount.toLocaleString()}\n\nDonate here: ${campaign.websiteLink || campaign.whatsappLink || window.location.href}`);
-    window.open(`mailto:?subject=${subject}&body=${body}`);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+
+    try {
+      const userEmail = localStorage.getItem('user_email') || 'anonymous';
+      const res = await fetch('/api/suggest-campaign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          description,
+          goal: Number(goal) || 0,
+          donationLink,
+          organizer,
+          submittedBy: userEmail
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to submit');
+
+      setSuccess(true);
+      setShowForm(false);
+      setTitle('');
+      setDescription('');
+      setGoal('');
+      setDonationLink('');
+      setOrganizer('');
+    } catch (err) {
+      setError('Failed to submit. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const shareViaWhatsApp = (campaign: Campaign) => {
-    const text = encodeURIComponent(`💝 *${campaign.campaignName}*\n\n${campaign.description.slice(0, 150)}...\n\n🎯 Goal: $${campaign.goalAmount.toLocaleString()}\n\n👉 Donate: ${campaign.websiteLink || campaign.whatsappLink || window.location.href}`);
-    window.open(`https://wa.me/?text=${text}`);
-  };
-
-  const copyLink = (campaign: Campaign) => {
-    const link = campaign.websiteLink || `${window.location.origin}/charity#${campaign.id}`;
-    navigator.clipboard.writeText(link);
-    setCopiedId(campaign.id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const isLikedByUser = (campaign: Campaign) => {
-    return user && campaign.likedBy?.includes(user.email);
-  };
-
-  const displayCampaigns = showArchived ? archived : campaigns;
+  const inputStyle = { width: '100%', padding: '0.875rem', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' as const };
 
   return (
     <div>
-      <Header user={user} onLogout={handleLogout} />
-      <main className="main">
-        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem' }}>
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <h1 style={{ fontSize: '2rem', color: '#e11d48', marginBottom: '0.5rem' }}>💝 Charity Campaigns</h1>
-            <p style={{ color: '#666' }}>Help families and individuals in our community</p>
-            <p style={{ color: '#e11d48', fontSize: '1.25rem', fontWeight: 'bold', marginTop: '0.5rem' }}>
-              {campaigns.length} Active Campaign{campaigns.length !== 1 ? 's' : ''}
-            </p>
+      <Header user={null} onLogout={() => {}} />
+      
+      <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1 style={{ color: '#1e3a5f', marginBottom: '0.5rem' }}>💝 Charity Campaigns</h1>
+          <p style={{ color: '#666' }}>Help families and individuals in our community</p>
+          <p style={{ color: '#dc2626', fontWeight: 'bold', marginTop: '0.5rem' }}>
+            {campaigns.length} Active Campaigns
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
+          <button
+            onClick={() => setShowForm(true)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: '#dc2626',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            + Start a Campaign
+          </button>
+        </div>
+
+        {success && (
+          <div style={{ background: '#d1fae5', color: '#065f46', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', textAlign: 'center' }}>
+            ✅ Campaign submitted! It will appear after admin approval.
           </div>
+        )}
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-            <Link 
-              href="/add/charity"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.75rem 1.5rem',
-                background: '#e11d48',
-                color: 'white',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                fontWeight: 'bold'
-              }}
-            >
-              ➕ Start a Campaign
-            </Link>
-            <button
-              onClick={() => setShowArchived(!showArchived)}
-              style={{
-                padding: '0.75rem 1.5rem',
-                background: showArchived ? '#64748b' : '#f1f5f9',
-                color: showArchived ? 'white' : '#475569',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              {showArchived ? '← Active Campaigns' : '📁 View Archive (' + archived.length + ')'}
-            </button>
+        {showForm && (
+          <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', marginBottom: '2rem' }}>
+            <h2 style={{ marginBottom: '1rem' }}>Start a Campaign</h2>
+            {error && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem' }}>{error}</div>}
+            
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Campaign Title *</label>
+                <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g., Help the Cohen Family" />
+              </div>
+              
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Description *</label>
+                <textarea style={{ ...inputStyle, minHeight: '100px' }} value={description} onChange={e => setDescription(e.target.value)} required placeholder="Describe the situation and how funds will be used" />
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Goal Amount ($)</label>
+                  <input style={inputStyle} type="number" value={goal} onChange={e => setGoal(e.target.value)} placeholder="10000" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Organizer Name</label>
+                  <input style={inputStyle} value={organizer} onChange={e => setOrganizer(e.target.value)} placeholder="Your name" />
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Donation Link *</label>
+                <input style={inputStyle} value={donationLink} onChange={e => setDonationLink(e.target.value)} required placeholder="https://charidy.com/..." />
+              </div>
+              
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button type="button" onClick={() => setShowForm(false)} style={{ flex: 1, padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={submitting} style={{ flex: 1, padding: '0.75rem', background: submitting ? '#ccc' : '#dc2626', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: submitting ? 'not-allowed' : 'pointer' }}>
+                  {submitting ? 'Submitting...' : 'Submit Campaign'}
+                </button>
+              </div>
+            </form>
           </div>
+        )}
 
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '3rem' }}>
-              <div className="spinner"></div>
-            </div>
-          ) : displayCampaigns.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem', background: '#fef2f2', borderRadius: '12px' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💝</div>
-              <h3 style={{ color: '#991b1b' }}>
-                {showArchived ? 'No archived campaigns' : 'No active campaigns'}
-              </h3>
-              {!showArchived && (
-                <p style={{ color: '#666', marginTop: '0.5rem' }}>Be the first to start a fundraiser!</p>
-              )}
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gap: '1.5rem' }}>
-              {displayCampaigns.map(campaign => (
-                <div
-                  key={campaign.id}
-                  id={campaign.id}
-                  style={{
-                    background: 'white',
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-                    border: '1px solid #fee2e2'
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {campaign.imageUrl && (
-                      <div style={{ 
-                        height: '200px', 
-                        backgroundImage: `url(${campaign.imageUrl})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center'
-                      }} />
-                    )}
-                    <div style={{ padding: '1.5rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                        <h2 style={{ margin: 0, color: '#1e3a5f', fontSize: '1.25rem' }}>{campaign.campaignName}</h2>
-                        {!showArchived && (
-                          <span style={{
-                            background: getDaysLeft(campaign.expiresAt) <= 1 ? '#fee2e2' : '#dcfce7',
-                            color: getDaysLeft(campaign.expiresAt) <= 1 ? '#dc2626' : '#16a34a',
-                            padding: '0.25rem 0.75rem',
-                            borderRadius: '20px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold'
-                          }}>
-                            {getDaysLeft(campaign.expiresAt)} days left
-                          </span>
-                        )}
-                      </div>
-
-                      <p style={{ color: '#666', marginBottom: '1rem', lineHeight: '1.6' }}>
-                        {campaign.description.length > 300 
-                          ? campaign.description.slice(0, 300) + '...' 
-                          : campaign.description}
-                      </p>
-
-                      <div style={{ 
-                        background: '#f8fafc', 
-                        padding: '1rem', 
-                        borderRadius: '8px',
-                        marginBottom: '1rem'
-                      }}>
-                        <div style={{ fontWeight: 'bold', color: '#1e3a5f', marginBottom: '0.5rem' }}>
-                          🎯 Goal: ${campaign.goalAmount?.toLocaleString()}
-                        </div>
-                        <div style={{ fontSize: '0.85rem', color: '#666' }}>
-                          📋 Reference: {campaign.refereeName} {campaign.refereeRole && `(${campaign.refereeRole})`}
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                        {campaign.websiteLink && (
-                          <a
-                            href={campaign.websiteLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.5rem',
-                              padding: '0.75rem 1.5rem',
-                              background: '#e11d48',
-                              color: 'white',
-                              borderRadius: '8px',
-                              textDecoration: 'none',
-                              fontWeight: 'bold'
-                            }}
-                          >
-                            💝 Donate Now
-                          </a>
-                        )}
-                        {campaign.whatsappLink && (
-                          <a
-                            href={campaign.whatsappLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.5rem',
-                              padding: '0.75rem 1.5rem',
-                              background: '#25D366',
-                              color: 'white',
-                              borderRadius: '8px',
-                              textDecoration: 'none',
-                              fontWeight: 'bold'
-                            }}
-                          >
-                            📱 WhatsApp
-                          </a>
-                        )}
-                      </div>
-
-                      {/* Like & Share Section */}
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center',
-                        paddingTop: '1rem',
-                        borderTop: '1px solid #f1f5f9'
-                      }}>
-                        {/* Like Button */}
-                        <button
-                          onClick={() => handleLike(campaign.id)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.5rem 1rem',
-                            background: isLikedByUser(campaign) ? '#fee2e2' : '#f1f5f9',
-                            border: 'none',
-                            borderRadius: '20px',
-                            cursor: 'pointer',
-                            color: isLikedByUser(campaign) ? '#e11d48' : '#666'
-                          }}
-                        >
-                          {isLikedByUser(campaign) ? '❤️' : '🤍'} {campaign.likes || 0}
-                        </button>
-
-                        {/* Share Buttons */}
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button
-                            onClick={() => shareViaEmail(campaign)}
-                            title="Share via Email"
-                            style={{
-                              padding: '0.5rem',
-                              background: '#f1f5f9',
-                              border: 'none',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              fontSize: '1.2rem'
-                            }}
-                          >
-                            📧
-                          </button>
-                          <button
-                            onClick={() => shareViaWhatsApp(campaign)}
-                            title="Share via WhatsApp"
-                            style={{
-                              padding: '0.5rem',
-                              background: '#dcfce7',
-                              border: 'none',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              fontSize: '1.2rem'
-                            }}
-                          >
-                            💬
-                          </button>
-                          <button
-                            onClick={() => copyLink(campaign)}
-                            title="Copy Link"
-                            style={{
-                              padding: '0.5rem',
-                              background: copiedId === campaign.id ? '#dcfce7' : '#f1f5f9',
-                              border: 'none',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              fontSize: '1.2rem'
-                            }}
-                          >
-                            {copiedId === campaign.id ? '✅' : '🔗'}
-                          </button>
-                        </div>
-                      </div>
+        {loading ? (
+          <p style={{ textAlign: 'center', color: '#666' }}>Loading campaigns...</p>
+        ) : campaigns.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💝</div>
+            <p>No active campaigns</p>
+            <p>Be the first to start a fundraiser!</p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            {campaigns.map(campaign => (
+              <div key={campaign.id} style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <h3 style={{ marginBottom: '0.5rem', color: '#1e3a5f' }}>{campaign.title}</h3>
+                <p style={{ color: '#666', marginBottom: '1rem' }}>{campaign.description}</p>
+                {campaign.goal > 0 && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                      <span>${campaign.raised || 0} raised</span>
+                      <span>Goal: ${campaign.goal}</span>
+                    </div>
+                    <div style={{ background: '#e5e7eb', borderRadius: '4px', height: '8px' }}>
+                      <div style={{ background: '#dc2626', borderRadius: '4px', height: '100%', width: `${Math.min(100, ((campaign.raised || 0) / campaign.goal) * 100)}%` }} />
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                )}
+                {campaign.donationLink && (
+                  <a href={campaign.donationLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#dc2626', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
+                    Donate Now
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </main>
+
       <Footer />
     </div>
   );
