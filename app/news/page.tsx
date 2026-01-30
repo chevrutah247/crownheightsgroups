@@ -12,13 +12,15 @@ interface NewsItem {
   source: string;
   sourceIcon: string;
   image?: string;
+  category: string;
 }
 
 export default function NewsPage() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [filter, setFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   useEffect(() => {
     const token = localStorage.getItem('session_token');
@@ -60,8 +62,16 @@ export default function NewsPage() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const sources = ['all', ...Array.from(new Set(news.map(n => n.source)))];
-  const filteredNews = filter === 'all' ? news : news.filter(n => n.source === filter);
+  const categories = [
+    { id: 'all', name: 'All News', icon: '📰' },
+    { id: 'community', name: 'Community', icon: '🏘️' },
+    { id: 'torah', name: 'Torah', icon: '📖' },
+    { id: 'world', name: 'World News', icon: '🌍' },
+  ];
+
+  const filteredByCategory = categoryFilter === 'all' ? news : news.filter(n => n.category === categoryFilter);
+  const sources = ['all', ...Array.from(new Set(filteredByCategory.map(n => n.source)))];
+  const filteredNews = sourceFilter === 'all' ? filteredByCategory : filteredByCategory.filter(n => n.source === sourceFilter);
 
   const getSourceColor = (source: string): string => {
     if (source === 'COLlive') return '#dc2626';
@@ -74,7 +84,7 @@ export default function NewsPage() {
   };
 
   const decodeHtml = (text: string): string => {
-    return text.replace(/&#8217;/g, "'").replace(/&#8216;/g, "'").replace(/&#8220;/g, '"').replace(/&#8221;/g, '"').replace(/&#038;/g, '&').replace(/&amp;/g, '&');
+    return text.replace(/&#8217;/g, "'").replace(/&#8216;/g, "'").replace(/&#8220;/g, '"').replace(/&#8221;/g, '"').replace(/&#038;/g, '&').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ');
   };
 
   if (loading) {
@@ -97,13 +107,23 @@ export default function NewsPage() {
           <h1 className="page-title">Community News</h1>
           <p className="page-subtitle">Latest updates from Jewish news sources</p>
         </div>
+        
+        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1rem', padding: '0 1rem' }}>
+          {categories.map(cat => (
+            <button key={cat.id} onClick={() => { setCategoryFilter(cat.id); setSourceFilter('all'); }} style={{ padding: '0.6rem 1.2rem', borderRadius: '25px', border: 'none', background: categoryFilter === cat.id ? '#1e3a5f' : '#f1f5f9', color: categoryFilter === cat.id ? 'white' : '#475569', fontWeight: categoryFilter === cat.id ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.95rem' }}>
+              {cat.icon} {cat.name}
+            </button>
+          ))}
+        </div>
+
         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem', padding: '0 1rem' }}>
           {sources.map(source => (
-            <button key={source} onClick={() => setFilter(source)} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: filter === source ? '#1e3a5f' : '#e5e7eb', color: filter === source ? 'white' : '#475569', fontWeight: filter === source ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.9rem' }}>
+            <button key={source} onClick={() => setSourceFilter(source)} style={{ padding: '0.4rem 0.8rem', borderRadius: '15px', border: 'none', background: sourceFilter === source ? '#10b981' : '#e5e7eb', color: sourceFilter === source ? 'white' : '#475569', fontWeight: sourceFilter === source ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.85rem' }}>
               {source === 'all' ? 'All Sources' : source}
             </button>
           ))}
         </div>
+
         <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 1rem' }}>
           {filteredNews.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem', background: '#f8fafc', borderRadius: '12px' }}>
@@ -128,6 +148,7 @@ export default function NewsPage() {
             </div>
           )}
         </div>
+
         <div style={{ maxWidth: '600px', margin: '3rem auto', padding: '1.5rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', borderRadius: '16px', textAlign: 'center', color: 'white' }}>
           <h3 style={{ margin: '0 0 0.5rem 0' }}>Check Out Updates</h3>
           <p style={{ margin: '0 0 1rem 0', opacity: 0.9 }}>See recently added groups</p>
