@@ -1,16 +1,16 @@
 {
-  "crons": [
+  "trailingSlash": false,
+  "redirects": [
     {
-      "path": "/api/newsletter/send?secret=chgroups2024&frequency=daily",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/newsletter/send?secret=chgroups2024&frequency=weekly",
-      "schedule": "0 9 * * 0"
-    },
-    {
-      "path": "/api/newsletter/send?secret=chgroups2024&frequency=monthly",
-      "schedule": "0 9 1 * *"
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "crownheightsgroups.com"
+        }
+      ],
+      "destination": "https://www.crownheightsgroups.com/:path*",
+      "permanent": true
     }
   ]
 }
