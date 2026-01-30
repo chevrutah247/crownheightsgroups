@@ -8,6 +8,7 @@ import EmergencyBar from '@/components/EmergencyBar';
 import ShareButtons from '@/components/ShareButtons';
 
 interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
+interface ClickLimitState { remaining: number; clickedToday: string[]; }
 interface Category { id: string; name: string; icon: string; slug: string; order?: number; }
 interface Location { id: string; neighborhood: string; status: string; order?: number; }
 interface Group { 
@@ -31,6 +32,8 @@ export default function GroupsClient() {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'popular' | 'alpha'>('popular');
+  const [clickLimit, setClickLimit] = useState<ClickLimitState>({ remaining: 3, clickedToday: [] });
+  const [showLimitModal, setShowLimitModal] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -39,8 +42,15 @@ export default function GroupsClient() {
       try {
         const response = await fetch('/api/auth/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
         const data = await response.json();
-        if (data.valid) setUser({ name: data.user.name, email: data.user.email, role: data.user.role });
-        else { localStorage.clear(); window.location.href = '/auth/login'; }
+        if (data.valid) {
+          setUser({ name: data.user.name, email: data.user.email, role: data.user.role });
+          const limitRes = await fetch(`/api/group-clicks?userId=${encodeURIComponent(data.user.email)}`);
+          const limitData = await limitRes.json();
+          setClickLimit({ remaining: limitData.remaining ?? 3, clickedToday: limitData.clickedToday || [] });
+        } else { 
+          localStorage.clear(); 
+          window.location.href = '/auth/login'; 
+        }
       } catch (error) { window.location.href = '/auth/login'; }
     };
     checkAuth();
@@ -93,6 +103,46 @@ export default function GroupsClient() {
   }, [allGroups, categories, selectedLocation, selectedCategory, searchQuery, sortBy]);
 
   const handleLogout = () => { localStorage.clear(); window.location.href = '/auth/login'; };
+
+  const handleGroupClick = async (e: React.MouseEvent, link: string, groupId: string, groupTitle: string) => {
+    e.preventDefault();
+    
+    if (user?.role === 'admin') {
+      window.open(link, '_blank');
+      return;
+    }
+    
+    if (clickLimit.clickedToday.includes(groupId)) {
+      window.open(link, '_blank');
+      return;
+    }
+    
+    if (clickLimit.remaining <= 0) {
+      setShowLimitModal(true);
+      return;
+    }
+    
+    try {
+      const res = await fetch('/api/group-clicks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.email, groupId, groupTitle })
+      });
+      const data = await res.json();
+      
+      if (data.allowed) {
+        setClickLimit(prev => ({
+          remaining: data.remaining,
+          clickedToday: [...prev.clickedToday, groupId]
+        }));
+        window.open(link, '_blank');
+      } else {
+        setShowLimitModal(true);
+      }
+    } catch (error) {
+      window.open(link, '_blank');
+    }
+  };
   
   const getWhatsAppLinks = (group: Group): string[] => {
     const links: string[] = [];
@@ -124,6 +174,17 @@ export default function GroupsClient() {
           <h1 className="page-title">{getSelectedCategoryName() || '👥 All Groups'}</h1>
           <p className="page-subtitle">Find and join community groups</p>
         </div>
+
+        {user?.role !== 'admin' && (
+          <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: clickLimit.remaining > 0 ? '#f0fdf4' : '#fef2f2', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span>{clickLimit.remaining > 0 ? '✅' : '⏰'}</span>
+            <span style={{ color: clickLimit.remaining > 0 ? '#166534' : '#991b1b', fontSize: '0.9rem' }}>
+              {clickLimit.remaining > 0 
+                ? `You can join ${clickLimit.remaining} more group${clickLimit.remaining !== 1 ? 's' : ''} today`
+                : 'Daily limit reached. Come back tomorrow!'}
+            </span>
+          </div>
+        )}
 
         <div style={{ marginBottom: '1.5rem' }}>
           <input type="text" placeholder="🔍 Search by group name or category..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid #ddd', fontSize: '1rem', boxSizing: 'border-box' }} />
@@ -165,36 +226,38 @@ export default function GroupsClient() {
               const cat = getCat(group.categoryId);
               const loc = getLoc(group.locationId);
               const waLinks = getWhatsAppLinks(group);
+              const isJoined = clickLimit.clickedToday.includes(group.id);
               
               return (
-                <div key={group.id || `group-${index}`} style={{ background: 'white',  borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: group.isPinned ? '2px solid #f59e0b' : '1px solid #eee' }}>
+                <div key={group.id || `group-${index}`} style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: group.isPinned ? '2px solid #f59e0b' : '1px solid #eee' }}>
                   {group.isPinned && <div style={{ color: '#f59e0b', fontSize: '0.8rem', marginBottom: '0.5rem' }}>⭐ Featured</div>}
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                     <span style={{ padding: '2px 8px', background: '#eff6ff', borderRadius: '4px', fontSize: '0.8rem' }}>{cat?.icon} {cat?.name}</span>
                     {loc && <span style={{ padding: '2px 8px', background: '#f0fdf4', borderRadius: '4px', fontSize: '0.8rem' }}>📍 {loc.neighborhood}</span>}
                     {group.language && group.language !== 'English' && <span style={{ padding: '2px 8px', background: '#fef3c7', borderRadius: '4px', fontSize: '0.8rem' }}>{group.language}</span>}
+                    {isJoined && <span style={{ padding: '2px 8px', background: '#dbeafe', borderRadius: '4px', fontSize: '0.8rem' }}>✓ Joined today</span>}
                   </div>
                   <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{group.title}</h3>
                   <p style={{ color: '#666', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>{group.description && group.description.length > 150 ? group.description.slice(0, 150) + '...' : group.description}</p>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
                     {waLinks.map((link, i) => (
-                      <a key={i} href={link} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
+                      <a key={i} href={link} onClick={(e) => handleGroupClick(e, link, group.id, group.title)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', cursor: 'pointer' }}>
                         <span>💬</span> WhatsApp{waLinks.length > 1 ? ` ${i + 1}` : ''}
                       </a>
                     ))}
                     {group.telegramLink && (
-                      <a href={group.telegramLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#0088cc', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
+                      <a href={group.telegramLink} onClick={(e) => handleGroupClick(e, group.telegramLink!, group.id, group.title)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#0088cc', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', cursor: 'pointer' }}>
                         <span>✈️</span> Telegram
                       </a>
                     )}
                     {group.facebookLink && (
-                      <a href={group.facebookLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#1877F2', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
+                      <a href={group.facebookLink} onClick={(e) => handleGroupClick(e, group.facebookLink!, group.id, group.title)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#1877F2', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', cursor: 'pointer' }}>
                         <span>📘</span> Facebook
                       </a>
                     )}
                     {group.websiteLink && (
-                      <a href={group.websiteLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#6366f1', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
+                      <a href={group.websiteLink} onClick={(e) => handleGroupClick(e, group.websiteLink!, group.id, group.title)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#6366f1', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', cursor: 'pointer' }}>
                         <span>🌐</span> Website
                       </a>
                     )}
@@ -219,6 +282,24 @@ export default function GroupsClient() {
           </div>
         )}
       </main>
+      
+      {showLimitModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '2rem', maxWidth: '400px', margin: '1rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏰</div>
+            <h3 style={{ marginBottom: '1rem', color: '#1e3a5f' }}>Daily Limit Reached</h3>
+            <p style={{ color: '#666', marginBottom: '1.5rem' }}>
+              You can join maximum <strong>3 new groups per day</strong>. This helps protect our community from spam.
+            </p>
+            <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+              Come back tomorrow to join more groups!
+            </p>
+            <button onClick={() => setShowLimitModal(false)} style={{ padding: '0.75rem 2rem', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
       
       <Footer />
     </div>
