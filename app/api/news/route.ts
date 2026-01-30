@@ -59,9 +59,8 @@ export async function GET() {
       { url: 'https://collive.com/feed/', source: 'COLlive', icon: '📰', category: 'community' },
       { url: 'https://www.chabad.info/feed/', source: 'Chabad.info', icon: '🕯️', category: 'community' },
       { url: 'https://crownheights.info/feed/', source: 'CrownHeights.info', icon: '🏘️', category: 'community' },
-      { url: 'https://www.lubavitch.com/feed/', source: 'Lubavitch.com', icon: '✡️', category: 'community' },
+      { url: 'https://www.lubavitch.com/feed/', source: 'Lubavitch.com', icon: '✡️', category: 'torah' },
       { url: 'https://www.theyeshivaworld.com/feed', source: 'Yeshiva World', icon: '📖', category: 'world' },
-      { url: 'https://www.chabad.org/tools/rss/rss.xml', source: 'Chabad.org', icon: '🔯', category: 'torah' },
     ];
     const allNews = await Promise.all(feeds.map(feed => fetchRSS(feed.url, feed.source, feed.icon, feed.category)));
     const combined = allNews.flat();
