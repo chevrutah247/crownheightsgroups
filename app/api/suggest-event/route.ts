@@ -105,18 +105,3 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
-```
-
-Также создайте файлы для campaigns (из предыдущего сообщения):
-
-**Папка 3:** `app/api/campaigns/route.ts` — код из предыдущего сообщения
-
-**Папка 4:** `app/api/suggest-campaign/route.ts` — код из предыдущего сообщения
-
-Итого должно быть 4 новые папки:
-```
-app/api/
-  events/route.ts
-  suggest-event/route.ts
-  campaigns/route.ts
-  suggest-campaign/route.ts
