@@ -13,16 +13,10 @@ interface NewsItem {
   sourceIcon: string;
 }
 
-interface UserInfo {
-  name: string;
-  email: string;
-  role: 'user' | 'admin';
-}
-
 export default function NewsPage() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
@@ -68,16 +62,26 @@ export default function NewsPage() {
   const sources = ['all', ...Array.from(new Set(news.map(n => n.source)))];
   const filteredNews = filter === 'all' ? news : news.filter(n => n.source === filter);
 
-  const getSourceColor = (source: string) => {
+  const getSourceColor = (source: string): string => {
     const colors: Record<string, string> = {
       'COLlive': '#dc2626',
       'CrownHeights.info': '#16a34a',
       'Chabad.info': '#f59e0b',
       'Lubavitch.com': '#8b5cf6',
       'Yeshiva World': '#3b82f6',
-      'Chabad.org': '#c9a227',
+      'Chabad.org': '#c9a227'
     };
     return colors[source] || '#666';
+  };
+
+  const decodeHtml = (text: string): string => {
+    return text
+      .replace(/&#8217;/g, "'")
+      .replace(/&#8216;/g, "'")
+      .replace(/&#8220;/g, '"')
+      .replace(/&#8221;/g, '"')
+      .replace(/&#038;/g, '&')
+      .replace(/&amp;/g, '&');
   };
 
   return (
@@ -85,7 +89,7 @@ export default function NewsPage() {
       <Header user={user} onLogout={handleLogout} />
       <main className="main">
         <div className="page-header">
-          <h1 className="page-title">📰 Community News</h1>
+          <h1 className="page-title">Community News</h1>
           <p className="page-subtitle">Latest updates from Jewish news sources</p>
         </div>
 
@@ -98,14 +102,14 @@ export default function NewsPage() {
                 padding: '0.5rem 1rem',
                 borderRadius: '20px',
                 border: 'none',
-                background: filter === source ? getSourceColor(source === 'all' ? 'COLlive' : source) : '#e5e7eb',
+                background: filter === source ? '#1e3a5f' : '#e5e7eb',
                 color: filter === source ? 'white' : '#475569',
                 fontWeight: filter === source ? 'bold' : 'normal',
                 cursor: 'pointer',
                 fontSize: '0.9rem'
               }}
             >
-              {source === 'all' ? '📰 All Sources' : source}
+              {source === 'all' ? 'All Sources' : source}
             </button>
           ))}
         </div>
@@ -113,8 +117,7 @@ export default function NewsPage() {
         <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 1rem' }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '3rem' }}>
-              <div className="spinner"></div>
-              <p style={{ marginTop: '1rem', color: '#666' }}>Loading news...</p>
+              <p>Loading news...</p>
             </div>
           ) : filteredNews.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem', background: '#f8fafc', borderRadius: '12px' }}>
@@ -132,45 +135,28 @@ export default function NewsPage() {
                     display: 'block',
                     background: 'white',
                     borderRadius: '12px',
-                    overflow: 'hidden',
+                    padding: '1.25rem',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                     border: '1px solid #e2e8f0',
-                    textDecoration: 'none',
-                    transition: 'transform 0.2s, box-shadow 0.2s'
+                    textDecoration: 'none'
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'; }}
                 >
-                  <div style={{ padding: '1.25rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                      <span style={{ 
-                        background: getSourceColor(item.source) + '20', 
-                        color: getSourceColor(item.source), 
-                        padding: '0.25rem 0.75rem', 
-                        borderRadius: '12px', 
-                        fontSize: '0.8rem', 
-                        fontWeight: 'bold',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem'
-                      }}>
-                        {item.sourceIcon} {item.source}
-                      </span>
-                      <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{formatDate(item.pubDate)}</span>
-                    </div>
-                    <h3 style={{ 
-                      margin: 0, 
-                      color: '#1e3a5f', 
-                      fontSize: '1rem', 
-                      lineHeight: '1.5',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <span style={{ 
+                      background: getSourceColor(item.source) + '20', 
+                      color: getSourceColor(item.source), 
+                      padding: '0.25rem 0.75rem', 
+                      borderRadius: '12px', 
+                      fontSize: '0.8rem', 
+                      fontWeight: 'bold'
                     }}>
-                      {item.title.replace(/&#8217;/g, "'").replace(/&#8216;/g, "'").replace(/&#8220;/g, '"').replace(/&#8221;/g, '"').replace(/&#038;/g, '&').replace(/&amp;/g, '&')}
-                    </h3>
+                      {item.sourceIcon} {item.source}
+                    </span>
+                    <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{formatDate(item.pubDate)}</span>
                   </div>
+                  <h3 style={{ margin: 0, color: '#1e3a5f', fontSize: '1rem', lineHeight: '1.5' }}>
+                    {decodeHtml(item.title)}
+                  </h3>
                 </a>
               ))}
             </div>
