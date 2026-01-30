@@ -24,17 +24,22 @@ async function fetchRSS(url: string, source: string, sourceIcon: string): Promis
     
     for (const item of itemMatches.slice(0, 10)) {
       const title = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>|<title>(.*?)<\/title>/i);
-      const link = item.match(/<link>(.*?)<\/link>/i);
+      const link = item.match(/<link>(.*?)<\/link>|<link>[^<]*<!\[CDATA\[(.*?)\]\]>[^<]*<\/link>/i);
       const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/i);
       
       if (title && link) {
-        items.push({
-          title: (title[1] || title[2] || '').trim(),
-          link: link[1].trim(),
-          pubDate: pubDate ? pubDate[1] : new Date().toISOString(),
-          source,
-          sourceIcon
-        });
+        const titleText = (title[1] || title[2] || '').trim();
+        const linkText = (link[1] || link[2] || '').trim();
+        
+        if (titleText && linkText) {
+          items.push({
+            title: titleText,
+            link: linkText,
+            pubDate: pubDate ? pubDate[1] : new Date().toISOString(),
+            source,
+            sourceIcon
+          });
+        }
       }
     }
     
@@ -53,6 +58,7 @@ export async function GET() {
       { url: 'https://crownheights.info/feed/', source: 'CrownHeights.info', icon: '🏘️' },
       { url: 'https://www.lubavitch.com/feed/', source: 'Lubavitch.com', icon: '✡️' },
       { url: 'https://www.theyeshivaworld.com/feed', source: 'Yeshiva World', icon: '📖' },
+      { url: 'https://www.chabad.org/tools/rss/rss.xml', source: 'Chabad.org', icon: '🔯' },
     ];
     
     const allNews = await Promise.all(
