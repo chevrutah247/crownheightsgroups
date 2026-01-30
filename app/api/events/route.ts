@@ -8,14 +8,31 @@ function getRedis() {
   return null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const redis = getRedis();
     if (!redis) return NextResponse.json([]);
+    
     const stored = await redis.get('events');
     if (stored) {
       const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
-      if (Array.isArray(data)) return NextResponse.json(data);
+      if (Array.isArray(data)) {
+        // Check if admin wants all events (including expired)
+        const showAll = request.nextUrl.searchParams.get('all') === 'true';
+        
+        if (showAll) {
+          return NextResponse.json(data);
+        }
+        
+        // Filter out expired events for public view
+        const now = new Date();
+        const activeEvents = data.filter((e: any) => {
+          if (!e.date) return true;
+          const eventDate = new Date(e.date);
+          return eventDate >= now;
+        });
+        return NextResponse.json(activeEvents);
+      }
     }
     return NextResponse.json([]);
   } catch (error) {
@@ -35,7 +52,7 @@ export async function POST(request: NextRequest) {
       if (!Array.isArray(events)) events = [];
     }
     const event = {
-      id: String(Date.now()),
+      id: data.id || String(Date.now()),
       title: data.title || '',
       description: data.description || '',
       date: data.date || '',
@@ -44,11 +61,10 @@ export async function POST(request: NextRequest) {
       address: data.address || '',
       organizer: data.organizer || '',
       contactPhone: data.contactPhone || '',
-      contactEmail: data.contactEmail || '',
       link: data.link || '',
       imageUrl: data.imageUrl || '',
       status: 'approved',
-      createdAt: new Date().toISOString()
+      createdAt: data.createdAt || new Date().toISOString()
     };
     events.push(event);
     await redis.set('events', JSON.stringify(events));
