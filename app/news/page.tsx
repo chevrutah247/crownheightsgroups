@@ -11,6 +11,7 @@ interface NewsItem {
   pubDate: string;
   source: string;
   sourceIcon: string;
+  image?: string;
 }
 
 export default function NewsPage() {
@@ -111,12 +112,17 @@ export default function NewsPage() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
               {filteredNews.map((item, index) => (
-                <a key={index} href={item.link} target="_blank" rel="noopener noreferrer" style={{ display: 'block', background: 'white', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <span style={{ background: getSourceColor(item.source) + '20', color: getSourceColor(item.source), padding: '0.25rem 0.75rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>{item.sourceIcon} {item.source}</span>
-                    <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{formatDate(item.pubDate)}</span>
+                <a key={index} href={item.link} target="_blank" rel="noopener noreferrer" style={{ display: 'block', background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>
+                  {item.image && (
+                    <div style={{ height: '160px', backgroundImage: `url(${item.image})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#f1f5f9' }} />
+                  )}
+                  <div style={{ padding: '1.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <span style={{ background: getSourceColor(item.source) + '20', color: getSourceColor(item.source), padding: '0.25rem 0.75rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>{item.sourceIcon} {item.source}</span>
+                      <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{formatDate(item.pubDate)}</span>
+                    </div>
+                    <h3 style={{ margin: 0, color: '#1e3a5f', fontSize: '1rem', lineHeight: '1.5' }}>{decodeHtml(item.title)}</h3>
                   </div>
-                  <h3 style={{ margin: 0, color: '#1e3a5f', fontSize: '1rem', lineHeight: '1.5' }}>{decodeHtml(item.title)}</h3>
                 </a>
               ))}
             </div>

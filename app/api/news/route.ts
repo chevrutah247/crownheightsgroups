@@ -6,6 +6,7 @@ interface NewsItem {
   pubDate: string;
   source: string;
   sourceIcon: string;
+  image?: string;
 }
 
 async function fetchRSS(url: string, source: string, sourceIcon: string): Promise<NewsItem[]> {
@@ -24,22 +25,32 @@ async function fetchRSS(url: string, source: string, sourceIcon: string): Promis
     
     for (const item of itemMatches.slice(0, 10)) {
       const title = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>|<title>(.*?)<\/title>/i);
-      const link = item.match(/<link>(.*?)<\/link>|<link>[^<]*<!\[CDATA\[(.*?)\]\]>[^<]*<\/link>/i);
+      const link = item.match(/<link>(.*?)<\/link>/i);
       const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/i);
       
+      // Extract image from various RSS formats
+      let image = '';
+      const mediaContent = item.match(/<media:content[^>]*url=["']([^"']+)["']/i);
+      const enclosure = item.match(/<enclosure[^>]*url=["']([^"']+)["'][^>]*type=["']image/i);
+      const imgInContent = item.match(/<content:encoded>[\s\S]*?<img[^>]*src=["']([^"']+)["']/i);
+      const imgInDescription = item.match(/<description>[\s\S]*?(?:<!\[CDATA\[)?[\s\S]*?<img[^>]*src=["']([^"']+)["']/i);
+      const mediaThumbnail = item.match(/<media:thumbnail[^>]*url=["']([^"']+)["']/i);
+      
+      if (mediaContent) image = mediaContent[1];
+      else if (enclosure) image = enclosure[1];
+      else if (mediaThumbnail) image = mediaThumbnail[1];
+      else if (imgInContent) image = imgInContent[1];
+      else if (imgInDescription) image = imgInDescription[1];
+      
       if (title && link) {
-        const titleText = (title[1] || title[2] || '').trim();
-        const linkText = (link[1] || link[2] || '').trim();
-        
-        if (titleText && linkText) {
-          items.push({
-            title: titleText,
-            link: linkText,
-            pubDate: pubDate ? pubDate[1] : new Date().toISOString(),
-            source,
-            sourceIcon
-          });
-        }
+        items.push({
+          title: (title[1] || title[2] || '').trim(),
+          link: link[1].trim(),
+          pubDate: pubDate ? pubDate[1] : new Date().toISOString(),
+          source,
+          sourceIcon,
+          image: image || undefined
+        });
       }
     }
     
