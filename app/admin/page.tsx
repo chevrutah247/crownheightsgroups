@@ -5,47 +5,37 @@ import Link from 'next/link';
 
 type Tab = 'dashboard' | 'groups' | 'users' | 'services' | 'group-categories' | 'service-categories' | 'locations' | 'suggestions' | 'reports';
 
-interface Group { id: string; title: string; description: string; whatsappLinks?: string[]; whatsappLink?: string; telegramLink?: string; facebookLink?: string; twitterLink?: string; websiteLink?: string; categoryId: string; locationId: string; language: string; status: string; clicksCount: number; isPinned?: boolean; }
-interface User { id: string; email: string; name: string; role: 'user' | 'admin'; isVerified: boolean; createdAt: string; }
-interface Service { id: string; name: string; phone: string; categoryId: string; description?: string; languages?: string[]; isPinned?: boolean; }
-interface Category { id: string; name: string; nameRu?: string; slug: string; icon: string; order?: number; }
-interface Location { id: string; neighborhood: string; city: string; state: string; country: string; status: string; order?: number; }
-interface Suggestion { id: string; name: string; type: string; suggestedBy: string; status: string; createdAt: string; }
-interface ServiceSuggestion { id: string; name: string; phone: string; categoryId: string; description: string; type: string; status: string; submittedBy: string; createdAt: string; }
-interface LocationSuggestion { id: string; neighborhood: string; city: string; state: string; country: string; suggestedBy: string; status: string; createdAt: string; }
-interface Report { id: string; groupId: string; userEmail: string; reason: string; createdAt: string; }
-
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
-  const [groupCategories, setGroupCategories] = useState<Category[]>([]);
-  const [serviceCategories, setServiceCategories] = useState<Category[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [categorySuggestions, setCategorySuggestions] = useState<Suggestion[]>([]);
-  const [serviceSuggestions, setServiceSuggestions] = useState<ServiceSuggestion[]>([]);
-  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
-  const [reports, setReports] = useState<Report[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [groupCategories, setGroupCategories] = useState<any[]>([]);
+  const [serviceCategories, setServiceCategories] = useState<any[]>([]);
+  const [locations, setLocations] = useState<any[]>([]);
+  const [groupSuggestions, setGroupSuggestions] = useState<any[]>([]);
+  const [serviceSuggestions, setServiceSuggestions] = useState<any[]>([]);
+  const [locationSuggestions, setLocationSuggestions] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
   const [editingGroup, setEditingGroup] = useState<any>(null);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [isNewGroup, setIsNewGroup] = useState(false);
-  const [groupError, setGroupError] = useState<string>('');
-  const [suggestedTitle, setSuggestedTitle] = useState<string>('');
+  const [groupError, setGroupError] = useState('');
+  const [suggestedTitle, setSuggestedTitle] = useState('');
   
   const [editingService, setEditingService] = useState<any>(null);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [isNewService, setIsNewService] = useState(false);
 
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [isNewCategory, setIsNewCategory] = useState(false);
   const [categoryType, setCategoryType] = useState<'group' | 'service'>('group');
 
-  const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const [editingLocation, setEditingLocation] = useState<any>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [isNewLocation, setIsNewLocation] = useState(false);
 
@@ -55,7 +45,7 @@ export default function AdminPage() {
     await Promise.all([
       fetchGroups(), fetchUsers(), fetchServices(),
       fetchGroupCategories(), fetchServiceCategories(), fetchLocations(),
-      fetchCategorySuggestions(), fetchServiceSuggestions(), fetchLocationSuggestions(), fetchReports()
+      fetchGroupSuggestions(), fetchServiceSuggestions(), fetchLocationSuggestions(), fetchReports()
     ]);
     setLoading(false);
   };
@@ -66,155 +56,50 @@ export default function AdminPage() {
   const fetchGroupCategories = async () => { try { const r = await fetch('/api/admin/group-categories'); const d = await r.json(); setGroupCategories(Array.isArray(d) ? d : []); } catch (e) {} };
   const fetchServiceCategories = async () => { try { const r = await fetch('/api/admin/service-categories'); const d = await r.json(); setServiceCategories(Array.isArray(d) ? d : []); } catch (e) {} };
   const fetchLocations = async () => { try { const r = await fetch('/api/admin/locations'); const d = await r.json(); setLocations(Array.isArray(d) ? d : []); } catch (e) {} };
-  const fetchCategorySuggestions = async () => { try { const r = await fetch('/api/category-suggestions'); const d = await r.json(); setCategorySuggestions(Array.isArray(d) ? d : []); } catch (e) {} };
+  const fetchGroupSuggestions = async () => { try { const r = await fetch('/api/suggest-group'); const d = await r.json(); setGroupSuggestions(Array.isArray(d) ? d : []); } catch (e) {} };
   const fetchServiceSuggestions = async () => { try { const r = await fetch('/api/suggest-service'); const d = await r.json(); setServiceSuggestions(Array.isArray(d) ? d : []); } catch (e) {} };
   const fetchLocationSuggestions = async () => { try { const r = await fetch('/api/location-suggestions'); const d = await r.json(); setLocationSuggestions(Array.isArray(d) ? d : []); } catch (e) {} };
   const fetchReports = async () => { try { const r = await fetch('/api/reports'); const d = await r.json(); setReports(Array.isArray(d) ? d : []); } catch (e) {} };
 
-  const handleToggleAdmin = async (u: User) => { if (!confirm('Change role?')) return; await fetch('/api/admin/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: u.email, role: u.role === 'admin' ? 'user' : 'admin' }) }); fetchUsers(); };
+  const handleToggleAdmin = async (u: any) => { if (!confirm('Change role?')) return; await fetch('/api/admin/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: u.email, role: u.role === 'admin' ? 'user' : 'admin' }) }); fetchUsers(); };
   const handleDeleteUser = async (email: string) => { if (!confirm('Delete?')) return; await fetch('/api/admin/users', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }); fetchUsers(); };
 
-  const handleNewGroup = () => { 
-    setEditingGroup({ 
-      id: '', title: '', description: '', 
-      whatsappLinks: [''], 
-      telegramLink: '',
-      facebookLink: '',
-      twitterLink: '',
-      websiteLink: '',
-      categoryId: groupCategories[0]?.id || '1', 
-      locationId: locations[0]?.id || '1', 
-      language: 'English', 
-      status: 'approved', 
-      clicksCount: 0 
-    }); 
-    setIsNewGroup(true); 
-    setGroupError('');
-    setSuggestedTitle('');
-    setShowGroupModal(true); 
-  };
-  
-  const handleEditGroup = (g: Group) => { 
-    setEditingGroup({ 
-      ...g, 
-      whatsappLinks: g.whatsappLinks || (g.whatsappLink ? [g.whatsappLink] : ['']),
-      telegramLink: g.telegramLink || '',
-      facebookLink: g.facebookLink || '',
-      twitterLink: g.twitterLink || '',
-      websiteLink: g.websiteLink || ''
-    }); 
-    setIsNewGroup(false); 
-    setGroupError('');
-    setSuggestedTitle('');
-    setShowGroupModal(true); 
-  };
-  
-  const handleSaveGroup = async () => { 
-    if (!editingGroup?.title) return alert('Title required'); 
-    setSaving(true);
-    setGroupError('');
-    
-    const dataToSend = {
-      ...editingGroup,
-      whatsappLinks: (editingGroup.whatsappLinks || []).filter((l: string) => l && l.trim())
-    };
-    
-    const res = await fetch('/api/admin/groups', { 
-      method: isNewGroup ? 'POST' : 'PUT', 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify(dataToSend) 
-    }); 
-    
-    const data = await res.json();
-    
-    if (!res.ok) {
-      if (data.type === 'duplicate_title' && data.suggestedTitle) {
-        setSuggestedTitle(data.suggestedTitle);
-        setGroupError(data.error);
-      } else {
-        setGroupError(data.error || 'Error saving group');
-        setSuggestedTitle('');
-      }
-      setSaving(false);
-      return;
-    }
-    
-    await fetchGroups(); 
-    setShowGroupModal(false);
-    setGroupError('');
-    setSuggestedTitle('');
-    setSaving(false); 
-  };
-  
-  const handleUseSuggestedTitle = () => {
-    if (suggestedTitle) {
-      setEditingGroup({ ...editingGroup, title: suggestedTitle });
-      setSuggestedTitle('');
-      setGroupError('');
-    }
-  };
-  
+  const handleNewGroup = () => { setEditingGroup({ id: '', title: '', description: '', whatsappLinks: [''], telegramLink: '', facebookLink: '', twitterLink: '', websiteLink: '', categoryId: groupCategories[0]?.id || '1', locationId: locations[0]?.id || '1', language: 'English', status: 'approved', clicksCount: 0 }); setIsNewGroup(true); setGroupError(''); setSuggestedTitle(''); setShowGroupModal(true); };
+  const handleEditGroup = (g: any) => { setEditingGroup({ ...g, whatsappLinks: g.whatsappLinks || (g.whatsappLink ? [g.whatsappLink] : ['']) }); setIsNewGroup(false); setGroupError(''); setSuggestedTitle(''); setShowGroupModal(true); };
+  const handleSaveGroup = async () => { if (!editingGroup?.title) return alert('Title required'); setSaving(true); const res = await fetch('/api/admin/groups', { method: isNewGroup ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...editingGroup, whatsappLinks: (editingGroup.whatsappLinks || []).filter((l: string) => l && l.trim()) }) }); const data = await res.json(); if (!res.ok) { if (data.suggestedTitle) { setSuggestedTitle(data.suggestedTitle); } setGroupError(data.error || 'Error'); setSaving(false); return; } await fetchGroups(); setShowGroupModal(false); setSaving(false); };
   const handleDeleteGroup = async (id: string) => { if (!confirm('Delete?')) return; await fetch('/api/admin/groups', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); fetchGroups(); };
-  const handleTogglePin = async (g: Group) => { await fetch('/api/admin/groups', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...g, isPinned: !g.isPinned }) }); fetchGroups(); };
+  const handleTogglePin = async (g: any) => { await fetch('/api/admin/groups', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...g, isPinned: !g.isPinned }) }); fetchGroups(); };
 
   const handleNewService = () => { setEditingService({ id: '', name: '', phone: '', categoryId: serviceCategories[0]?.id || '1', description: '', languages: ['English'], status: 'approved' }); setIsNewService(true); setShowServiceModal(true); };
-  const handleEditService = (s: Service) => { setEditingService({ ...s }); setIsNewService(false); setShowServiceModal(true); };
-  const handleSaveService = async () => { 
-    if (!editingService?.name || !editingService?.phone) return alert('Name & Phone required'); 
-    setSaving(true); 
-    const res = await fetch('/api/admin/services', { method: isNewService ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editingService) }); 
-    const data = await res.json();
-    if (!res.ok) { alert(data.error || 'Error'); setSaving(false); return; }
-    await fetchServices(); setShowServiceModal(false); setSaving(false); 
-  };
+  const handleEditService = (s: any) => { setEditingService({ ...s }); setIsNewService(false); setShowServiceModal(true); };
+  const handleSaveService = async () => { if (!editingService?.name || !editingService?.phone) return alert('Name & Phone required'); setSaving(true); await fetch('/api/admin/services', { method: isNewService ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editingService) }); await fetchServices(); setShowServiceModal(false); setSaving(false); };
   const handleDeleteService = async (id: string) => { if (!confirm('Delete?')) return; await fetch('/api/admin/services', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); fetchServices(); };
-  const handleToggleServicePin = async (s: Service) => { await fetch('/api/admin/services', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...s, isPinned: !s.isPinned }) }); fetchServices(); };
+  const handleToggleServicePin = async (s: any) => { await fetch('/api/admin/services', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...s, isPinned: !s.isPinned }) }); fetchServices(); };
 
   const handleNewCategory = (type: 'group' | 'service') => { setCategoryType(type); setEditingCategory({ id: '', name: '', nameRu: '', slug: '', icon: '📁', order: 0 }); setIsNewCategory(true); setShowCategoryModal(true); };
-  const handleEditCategory = (c: Category, type: 'group' | 'service') => { setCategoryType(type); setEditingCategory({ ...c }); setIsNewCategory(false); setShowCategoryModal(true); };
-  const handleSaveCategory = async () => {
-    if (!editingCategory?.name) return alert('Name required');
-    setSaving(true);
-    const endpoint = categoryType === 'service' ? '/api/admin/service-categories' : '/api/admin/group-categories';
-    await fetch(endpoint, { method: isNewCategory ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editingCategory) });
-    if (categoryType === 'service') await fetchServiceCategories(); else await fetchGroupCategories();
-    setShowCategoryModal(false); setSaving(false);
-  };
-  const handleDeleteCategory = async (id: string, type: 'group' | 'service') => {
-    const items = type === 'service' ? services : groups;
-    if (items.some(i => i.categoryId === id)) return alert('Cannot delete - has items');
-    if (!confirm('Delete?')) return;
-    const endpoint = type === 'service' ? '/api/admin/service-categories' : '/api/admin/group-categories';
-    await fetch(endpoint, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
-    if (type === 'service') fetchServiceCategories(); else fetchGroupCategories();
-  };
+  const handleEditCategory = (c: any, type: 'group' | 'service') => { setCategoryType(type); setEditingCategory({ ...c }); setIsNewCategory(false); setShowCategoryModal(true); };
+  const handleSaveCategory = async () => { if (!editingCategory?.name) return alert('Name required'); setSaving(true); const endpoint = categoryType === 'service' ? '/api/admin/service-categories' : '/api/admin/group-categories'; await fetch(endpoint, { method: isNewCategory ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editingCategory) }); if (categoryType === 'service') await fetchServiceCategories(); else await fetchGroupCategories(); setShowCategoryModal(false); setSaving(false); };
+  const handleDeleteCategory = async (id: string, type: 'group' | 'service') => { const items = type === 'service' ? services : groups; if (items.some((i: any) => i.categoryId === id)) return alert('Cannot delete - has items'); if (!confirm('Delete?')) return; const endpoint = type === 'service' ? '/api/admin/service-categories' : '/api/admin/group-categories'; await fetch(endpoint, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); if (type === 'service') fetchServiceCategories(); else fetchGroupCategories(); };
 
   const handleNewLocation = () => { setEditingLocation({ id: '', neighborhood: '', city: '', state: '', country: 'USA', status: 'approved', order: locations.length + 1 }); setIsNewLocation(true); setShowLocationModal(true); };
-  const handleEditLocation = (l: Location) => { setEditingLocation({ ...l }); setIsNewLocation(false); setShowLocationModal(true); };
-  const handleSaveLocation = async () => {
-    if (!editingLocation?.neighborhood) return alert('Neighborhood required');
-    setSaving(true);
-    await fetch('/api/admin/locations', { method: isNewLocation ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editingLocation) });
-    await fetchLocations();
-    setShowLocationModal(false); setSaving(false);
-  };
-  const handleDeleteLocation = async (id: string) => {
-    if (groups.some(g => g.locationId === id)) return alert('Cannot delete - has groups');
-    if (!confirm('Delete?')) return;
-    await fetch('/api/admin/locations', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
-    fetchLocations();
-  };
+  const handleEditLocation = (l: any) => { setEditingLocation({ ...l }); setIsNewLocation(false); setShowLocationModal(true); };
+  const handleSaveLocation = async () => { if (!editingLocation?.neighborhood) return alert('Neighborhood required'); setSaving(true); await fetch('/api/admin/locations', { method: isNewLocation ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editingLocation) }); await fetchLocations(); setShowLocationModal(false); setSaving(false); };
+  const handleDeleteLocation = async (id: string) => { if (groups.some((g: any) => g.locationId === id)) return alert('Cannot delete - has groups'); if (!confirm('Delete?')) return; await fetch('/api/admin/locations', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); fetchLocations(); };
 
-  const handleApproveLocationSuggestion = async (s: LocationSuggestion) => {
-    await fetch('/api/location-suggestions', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, action: 'approve' }) });
-    fetchLocationSuggestions(); fetchLocations();
-  };
-  const handleRejectLocationSuggestion = async (id: string) => {
-    await fetch('/api/location-suggestions', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action: 'reject' }) });
-    fetchLocationSuggestions();
-  };
+  // Approve/Reject suggestions
+  const handleApproveGroupSuggestion = async (s: any) => { await fetch('/api/suggest-group', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, action: 'approve' }) }); fetchGroupSuggestions(); fetchGroups(); };
+  const handleRejectGroupSuggestion = async (id: string) => { await fetch('/api/suggest-group', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action: 'reject' }) }); fetchGroupSuggestions(); };
+  
+  const handleApproveServiceSuggestion = async (s: any) => { await fetch('/api/suggest-service', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, action: 'approve' }) }); fetchServiceSuggestions(); fetchServices(); };
+  const handleRejectServiceSuggestion = async (id: string) => { await fetch('/api/suggest-service', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action: 'reject' }) }); fetchServiceSuggestions(); };
 
-  const pendingCount = categorySuggestions.filter(s => s.status === 'pending').length + serviceSuggestions.filter(s => s.status === 'pending').length + locationSuggestions.filter(s => s.status === 'pending').length;
+  const handleApproveLocationSuggestion = async (s: any) => { await fetch('/api/location-suggestions', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, action: 'approve' }) }); fetchLocationSuggestions(); fetchLocations(); };
+  const handleRejectLocationSuggestion = async (id: string) => { await fetch('/api/location-suggestions', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action: 'reject' }) }); fetchLocationSuggestions(); };
+
+  const pendingGroupSuggestions = groupSuggestions.filter(s => s.status === 'pending');
+  const pendingServiceSuggestions = serviceSuggestions.filter(s => s.status === 'pending');
+  const pendingLocationSuggestions = locationSuggestions.filter(s => s.status === 'pending');
+  const pendingCount = pendingGroupSuggestions.length + pendingServiceSuggestions.length + pendingLocationSuggestions.length;
 
   const navItems = [
     { id: 'dashboard' as Tab, label: 'Dashboard', icon: '📊' },
@@ -271,19 +156,17 @@ export default function AdminPage() {
             <div className="admin-header"><h1 className="admin-title">Groups ({groups.length})</h1><button className="admin-btn" onClick={handleNewGroup}>+ Add</button></div>
             <div className="admin-card">
               <table className="admin-table">
-                <thead><tr><th>Pin</th><th>Title</th><th>Category</th><th>Location</th><th>Links</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Pin</th><th>Title</th><th>Category</th><th>Location</th><th>Actions</th></tr></thead>
                 <tbody>
-                  {groups.map(g => {
-                    const cat = groupCategories.find(c => c.id === g.categoryId);
-                    const loc = locations.find(l => l.id === g.locationId);
-                    const linksCount = (g.whatsappLinks?.length || (g.whatsappLink ? 1 : 0)) + (g.telegramLink ? 1 : 0) + (g.facebookLink ? 1 : 0) + (g.twitterLink ? 1 : 0) + (g.websiteLink ? 1 : 0);
+                  {groups.map((g: any) => {
+                    const cat = groupCategories.find((c: any) => c.id === g.categoryId);
+                    const loc = locations.find((l: any) => l.id === g.locationId);
                     return (
-                      <tr key={g.id} style={{ background: g.status === 'broken' ? '#fee2e2' : g.isPinned ? '#fef3c7' : 'white' }}>
+                      <tr key={g.id} style={{ background: g.isPinned ? '#fef3c7' : 'white' }}>
                         <td><button onClick={() => handleTogglePin(g)} style={{ background: g.isPinned ? '#f59e0b' : '#e5e7eb', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>{g.isPinned ? '⭐' : '☆'}</button></td>
                         <td><strong>{g.title}</strong></td>
                         <td>{cat?.icon} {cat?.name || 'Unknown'}</td>
                         <td>📍 {loc?.neighborhood || 'Unknown'}</td>
-                        <td><span style={{ padding: '2px 8px', background: '#e0f2fe', borderRadius: '4px', fontSize: '0.8rem' }}>{linksCount} links</span></td>
                         <td><button className="action-btn edit" onClick={() => handleEditGroup(g)}>Edit</button><button className="action-btn delete" onClick={() => handleDeleteGroup(g.id)}>Delete</button></td>
                       </tr>
                     );
@@ -299,14 +182,13 @@ export default function AdminPage() {
             <div className="admin-header"><h1 className="admin-title">Locations ({locations.length})</h1><button className="admin-btn" onClick={handleNewLocation}>+ Add</button></div>
             <div className="admin-card">
               <table className="admin-table">
-                <thead><tr><th>Neighborhood</th><th>City</th><th>Country</th><th>Groups</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Neighborhood</th><th>City</th><th>Groups</th><th>Actions</th></tr></thead>
                 <tbody>
-                  {locations.sort((a, b) => (a.order || 0) - (b.order || 0)).map(l => (
+                  {locations.sort((a: any, b: any) => (a.order || 0) - (b.order || 0)).map((l: any) => (
                     <tr key={l.id}>
                       <td><strong>{l.neighborhood}</strong></td>
                       <td>{l.city}{l.state ? ', ' + l.state : ''}</td>
-                      <td>{l.country}</td>
-                      <td>{groups.filter(g => g.locationId === l.id).length}</td>
+                      <td>{groups.filter((g: any) => g.locationId === l.id).length}</td>
                       <td><button className="action-btn edit" onClick={() => handleEditLocation(l)}>Edit</button><button className="action-btn delete" onClick={() => handleDeleteLocation(l.id)}>Delete</button></td>
                     </tr>
                   ))}
@@ -323,8 +205,8 @@ export default function AdminPage() {
               <table className="admin-table">
                 <thead><tr><th>Icon</th><th>Name</th><th>Russian</th><th>Groups</th><th>Actions</th></tr></thead>
                 <tbody>
-                  {groupCategories.sort((a, b) => (a.order || 0) - (b.order || 0)).map(c => (
-                    <tr key={c.id}><td style={{ fontSize: '1.5rem' }}>{c.icon}</td><td><strong>{c.name}</strong></td><td>{c.nameRu || '-'}</td><td>{groups.filter(g => g.categoryId === c.id).length}</td><td><button className="action-btn edit" onClick={() => handleEditCategory(c, 'group')}>Edit</button><button className="action-btn delete" onClick={() => handleDeleteCategory(c.id, 'group')}>Delete</button></td></tr>
+                  {groupCategories.sort((a: any, b: any) => (a.order || 0) - (b.order || 0)).map((c: any) => (
+                    <tr key={c.id}><td style={{ fontSize: '1.5rem' }}>{c.icon}</td><td><strong>{c.name}</strong></td><td>{c.nameRu || '-'}</td><td>{groups.filter((g: any) => g.categoryId === c.id).length}</td><td><button className="action-btn edit" onClick={() => handleEditCategory(c, 'group')}>Edit</button><button className="action-btn delete" onClick={() => handleDeleteCategory(c.id, 'group')}>Delete</button></td></tr>
                   ))}
                 </tbody>
               </table>
@@ -339,8 +221,8 @@ export default function AdminPage() {
               <table className="admin-table">
                 <thead><tr><th>Pin</th><th>Name</th><th>Category</th><th>Phone</th><th>Actions</th></tr></thead>
                 <tbody>
-                  {services.map(s => {
-                    const cat = serviceCategories.find(c => c.id === s.categoryId);
+                  {services.map((s: any) => {
+                    const cat = serviceCategories.find((c: any) => c.id === s.categoryId);
                     return (
                       <tr key={s.id} style={s.isPinned ? { background: '#fef3c7' } : {}}>
                         <td><button onClick={() => handleToggleServicePin(s)} style={{ background: s.isPinned ? '#f59e0b' : '#e5e7eb', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer' }}>{s.isPinned ? '⭐' : '☆'}</button></td>
@@ -362,8 +244,8 @@ export default function AdminPage() {
               <table className="admin-table">
                 <thead><tr><th>Icon</th><th>Name</th><th>Russian</th><th>Services</th><th>Actions</th></tr></thead>
                 <tbody>
-                  {serviceCategories.sort((a, b) => (a.order || 0) - (b.order || 0)).map(c => (
-                    <tr key={c.id}><td style={{ fontSize: '1.5rem' }}>{c.icon}</td><td><strong>{c.name}</strong></td><td>{c.nameRu || '-'}</td><td>{services.filter(s => s.categoryId === c.id).length}</td><td><button className="action-btn edit" onClick={() => handleEditCategory(c, 'service')}>Edit</button><button className="action-btn delete" onClick={() => handleDeleteCategory(c.id, 'service')}>Delete</button></td></tr>
+                  {serviceCategories.sort((a: any, b: any) => (a.order || 0) - (b.order || 0)).map((c: any) => (
+                    <tr key={c.id}><td style={{ fontSize: '1.5rem' }}>{c.icon}</td><td><strong>{c.name}</strong></td><td>{c.nameRu || '-'}</td><td>{services.filter((s: any) => s.categoryId === c.id).length}</td><td><button className="action-btn edit" onClick={() => handleEditCategory(c, 'service')}>Edit</button><button className="action-btn delete" onClick={() => handleDeleteCategory(c.id, 'service')}>Delete</button></td></tr>
                   ))}
                 </tbody>
               </table>
@@ -378,7 +260,7 @@ export default function AdminPage() {
               <table className="admin-table">
                 <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
                 <tbody>
-                  {users.map(u => (
+                  {users.map((u: any) => (
                     <tr key={u.email} style={u.role === 'admin' ? { background: '#dbeafe' } : {}}>
                       <td><strong>{u.name}</strong></td><td>{u.email}</td>
                       <td><span style={{ padding: '4px 8px', borderRadius: '4px', background: u.role === 'admin' ? '#2563eb' : '#e5e7eb', color: u.role === 'admin' ? 'white' : '#333' }}>{u.role === 'admin' ? '👑 Admin' : 'User'}</span></td>
@@ -395,16 +277,26 @@ export default function AdminPage() {
           <>
             <div className="admin-header"><h1 className="admin-title">Pending Suggestions</h1></div>
             
+            {/* Group Suggestions */}
             <div className="admin-card" style={{ marginBottom: '1rem' }}>
-              <h3>📍 Location Suggestions</h3>
-              {locationSuggestions.filter(s => s.status === 'pending').length === 0 ? <p style={{ color: '#666' }}>No pending</p> : (
+              <h3>👥 Group Suggestions ({pendingGroupSuggestions.length})</h3>
+              {pendingGroupSuggestions.length === 0 ? <p style={{ color: '#666' }}>No pending</p> : (
                 <table className="admin-table">
-                  <thead><tr><th>Neighborhood</th><th>City</th><th>Country</th><th>By</th><th>Actions</th></tr></thead>
+                  <thead><tr><th>Title</th><th>Links</th><th>By</th><th>Actions</th></tr></thead>
                   <tbody>
-                    {locationSuggestions.filter(s => s.status === 'pending').map(s => (
+                    {pendingGroupSuggestions.map((s: any) => (
                       <tr key={s.id}>
-                        <td><strong>{s.neighborhood}</strong></td><td>{s.city}{s.state ? ', ' + s.state : ''}</td><td>{s.country}</td><td>{s.suggestedBy}</td>
-                        <td><button className="action-btn edit" onClick={() => handleApproveLocationSuggestion(s)}>✅</button><button className="action-btn delete" onClick={() => handleRejectLocationSuggestion(s.id)}>❌</button></td>
+                        <td><strong>{s.title}</strong><br/><small style={{color:'#666'}}>{s.description?.substring(0,50)}...</small></td>
+                        <td>
+                          {s.whatsappLink && <span>💬</span>}
+                          {s.telegramLink && <span>✈️</span>}
+                          {s.facebookLink && <span>📘</span>}
+                        </td>
+                        <td>{s.submittedBy}</td>
+                        <td>
+                          <button className="action-btn edit" onClick={() => handleApproveGroupSuggestion(s)}>✅ Approve</button>
+                          <button className="action-btn delete" onClick={() => handleRejectGroupSuggestion(s.id)}>❌ Reject</button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -412,28 +304,46 @@ export default function AdminPage() {
               )}
             </div>
 
+            {/* Service Suggestions */}
             <div className="admin-card" style={{ marginBottom: '1rem' }}>
-              <h3>📁 Category Suggestions</h3>
-              {categorySuggestions.filter(s => s.status === 'pending').length === 0 ? <p style={{ color: '#666' }}>No pending</p> : (
+              <h3>🔧 Service Suggestions ({pendingServiceSuggestions.length})</h3>
+              {pendingServiceSuggestions.length === 0 ? <p style={{ color: '#666' }}>No pending</p> : (
                 <table className="admin-table">
-                  <thead><tr><th>Name</th><th>Type</th><th>By</th><th>Actions</th></tr></thead>
+                  <thead><tr><th>Name</th><th>Phone</th><th>By</th><th>Actions</th></tr></thead>
                   <tbody>
-                    {categorySuggestions.filter(s => s.status === 'pending').map(s => (
-                      <tr key={s.id}><td><strong>{s.name}</strong></td><td>{s.type}</td><td>{s.suggestedBy}</td><td><button className="action-btn edit">✅</button><button className="action-btn delete">❌</button></td></tr>
+                    {pendingServiceSuggestions.map((s: any) => (
+                      <tr key={s.id}>
+                        <td><strong>{s.name}</strong></td>
+                        <td>{s.phone}</td>
+                        <td>{s.submittedBy}</td>
+                        <td>
+                          <button className="action-btn edit" onClick={() => handleApproveServiceSuggestion(s)}>✅ Approve</button>
+                          <button className="action-btn delete" onClick={() => handleRejectServiceSuggestion(s.id)}>❌ Reject</button>
+                        </td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
               )}
             </div>
 
+            {/* Location Suggestions */}
             <div className="admin-card">
-              <h3>🔧 Service Suggestions</h3>
-              {serviceSuggestions.filter(s => s.status === 'pending').length === 0 ? <p style={{ color: '#666' }}>No pending</p> : (
+              <h3>📍 Location Suggestions ({pendingLocationSuggestions.length})</h3>
+              {pendingLocationSuggestions.length === 0 ? <p style={{ color: '#666' }}>No pending</p> : (
                 <table className="admin-table">
-                  <thead><tr><th>Name</th><th>Phone</th><th>By</th><th>Actions</th></tr></thead>
+                  <thead><tr><th>Neighborhood</th><th>City</th><th>By</th><th>Actions</th></tr></thead>
                   <tbody>
-                    {serviceSuggestions.filter(s => s.status === 'pending').map(s => (
-                      <tr key={s.id}><td><strong>{s.name}</strong></td><td>{s.phone}</td><td>{s.submittedBy}</td><td><button className="action-btn edit">✅</button><button className="action-btn delete">❌</button></td></tr>
+                    {pendingLocationSuggestions.map((s: any) => (
+                      <tr key={s.id}>
+                        <td><strong>{s.neighborhood}</strong></td>
+                        <td>{s.city}</td>
+                        <td>{s.suggestedBy}</td>
+                        <td>
+                          <button className="action-btn edit" onClick={() => handleApproveLocationSuggestion(s)}>✅ Approve</button>
+                          <button className="action-btn delete" onClick={() => handleRejectLocationSuggestion(s.id)}>❌ Reject</button>
+                        </td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
@@ -450,11 +360,12 @@ export default function AdminPage() {
                 <table className="admin-table">
                   <thead><tr><th>Group</th><th>By</th><th>Reports</th></tr></thead>
                   <tbody>
-                    {Object.entries(reports.reduce((acc: any, r) => { acc[r.groupId] = acc[r.groupId] || []; acc[r.groupId].push(r); return acc; }, {})).map(([groupId, groupReports]: [string, any]) => {
-                      const group = groups.find(g => g.id === groupId);
+                    {Object.entries(reports.reduce((acc: any, r: any) => { acc[r.groupId] = acc[r.groupId] || []; acc[r.groupId].push(r); return acc; }, {})).map(([groupId, groupReports]: [string, any]) => {
+                      const group = groups.find((g: any) => g.id === groupId);
                       return (
                         <tr key={groupId} style={groupReports.length >= 3 ? { background: '#fee2e2' } : {}}>
-                          <td><strong>{group?.title || 'Unknown'}</strong></td><td>{groupReports.map((r: Report) => r.userEmail).join(', ')}</td>
+                          <td><strong>{group?.title || 'Unknown'}</strong></td>
+                          <td>{groupReports.map((r: any) => r.userEmail).join(', ')}</td>
                           <td><span style={{ padding: '4px 8px', borderRadius: '4px', background: groupReports.length >= 3 ? '#ef4444' : '#f59e0b', color: 'white' }}>{groupReports.length}</span></td>
                         </tr>
                       );
@@ -472,31 +383,10 @@ export default function AdminPage() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '600px', maxHeight: '90vh', overflow: 'auto' }}>
             <h2>{isNewGroup ? 'Add Group' : 'Edit Group'}</h2>
-            
-            {groupError && (
-              <div style={{ background: suggestedTitle ? '#fef3c7' : '#fee2e2', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-                <p style={{ margin: 0, color: suggestedTitle ? '#92400e' : '#dc2626' }}>{groupError}</p>
-                {suggestedTitle && (
-                  <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={handleUseSuggestedTitle} style={{ padding: '0.5rem 1rem', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Use "{suggestedTitle}"</button>
-                    <button onClick={() => { setGroupError(''); setSuggestedTitle(''); }} style={{ padding: '0.5rem 1rem', background: '#e5e7eb', color: '#333', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Change manually</button>
-                  </div>
-                )}
-              </div>
-            )}
-            
+            {groupError && <div style={{ background: '#fee2e2', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', color: '#dc2626' }}>{groupError}{suggestedTitle && <><br/><button onClick={() => { setEditingGroup({...editingGroup, title: suggestedTitle}); setGroupError(''); setSuggestedTitle(''); }} style={{marginTop:'0.5rem',padding:'0.5rem',background:'#2563eb',color:'white',border:'none',borderRadius:'4px',cursor:'pointer'}}>Use "{suggestedTitle}"</button></>}</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-              <div>
-                <label style={labelStyle}>Title *</label>
-                <input style={inputStyle} placeholder="Group name" value={editingGroup.title} onChange={e => setEditingGroup({ ...editingGroup, title: e.target.value })} />
-              </div>
-              
-              <div>
-                <label style={labelStyle}>Description</label>
-                <textarea style={inputStyle} placeholder="What is this group about?" value={editingGroup.description} onChange={e => setEditingGroup({ ...editingGroup, description: e.target.value })} rows={2} />
-              </div>
-
-              {/* WhatsApp Links */}
+              <div><label style={labelStyle}>Title *</label><input style={inputStyle} value={editingGroup.title} onChange={e => setEditingGroup({ ...editingGroup, title: e.target.value })} /></div>
+              <div><label style={labelStyle}>Description</label><textarea style={inputStyle} value={editingGroup.description} onChange={e => setEditingGroup({ ...editingGroup, description: e.target.value })} rows={2} /></div>
               <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: '8px' }}>
                 <label style={{ ...labelStyle, color: '#166534' }}>💬 WhatsApp Links</label>
                 {editingGroup.whatsappLinks?.map((link: string, i: number) => (
@@ -505,68 +395,24 @@ export default function AdminPage() {
                     {editingGroup.whatsappLinks.length > 1 && <button onClick={() => { const links = editingGroup.whatsappLinks.filter((_: any, idx: number) => idx !== i); setEditingGroup({ ...editingGroup, whatsappLinks: links }); }} style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>✕</button>}
                   </div>
                 ))}
-                <button onClick={() => setEditingGroup({ ...editingGroup, whatsappLinks: [...(editingGroup.whatsappLinks || []), ''] })} style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', border: '1px solid #25D366', borderRadius: '8px', background: 'white', color: '#25D366', cursor: 'pointer' }}>+ Add WhatsApp Link</button>
+                <button onClick={() => setEditingGroup({ ...editingGroup, whatsappLinks: [...(editingGroup.whatsappLinks || []), ''] })} style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', border: '1px solid #25D366', borderRadius: '8px', background: 'white', color: '#25D366', cursor: 'pointer' }}>+ Add Link</button>
               </div>
-
-              {/* Other Social Links */}
               <div style={{ background: '#eff6ff', padding: '1rem', borderRadius: '8px' }}>
-                <label style={{ ...labelStyle, color: '#1e40af' }}>Other Links (optional)</label>
-                
-                <div style={{ marginTop: '0.75rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: '#666' }}>✈️ Telegram</label>
-                  <input style={inputStyle} placeholder="https://t.me/..." value={editingGroup.telegramLink || ''} onChange={e => setEditingGroup({ ...editingGroup, telegramLink: e.target.value })} />
-                </div>
-                
-                <div style={{ marginTop: '0.75rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: '#666' }}>📘 Facebook</label>
-                  <input style={inputStyle} placeholder="https://facebook.com/groups/..." value={editingGroup.facebookLink || ''} onChange={e => setEditingGroup({ ...editingGroup, facebookLink: e.target.value })} />
-                </div>
-                
-                <div style={{ marginTop: '0.75rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: '#666' }}>𝕏 X / Twitter</label>
-                  <input style={inputStyle} placeholder="https://x.com/..." value={editingGroup.twitterLink || ''} onChange={e => setEditingGroup({ ...editingGroup, twitterLink: e.target.value })} />
-                </div>
-                
-                <div style={{ marginTop: '0.75rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: '#666' }}>🌐 Website</label>
-                  <input style={inputStyle} placeholder="https://example.com" value={editingGroup.websiteLink || ''} onChange={e => setEditingGroup({ ...editingGroup, websiteLink: e.target.value })} />
-                </div>
+                <label style={{ ...labelStyle, color: '#1e40af' }}>Other Links</label>
+                <div style={{ marginTop: '0.5rem' }}><label style={{ fontSize: '0.85rem' }}>✈️ Telegram</label><input style={inputStyle} value={editingGroup.telegramLink || ''} onChange={e => setEditingGroup({ ...editingGroup, telegramLink: e.target.value })} /></div>
+                <div style={{ marginTop: '0.5rem' }}><label style={{ fontSize: '0.85rem' }}>📘 Facebook</label><input style={inputStyle} value={editingGroup.facebookLink || ''} onChange={e => setEditingGroup({ ...editingGroup, facebookLink: e.target.value })} /></div>
+                <div style={{ marginTop: '0.5rem' }}><label style={{ fontSize: '0.85rem' }}>🌐 Website</label><input style={inputStyle} value={editingGroup.websiteLink || ''} onChange={e => setEditingGroup({ ...editingGroup, websiteLink: e.target.value })} /></div>
               </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label style={labelStyle}>Category</label>
-                  <select style={inputStyle} value={editingGroup.categoryId} onChange={e => setEditingGroup({ ...editingGroup, categoryId: e.target.value })}>
-                    {groupCategories.sort((a, b) => (a.order || 0) - (b.order || 0)).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>Location</label>
-                  <select style={inputStyle} value={editingGroup.locationId} onChange={e => setEditingGroup({ ...editingGroup, locationId: e.target.value })}>
-                    {locations.sort((a, b) => (a.order || 0) - (b.order || 0)).map(l => <option key={l.id} value={l.id}>📍 {l.neighborhood}</option>)}
-                  </select>
-                </div>
+                <div><label style={labelStyle}>Category</label><select style={inputStyle} value={editingGroup.categoryId} onChange={e => setEditingGroup({ ...editingGroup, categoryId: e.target.value })}>{groupCategories.map((c: any) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
+                <div><label style={labelStyle}>Location</label><select style={inputStyle} value={editingGroup.locationId} onChange={e => setEditingGroup({ ...editingGroup, locationId: e.target.value })}>{locations.map((l: any) => <option key={l.id} value={l.id}>📍 {l.neighborhood}</option>)}</select></div>
               </div>
-
-              <div>
-                <label style={labelStyle}>Language</label>
-                <select style={inputStyle} value={editingGroup.language} onChange={e => setEditingGroup({ ...editingGroup, language: e.target.value })}>
-                  <option value="English">🇺🇸 English</option>
-                  <option value="Russian">🇷🇺 Russian</option>
-                  <option value="Hebrew">🇮🇱 Hebrew</option>
-                  <option value="Yiddish">יידיש Yiddish</option>
-                </select>
-              </div>
-
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input type="checkbox" checked={editingGroup.isPinned} onChange={e => setEditingGroup({ ...editingGroup, isPinned: e.target.checked })} />
-                ⭐ Pin to top (Featured)
-              </label>
+              <div><label style={labelStyle}>Language</label><select style={inputStyle} value={editingGroup.language} onChange={e => setEditingGroup({ ...editingGroup, language: e.target.value })}><option value="English">🇺🇸 English</option><option value="Russian">🇷🇺 Russian</option><option value="Hebrew">🇮🇱 Hebrew</option><option value="Yiddish">יידיש Yiddish</option></select></div>
+              <label><input type="checkbox" checked={editingGroup.isPinned} onChange={e => setEditingGroup({ ...editingGroup, isPinned: e.target.checked })} /> ⭐ Pin to top</label>
             </div>
-            
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-              <button onClick={() => { setShowGroupModal(false); setGroupError(''); setSuggestedTitle(''); }} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleSaveGroup} disabled={saving} style={btnStyle(saving)}>{saving ? 'Saving...' : 'Save Group'}</button>
+              <button onClick={() => setShowGroupModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleSaveGroup} disabled={saving} style={btnStyle(saving)}>{saving ? 'Saving...' : 'Save'}</button>
             </div>
           </div>
         </div>
@@ -582,9 +428,7 @@ export default function AdminPage() {
               <input style={inputStyle} placeholder="Phone *" value={editingService.phone} onChange={e => setEditingService({ ...editingService, phone: e.target.value })} />
               <input style={inputStyle} placeholder="Address" value={editingService.address || ''} onChange={e => setEditingService({ ...editingService, address: e.target.value })} />
               <input style={inputStyle} placeholder="Website" value={editingService.website || ''} onChange={e => setEditingService({ ...editingService, website: e.target.value })} />
-              <select style={inputStyle} value={editingService.categoryId} onChange={e => setEditingService({ ...editingService, categoryId: e.target.value })}>
-                {serviceCategories.sort((a, b) => (a.order || 0) - (b.order || 0)).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-              </select>
+              <select style={inputStyle} value={editingService.categoryId} onChange={e => setEditingService({ ...editingService, categoryId: e.target.value })}>{serviceCategories.map((c: any) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select>
               <textarea style={inputStyle} placeholder="Description" value={editingService.description || ''} onChange={e => setEditingService({ ...editingService, description: e.target.value })} rows={2} />
               <label><input type="checkbox" checked={editingService.isPinned} onChange={e => setEditingService({ ...editingService, isPinned: e.target.checked })} /> ⭐ Pin</label>
             </div>
@@ -600,7 +444,7 @@ export default function AdminPage() {
       {showCategoryModal && editingCategory && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '400px' }}>
-            <h2>{isNewCategory ? 'Add' : 'Edit'} {categoryType === 'service' ? 'Service Type' : 'Group Category'}</h2>
+            <h2>{isNewCategory ? 'Add' : 'Edit'} {categoryType === 'service' ? 'Service Type' : 'Category'}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
               <div><label style={labelStyle}>Icon</label><input style={inputStyle} value={editingCategory.icon} onChange={e => setEditingCategory({ ...editingCategory, icon: e.target.value })} /></div>
               <div><label style={labelStyle}>Name *</label><input style={inputStyle} value={editingCategory.name} onChange={e => setEditingCategory({ ...editingCategory, name: e.target.value })} /></div>
@@ -616,34 +460,18 @@ export default function AdminPage() {
 
       {/* Location Modal */}
       {showLocationModal && editingLocation && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "white", borderRadius: "12px", padding: "2rem", width: "90%", maxWidth: "450px" }}>
-            <h2>{isNewLocation ? "Add" : "Edit"} Location</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "1rem" }}>
-              <div style={{ background: "#f0f9ff", padding: "1rem", borderRadius: "8px", border: "1px solid #bae6fd" }}>
-                <label style={labelStyle}>🔍 ZIP Code (auto-fill)</label>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <input style={{ ...inputStyle, flex: 1 }} placeholder="e.g. 11213" id="zip-lookup" />
-                  <button type="button" onClick={async () => {
-                    const zip = (document.getElementById("zip-lookup") as HTMLInputElement)?.value;
-                    if (!zip) return alert("Enter ZIP code");
-                    try {
-                      const r = await fetch("/api/lookup-zip?zip=" + zip);
-                      const d = await r.json();
-                      if (d.error) return alert(d.error);
-                      setEditingLocation({ ...editingLocation, city: d.city, state: d.state, country: d.countryCode === "US" ? "USA" : d.country });
-                    } catch (e) { alert("Lookup failed"); }
-                  }} style={{ padding: "0.5rem 1rem", background: "#2563eb", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>Lookup</button>
-                </div>
-              </div>
-              <div><label style={labelStyle}>Neighborhood *</label><input style={inputStyle} value={editingLocation.neighborhood} onChange={e => setEditingLocation({ ...editingLocation, neighborhood: e.target.value })} placeholder="e.g. Crown Heights" /></div>
-              <div><label style={labelStyle}>City</label><input style={inputStyle} value={editingLocation.city} onChange={e => setEditingLocation({ ...editingLocation, city: e.target.value })} placeholder="e.g. Brooklyn" /></div>
-              <div><label style={labelStyle}>State</label><input style={inputStyle} value={editingLocation.state} onChange={e => setEditingLocation({ ...editingLocation, state: e.target.value })} placeholder="e.g. NY" /></div>
-              <div><label style={labelStyle}>Country</label><input style={inputStyle} value={editingLocation.country} onChange={e => setEditingLocation({ ...editingLocation, country: e.target.value })} placeholder="e.g. USA" /></div>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '400px' }}>
+            <h2>{isNewLocation ? 'Add' : 'Edit'} Location</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+              <div><label style={labelStyle}>Neighborhood *</label><input style={inputStyle} value={editingLocation.neighborhood} onChange={e => setEditingLocation({ ...editingLocation, neighborhood: e.target.value })} /></div>
+              <div><label style={labelStyle}>City</label><input style={inputStyle} value={editingLocation.city} onChange={e => setEditingLocation({ ...editingLocation, city: e.target.value })} /></div>
+              <div><label style={labelStyle}>State</label><input style={inputStyle} value={editingLocation.state} onChange={e => setEditingLocation({ ...editingLocation, state: e.target.value })} /></div>
+              <div><label style={labelStyle}>Country</label><input style={inputStyle} value={editingLocation.country} onChange={e => setEditingLocation({ ...editingLocation, country: e.target.value })} /></div>
             </div>
-            <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
-              <button onClick={() => setShowLocationModal(false)} style={{ flex: 1, padding: "0.75rem", borderRadius: "8px", border: "1px solid #ddd", background: "white", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleSaveLocation} disabled={saving} style={btnStyle(saving)}>{saving ? "Saving..." : "Save"}</button>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+              <button onClick={() => setShowLocationModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleSaveLocation} disabled={saving} style={btnStyle(saving)}>{saving ? 'Saving...' : 'Save'}</button>
             </div>
           </div>
         </div>
