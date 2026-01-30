@@ -134,7 +134,7 @@ export default function GroupsClient() {
           <div style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>📍 Location</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             <button onClick={() => setSelectedLocation('')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: !selectedLocation ? '#2563eb' : '#e5e7eb', color: !selectedLocation ? 'white' : '#333', cursor: 'pointer', fontWeight: !selectedLocation ? 'bold' : 'normal' }}>All</button>
-            {locations.sort((a, b) => (a.order || 0) - (b.order || 0)).map(loc => (
+            {[...locations].sort((a, b) => (a.order || 0) - (b.order || 0)).map(loc => (
               <button key={loc.id} onClick={() => setSelectedLocation(loc.id === selectedLocation ? '' : loc.id)} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: selectedLocation === loc.id ? '#2563eb' : '#e5e7eb', color: selectedLocation === loc.id ? 'white' : '#333', cursor: 'pointer', fontWeight: selectedLocation === loc.id ? 'bold' : 'normal' }}>{loc.neighborhood}</button>
             ))}
           </div>
@@ -144,7 +144,7 @@ export default function GroupsClient() {
           <div style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>📁 Category</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             <button onClick={() => setSelectedCategory('')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: !selectedCategory ? '#2563eb' : '#e5e7eb', color: !selectedCategory ? 'white' : '#333', cursor: 'pointer', fontWeight: !selectedCategory ? 'bold' : 'normal' }}>All</button>
-            {categories.sort((a, b) => (a.order || 0) - (b.order || 0)).map(cat => (
+            {[...categories].sort((a, b) => (a.order || 0) - (b.order || 0)).map(cat => (
               <button key={cat.id} onClick={() => setSelectedCategory(cat.id === selectedCategory ? '' : cat.id)} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: selectedCategory === cat.id ? '#2563eb' : '#e5e7eb', color: selectedCategory === cat.id ? 'white' : '#333', cursor: 'pointer', fontWeight: selectedCategory === cat.id ? 'bold' : 'normal' }}>{cat.icon} {cat.name}</button>
             ))}
           </div>
