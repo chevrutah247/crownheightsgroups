@@ -1,4 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
+
+const EMAIL_CONFIG = {
+  user: 'contact@edonthego.org',
+  pass: 'qvun irsl zsaf asux',
+};
+
+async function sendApprovalEmail(to: string, title: string, type: string) {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: EMAIL_CONFIG.user, pass: EMAIL_CONFIG.pass },
+    });
+    const typeLabels: Record<string, string> = { group: 'WhatsApp Group', service: 'Business/Service', event: 'Event', campaign: 'Campaign' };
+    const pageLinks: Record<string, string> = { group: '/groups', service: '/services', event: '/events', campaign: '/charity' };
+    await transporter.sendMail({
+      from: '"Crown Heights Groups" <' + EMAIL_CONFIG.user + '>',
+      to,
+      subject: '✅ Your ' + (typeLabels[type] || type) + ' has been approved!',
+      html: '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px;"><div style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);padding:20px;border-radius:12px 12px 0 0;text-align:center;"><h2 style="color:white;margin:0;">✅ Approved!</h2></div><div style="background:#f8fafc;padding:20px;border:1px solid #e2e8f0;border-radius:0 0 12px 12px;"><p>Great news! Your submission <strong>"' + title + '"</strong> has been approved and is now live on Crown Heights Groups.</p><a href="https://crownheightsgroups.com' + (pageLinks[type] || '/') + '" style="display:inline-block;padding:12px 24px;background:#2563eb;color:white;text-decoration:none;border-radius:8px;font-weight:bold;margin-top:10px;">View on Site</a><p style="color:#666;font-size:0.9rem;margin-top:20px;">Thank you for contributing to our community!</p></div></div>',
+    });
+    console.log('Approval email sent to', to);
+  } catch (error) {
+    console.error('Failed to send approval email:', error);
+  }
+}
+
 import { Redis } from '@upstash/redis';
 
 function getRedis() {
@@ -86,6 +113,11 @@ export async function PUT(request: NextRequest) {
       });
       await redis.set('services', JSON.stringify(services));
       suggestions[index].status = 'approved';
+      // Send approval email
+      const s = suggestions[index];
+      if (s.submittedBy) {
+        sendApprovalEmail(s.submittedBy, s.name, 'service');
+      }
     } else {
       suggestions[index].status = 'rejected';
     }
