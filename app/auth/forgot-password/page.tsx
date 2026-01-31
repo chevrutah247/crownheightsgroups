@@ -8,9 +8,10 @@ export default function ForgotPasswordPage() {
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [step, setStep] = useState<'email' | 'code' | 'success'>('email');
+  const [step, setStep] = useState<'email' | 'reset' | 'success'>('email');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [savedEmail, setSavedEmail] = useState('');
 
   const handleSendCode = async () => {
     setError('');
@@ -31,7 +32,8 @@ export default function ForgotPasswordPage() {
         return;
       }
       
-      setStep('code');
+      setSavedEmail(email);
+      setStep('reset');
       setLoading(false);
     } catch (err) {
       setError('Network error');
@@ -41,15 +43,31 @@ export default function ForgotPasswordPage() {
 
   const handleResetPassword = async () => {
     setError('');
-    if (newPassword.length < 6) { setError('Password must be at least 6 characters'); return; }
-    if (newPassword !== confirmPassword) { setError('Passwords do not match'); return; }
+    
+    if (!code || code.length !== 6) { 
+      setError('Please enter the 6-digit code from your email'); 
+      return; 
+    }
+    if (!newPassword) { 
+      setError('Please enter a new password'); 
+      return; 
+    }
+    if (newPassword.length < 6) { 
+      setError('Password must be at least 6 characters'); 
+      return; 
+    }
+    if (newPassword !== confirmPassword) { 
+      setError('Passwords do not match'); 
+      return; 
+    }
+    
     setLoading(true);
 
     try {
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code, newPassword }),
+        body: JSON.stringify({ email: savedEmail, code, newPassword }),
       });
       const data = await response.json();
       
@@ -71,14 +89,18 @@ export default function ForgotPasswordPage() {
     <div className="auth-container">
       <div className="auth-card" style={{ maxWidth: '420px' }}>
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>{step === 'success' ? '✅' : '🔐'}</div>
+          <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>
+            {step === 'success' ? '✅' : '🔐'}
+          </div>
           <h1 style={{ color: '#1e3a5f', marginBottom: '0.25rem', fontSize: '1.5rem' }}>
-            {step === 'success' ? 'Password Reset!' : 'Reset Password'}
+            {step === 'email' && 'Forgot Password?'}
+            {step === 'reset' && 'Reset Password'}
+            {step === 'success' && 'Password Changed!'}
           </h1>
           <p style={{ color: '#666', fontSize: '0.95rem' }}>
             {step === 'email' && 'Enter your email to receive a reset code'}
-            {step === 'code' && 'Enter the code sent to your email'}
-            {step === 'success' && 'Your password has been changed'}
+            {step === 'reset' && `Code sent to ${savedEmail}`}
+            {step === 'success' && 'You can now login with your new password'}
           </p>
         </div>
 
@@ -86,36 +108,102 @@ export default function ForgotPasswordPage() {
           <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>
         )}
 
+        {/* Step 1: Enter Email */}
         {step === 'email' && (
           <div>
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" style={{ width: '100%', padding: '0.875rem', border: '2px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} />
+              <input 
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                placeholder="your@email.com" 
+                style={{ width: '100%', padding: '0.875rem', border: '2px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} 
+              />
             </div>
-            <button type="button" onClick={handleSendCode} disabled={loading} style={{ width: '100%', padding: '1rem', background: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}>{loading ? 'Sending...' : 'Send Reset Code'}</button>
+            <button 
+              type="button" 
+              onClick={handleSendCode} 
+              disabled={loading} 
+              style={{ width: '100%', padding: '1rem', background: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              {loading ? 'Sending...' : 'Send Reset Code'}
+            </button>
           </div>
         )}
 
-        {step === 'code' && (
+        {/* Step 2: Enter Code and New Password */}
+        {step === 'reset' && (
           <div>
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Reset Code</label>
-              <input type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Enter 6-digit code" maxLength={6} style={{ width: '100%', padding: '0.875rem', border: '2px solid #ddd', borderRadius: '8px', fontSize: '1.2rem', textAlign: 'center', letterSpacing: '0.5rem', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                Code from Email
+              </label>
+              <input 
+                type="text" 
+                value={code} 
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} 
+                placeholder="Enter 6-digit code"
+                maxLength={6}
+                style={{ width: '100%', padding: '1rem', border: '2px solid #ddd', borderRadius: '8px', fontSize: '1.5rem', textAlign: 'center', letterSpacing: '0.5rem', boxSizing: 'border-box' }} 
+              />
             </div>
+            
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>New Password</label>
-              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="At least 6 characters" style={{ width: '100%', padding: '0.875rem', border: '2px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                New Password
+              </label>
+              <input 
+                type="password" 
+                value={newPassword} 
+                onChange={(e) => setNewPassword(e.target.value)} 
+                placeholder="Enter new password"
+                style={{ width: '100%', padding: '0.875rem', border: '2px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} 
+              />
             </div>
+            
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Confirm Password</label>
-              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat password" style={{ width: '100%', padding: '0.875rem', border: '2px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                Confirm New Password
+              </label>
+              <input 
+                type="password" 
+                value={confirmPassword} 
+                onChange={(e) => setConfirmPassword(e.target.value)} 
+                placeholder="Repeat new password"
+                style={{ width: '100%', padding: '0.875rem', border: '2px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} 
+              />
             </div>
-            <button type="button" onClick={handleResetPassword} disabled={loading} style={{ width: '100%', padding: '1rem', background: loading ? '#6ee7b7' : '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}>{loading ? 'Resetting...' : 'Reset Password'}</button>
+            
+            <button 
+              type="button" 
+              onClick={handleResetPassword} 
+              disabled={loading} 
+              style={{ width: '100%', padding: '1rem', background: loading ? '#6ee7b7' : '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              {loading ? 'Resetting...' : 'Reset Password'}
+            </button>
+            
+            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+              <button 
+                type="button"
+                onClick={() => { setStep('email'); setCode(''); setNewPassword(''); setConfirmPassword(''); setError(''); }}
+                style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '0.9rem' }}
+              >
+                Didn't receive code? Try again
+              </button>
+            </div>
           </div>
         )}
 
+        {/* Step 3: Success */}
         {step === 'success' && (
-          <Link href="/auth/login" style={{ display: 'block', width: '100%', padding: '1rem', background: '#2563eb', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', textAlign: 'center', textDecoration: 'none' }}>Go to Login</Link>
+          <Link 
+            href="/auth/login" 
+            style={{ display: 'block', width: '100%', padding: '1rem', background: '#2563eb', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}
+          >
+            Go to Login
+          </Link>
         )}
 
         <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
