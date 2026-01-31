@@ -14,10 +14,29 @@ interface Category { id: string; name: string; icon: string; slug: string; order
 interface Location { id: string; neighborhood: string; status: string; order?: number; }
 interface Group { 
   id: string; title: string; description: string; categoryId: string; locationId: string; 
-  language: string; status: string; clicksCount: number; isPinned?: boolean;
+  language: string; status: string; clicksCount: number; isPinned?: boolean; tags?: string[];
   whatsappLinks?: string[]; whatsappLink?: string;
   telegramLink?: string; facebookLink?: string; twitterLink?: string; websiteLink?: string;
 }
+
+
+const AVAILABLE_TAGS = [
+  { id: 'free-food', label: 'Free Food', icon: '🍕', color: '#dc2626' },
+  { id: 'free-clothes', label: 'Free Clothes', icon: '👕', color: '#7c3aed' },
+  { id: 'free-furniture', label: 'Free Furniture', icon: '🛋️', color: '#ea580c' },
+  { id: 'free-stuff', label: 'Free Stuff', icon: '🆓', color: '#0891b2' },
+  { id: 'jobs', label: 'Jobs', icon: '💼', color: '#2563eb' },
+  { id: 'housing', label: 'Housing', icon: '🏠', color: '#16a34a' },
+  { id: 'ladies-only', label: 'Ladies Only', icon: '👩', color: '#ec4899' },
+  { id: 'mens-only', label: 'Mens Only', icon: '👨', color: '#3b82f6' },
+  { id: 'hebrew', label: 'Hebrew', icon: '🇮🇱', color: '#1d4ed8' },
+  { id: 'yiddish', label: 'Yiddish', icon: '📜', color: '#854d0e' },
+  { id: 'chesed', label: 'Chesed', icon: '💝', color: '#be185d' },
+  { id: 'rides', label: 'Rides', icon: '🚗', color: '#4f46e5' },
+  { id: 'kids', label: 'Kids', icon: '👶', color: '#f59e0b' },
+  { id: 'seniors', label: 'Seniors', icon: '👴', color: '#6b7280' },
+  { id: 'no-ads', label: 'No Ads', icon: '🚫', color: '#64748b' },
+];
 
 export default function GroupsClient() {
   const searchParams = useSearchParams();
@@ -33,6 +52,7 @@ export default function GroupsClient() {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'popular' | 'alpha'>('popular');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [clickLimit, setClickLimit] = useState<ClickLimitState>({ remaining: 3, clickedToday: [] });
   const [showLimitModal, setShowLimitModal] = useState(false);
 
@@ -85,6 +105,7 @@ export default function GroupsClient() {
     let result = [...allGroups];
     if (selectedLocation) result = result.filter(g => g.locationId === selectedLocation);
     if (selectedCategory) result = result.filter(g => g.categoryId === selectedCategory);
+    if (selectedTags.length > 0) result = result.filter(g => g.tags && selectedTags.some(t => g.tags!.includes(t)));
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       const words = q.split(/\s+/);
@@ -101,7 +122,7 @@ export default function GroupsClient() {
     else if (sortBy === 'date') regular.sort((a, b) => new Date((b as any).createdAt || 0).getTime() - new Date((a as any).createdAt || 0).getTime());
     else regular.sort((a, b) => a.title.localeCompare(b.title));
     setFilteredGroups([...pinned, ...regular]);
-  }, [allGroups, categories, selectedLocation, selectedCategory, searchQuery, sortBy]);
+  }, [allGroups, categories, selectedLocation, selectedCategory, searchQuery, sortBy, selectedTags]);
 
   const handleLogout = () => { localStorage.clear(); window.location.href = '/auth/login'; };
 
@@ -219,6 +240,17 @@ export default function GroupsClient() {
           </div>
         </div>
 
+        {/* Tags Filter */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>🏷️ Tags</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {AVAILABLE_TAGS.map(tag => (
+              <button key={tag.id} onClick={() => setSelectedTags(prev => prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id])} style={{ padding: '0.4rem 0.8rem', borderRadius: '20px', border: 'none', background: selectedTags.includes(tag.id) ? tag.color : '#f1f5f9', color: selectedTags.includes(tag.id) ? 'white' : '#475569', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>{tag.icon} {tag.label}</button>
+            ))}
+            {selectedTags.length > 0 && <button onClick={() => setSelectedTags([])} style={{ padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1px dashed #cbd5e1', background: 'transparent', color: '#64748b', cursor: 'pointer', fontSize: '0.85rem' }}>✕ Clear</button>}
+          </div>
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <span style={{ color: '#666' }}>{filteredGroups.length} groups</span>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -244,6 +276,7 @@ export default function GroupsClient() {
                     {loc && <span style={{ padding: '2px 8px', background: '#f0fdf4', borderRadius: '4px', fontSize: '0.8rem' }}>📍 {loc.neighborhood}</span>}
                     {group.language && group.language !== 'English' && <span style={{ padding: '2px 8px', background: '#fef3c7', borderRadius: '4px', fontSize: '0.8rem' }}>{group.language}</span>}
                     {isJoined && <span style={{ padding: '2px 8px', background: '#dbeafe', borderRadius: '4px', fontSize: '0.8rem' }}>✓ Joined today</span>}
+                    {group.tags && group.tags.map(tagId => { const tag = AVAILABLE_TAGS.find(t => t.id === tagId); return tag ? <span key={tagId} style={{ padding: '2px 8px', background: tag.color + '20', color: tag.color, borderRadius: '4px', fontSize: '0.75rem', fontWeight: 500 }}>{tag.icon} {tag.label}</span> : null; })}
                   </div>
                   <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{group.title}</h3>
                   <p style={{ color: '#666', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>{group.description && group.description.length > 150 ? group.description.slice(0, 150) + '...' : group.description}</p>
