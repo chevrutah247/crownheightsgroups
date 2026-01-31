@@ -108,8 +108,10 @@ export default function KallahPage() {
       <Header user={user} onLogout={handleLogout} />
       <main className="main">
         {/* Hero with Image */}
-        <div style={{ background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 50%, #fbcfe8 100%)', borderRadius: '20px', padding: '2rem', marginBottom: '2rem', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>💍</div>
+       <div style={{ background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 50%, #fbcfe8 100%)', borderRadius: '20px', marginBottom: '2rem', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+  <img src="/images/huppah-banner.jpg" alt="Chuppah" style={{ width: '100%', height: '200px', objectFit: 'cover', objectPosition: 'center' }} />
+  <div style={{ padding: '2rem' }}>
+    <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>💍</div>
           <h1 style={{ fontSize: '2rem', color: '#831843', marginBottom: '0.5rem' }}>{getText('Hachnasat Kallah', 'הכנסת כלה', 'Гахнасат Кала')}</h1>
           <p style={{ color: '#9d174d', fontSize: '1.1rem', marginBottom: '1rem' }}>{getText('Helping brides marry with dignity and joy', 'מצווה גדולה לעזור לכלות להתחתן בכבוד ובשמחה', 'Заповедь помогать невестам выйти замуж достойно и радостно')}</p>
           <p style={{ color: '#be185d', fontSize: '0.9rem', fontStyle: 'italic' }}>{getText('📖 Talmud, Ketubot 67b — helping a bride is one of the highest forms of tzedakah', '📖 תלמוד, כתובות סז ע"ב - הכנסת כלה היא מצווה גדולה', '📖 Талмуд, Ктубот 67б — помощь невесте - высшая форма цдаки')}</p>
@@ -124,6 +126,7 @@ export default function KallahPage() {
           <Link href="/groups" style={{ display: 'inline-block', marginTop: '1rem', color: '#9d174d', fontSize: '0.9rem' }}>
             ← {getText('Back to all groups', 'חזרה לכל הקבוצות', 'Назад ко всем группам')}
           </Link>
+        </div>
         </div>
 
         {/* Add Service Button */}
