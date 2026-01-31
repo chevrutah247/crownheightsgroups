@@ -69,19 +69,7 @@ export default function AddGroupPage() {
   };
 
   
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setError('Image must be less than 2MB');
-        return;
-      }
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => setImagePreview(e.target?.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
+  
 
   const handleLogout = () => { localStorage.clear(); router.push('/auth/login'); };
 
