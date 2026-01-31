@@ -7,6 +7,7 @@ export function middleware(request: NextRequest) {
   // Allow these paths without gate check
   const publicPaths = [
     '/gate', 
+    '/auth',
     '/api/', 
     '/_next/', 
     '/favicon.ico',
