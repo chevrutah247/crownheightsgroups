@@ -10,7 +10,7 @@ interface Category { id: string; name: string; icon: string; slug: string; order
 interface Service { 
   id: string; name: string; phone: string; categoryId: string; 
   description?: string; address?: string; website?: string;
-  isPinned?: boolean; status?: string;
+  isPinned?: boolean; status?: string; imageUrl?: string; logoUrl?: string;
 }
 
 export default function ServicesPage() {
@@ -163,6 +163,10 @@ export default function ServicesPage() {
                 >
                   {service.isPinned && (
                     <div style={{ color: '#f59e0b', fontSize: '0.8rem', marginBottom: '0.5rem' }}>⭐ Featured</div>
+                  )}
+                  
+                  {(service.imageUrl || service.logoUrl) && (
+                    <img src={service.imageUrl || service.logoUrl} alt={service.name} style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px', marginBottom: '0.75rem' }} />
                   )}
                   
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
