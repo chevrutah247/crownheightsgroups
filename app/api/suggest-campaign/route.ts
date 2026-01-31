@@ -117,7 +117,6 @@ export async function PUT(request: NextRequest) {
       await redis.set('campaigns', JSON.stringify(campaigns));
       suggestions[index].status = 'approved';
       // Send approval email
-      const s = suggestions[index];
       if (s.submittedBy) {
         sendApprovalEmail(s.submittedBy, s.title, 'campaign');
       }
