@@ -17,7 +17,7 @@ export default function LoginPage() {
     if (password === '770') {
       localStorage.setItem('community_verified', 'true');
       document.cookie = 'gate_passed=true; path=/; max-age=31536000';
-      window.location.href = '/auth/register';
+      setTimeout(() => { window.location.href = '/auth/register'; }, 100);
     } else {
       setError('Incorrect answer. Hint: The famous address!');
       setLoading(false);
@@ -42,18 +42,17 @@ export default function LoginPage() {
         return;
       }
       
-      // Set session cookie
+      // Set cookies
+      document.cookie = 'gate_passed=true; path=/; max-age=31536000';
       if (data.token) {
         document.cookie = 'session=' + data.token + '; path=/; max-age=604800';
       }
-      // Set gate_passed cookie (required by middleware)
-      document.cookie = 'gate_passed=true; path=/; max-age=31536000';
-      
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
       }
       
-      window.location.href = '/';
+      // Redirect after small delay to ensure cookies are set
+      setTimeout(() => { window.location.replace('/'); }, 200);
     } catch (err) {
       setError('Network error. Please try again.');
       setLoading(false);
@@ -95,7 +94,7 @@ export default function LoginPage() {
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Password</label>
               <input type="password" value={userPassword} onChange={(e) => setUserPassword(e.target.value)} placeholder="Your password" style={{ width: '100%', padding: '0.875rem', border: '2px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} />
             </div>
-            <button type="button" onClick={handleLogin} style={{ width: '100%', padding: '1rem', background: '#2563eb', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}>Sign In</button>
+            <button type="button" onClick={handleLogin} disabled={loading} style={{ width: '100%', padding: '1rem', background: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}>{loading ? 'Signing in...' : 'Sign In'}</button>
           </div>
         )}
 
@@ -108,7 +107,7 @@ export default function LoginPage() {
             <div style={{ marginBottom: '1.5rem' }}>
               <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="_ _ _" maxLength={3} style={{ width: '100%', textAlign: 'center', fontSize: '2rem', letterSpacing: '1rem', padding: '1rem', border: '2px solid #ddd', borderRadius: '12px', boxSizing: 'border-box' }} />
             </div>
-            <button type="button" onClick={handleVerify} style={{ width: '100%', padding: '1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}>Continue to Register</button>
+            <button type="button" onClick={handleVerify} disabled={loading} style={{ width: '100%', padding: '1rem', background: loading ? '#6ee7b7' : '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}>{loading ? 'Checking...' : 'Continue to Register'}</button>
           </div>
         )}
 
