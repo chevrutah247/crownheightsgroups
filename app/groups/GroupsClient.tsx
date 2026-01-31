@@ -169,13 +169,20 @@ export default function GroupsClient() {
       <EmergencyBar />
       <Header user={user} onLogout={handleLogout} />
       
-      <main className="main">
-        <div className="page-header">
-          <h1 className="page-title">{getSelectedCategoryName() || '👥 All Groups'}</h1>
-          <p className="page-subtitle">Find and join community groups</p>
-        </div>
+     <main className="main">
+  <div className="page-header">
+    <h1 className="page-title">{getSelectedCategoryName() || '👥 All Groups'}</h1>
+    <p className="page-subtitle">Find and join community groups</p>
+  </div>
 
-        {user?.role !== 'admin' && (
+  {/* Kallah Banner */}
+  <Link href="/kallah" style={{ display: 'block', marginBottom: '1.5rem', padding: '1rem', background: 'linear-gradient(135deg, #fdf2f8 0%, #fbcfe8 100%)', borderRadius: '12px', textDecoration: 'none', textAlign: 'center' }}>
+    <span style={{ fontSize: '1.5rem' }}>💍</span>
+    <span style={{ marginLeft: '0.5rem', color: '#831843', fontWeight: 'bold' }}>Hachnasat Kallah | הכנסת כלה</span>
+    <span style={{ marginLeft: '0.5rem', color: '#9d174d', fontSize: '0.9rem' }}>→ Help for Brides</span>
+  </Link>
+
+  {user?.role !== 'admin' && (
           <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: clickLimit.remaining > 0 ? '#f0fdf4' : '#fef2f2', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span>{clickLimit.remaining > 0 ? '✅' : '⏰'}</span>
             <span style={{ color: clickLimit.remaining > 0 ? '#166534' : '#991b1b', fontSize: '0.9rem' }}>

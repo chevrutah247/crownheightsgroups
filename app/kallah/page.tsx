@@ -56,6 +56,9 @@ export default function KallahPage() {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [lang, setLang] = useState<'en' | 'he' | 'ru'>('en');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showSuggestForm, setShowSuggestForm] = useState(false);
+  const [formData, setFormData] = useState({ name: '', phone: '', location: '', description: '', category: 'dresses' });
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     const token = localStorage.getItem('session_token');
@@ -71,24 +74,107 @@ export default function KallahPage() {
   const filteredServices = selectedCategory === 'all' ? services : services.filter(s => s.category === selectedCategory);
   const getText = (en: string, he: string, ru: string) => lang === 'he' ? he : lang === 'ru' ? ru : en;
 
+  const handleSubmitSuggestion = async () => {
+    if (!formData.name || !formData.phone) return;
+    setSubmitStatus('loading');
+    try {
+      const res = await fetch('/api/suggestions/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `${formData.name} - Hachnasat Kallah`,
+          description: formData.description,
+          phone: formData.phone,
+          address: formData.location,
+          categoryId: '1769518048408',
+          submittedBy: user?.email || 'anonymous',
+          tags: ['kallah', 'wedding', 'gemach']
+        })
+      });
+      if (res.ok) {
+        setSubmitStatus('success');
+        setFormData({ name: '', phone: '', location: '', description: '', category: 'dresses' });
+        setTimeout(() => { setShowSuggestForm(false); setSubmitStatus('idle'); }, 2000);
+      } else {
+        setSubmitStatus('error');
+      }
+    } catch {
+      setSubmitStatus('error');
+    }
+  };
+
   return (
     <div>
       <Header user={user} onLogout={handleLogout} />
       <main className="main">
-        <div style={{ background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 50%, #fbcfe8 100%)', borderRadius: '20px', padding: '2rem', marginBottom: '2rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>💒</div>
+        {/* Hero with Image */}
+        <div style={{ background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 50%, #fbcfe8 100%)', borderRadius: '20px', padding: '2rem', marginBottom: '2rem', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>💍</div>
           <h1 style={{ fontSize: '2rem', color: '#831843', marginBottom: '0.5rem' }}>{getText('Hachnasat Kallah', 'הכנסת כלה', 'Гахнасат Кала')}</h1>
           <p style={{ color: '#9d174d', fontSize: '1.1rem', marginBottom: '1rem' }}>{getText('Helping brides marry with dignity and joy', 'מצווה גדולה לעזור לכלות להתחתן בכבוד ובשמחה', 'Заповедь помогать невестам выйти замуж достойно и радостно')}</p>
           <p style={{ color: '#be185d', fontSize: '0.9rem', fontStyle: 'italic' }}>{getText('📖 Talmud, Ketubot 67b — helping a bride is one of the highest forms of tzedakah', '📖 תלמוד, כתובות סז ע"ב - הכנסת כלה היא מצווה גדולה', '📖 Талмуд, Ктубот 67б — помощь невесте - высшая форма цдаки')}</p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
+          
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
             {[{ code: 'en', label: '🇺🇸 EN' }, { code: 'he', label: '🇮🇱 עב' }, { code: 'ru', label: '🇷🇺 RU' }].map(l => (
               <button key={l.code} onClick={() => setLang(l.code as any)} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: lang === l.code ? '#be185d' : 'white', color: lang === l.code ? 'white' : '#831843', cursor: 'pointer', fontWeight: lang === l.code ? 'bold' : 'normal' }}>{l.label}</button>
             ))}
           </div>
+
+          {/* Back to Groups */}
+          <Link href="/groups" style={{ display: 'inline-block', marginTop: '1rem', color: '#9d174d', fontSize: '0.9rem' }}>
+            ← {getText('Back to all groups', 'חזרה לכל הקבוצות', 'Назад ко всем группам')}
+          </Link>
         </div>
 
+        {/* Add Service Button */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+          <button onClick={() => setShowSuggestForm(true)} style={{ padding: '0.75rem 1.5rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+            ➕ {getText('Add Your Service', 'הוסף שירות', 'Добавить услугу')}
+          </button>
+        </div>
+
+        {/* Suggest Form Modal */}
+        {showSuggestForm && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            <div style={{ background: 'white', borderRadius: '16px', padding: '2rem', maxWidth: '500px', width: '90%', maxHeight: '90vh', overflow: 'auto' }}>
+              <h3 style={{ marginBottom: '1rem', color: '#831843' }}>{getText('Add Your Kallah Service', 'הוסף שירות לכלות', 'Добавить услугу для невест')}</h3>
+              <p style={{ color: '#666', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                {getText('Help brides worldwide! Add your gemach or service.', 'עזרו לכלות בכל העולם! הוסיפו את הגמ״ח או השירות שלכם.', 'Помогите невестам по всему миру! Добавьте свой гемах или услугу.')}
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <input type="text" placeholder={getText('Name / Business Name', 'שם / שם העסק', 'Имя / Название')} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+                <input type="tel" placeholder={getText('Phone Number', 'מספר טלפון', 'Телефон')} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+                <input type="text" placeholder={getText('Location (City, Country)', 'מיקום (עיר, מדינה)', 'Локация (город, страна)')} value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+                <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
+                  <option value="dresses">{getText('Wedding Dresses', 'שמלות כלה', 'Свадебные платья')}</option>
+                  <option value="makeup">{getText('Makeup & Hair', 'איפור ושיער', 'Макияж')}</option>
+                  <option value="accessories">{getText('Accessories', 'אביזרים', 'Аксессуары')}</option>
+                  <option value="music">{getText('DJ / Music', 'תקליטן', 'DJ / Музыка')}</option>
+                  <option value="guides">{getText('Bridal Guide', 'מדריכת כלות', 'Консультант')}</option>
+                  <option value="other">{getText('Other', 'אחר', 'Другое')}</option>
+                </select>
+                <textarea placeholder={getText('Description of services', 'תיאור השירותים', 'Описание услуг')} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', resize: 'vertical' }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button onClick={() => setShowSuggestForm(false)} style={{ flex: 1, padding: '0.75rem', background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                  {getText('Cancel', 'ביטול', 'Отмена')}
+                </button>
+                <button onClick={handleSubmitSuggestion} disabled={submitStatus === 'loading' || !formData.name || !formData.phone} style={{ flex: 1, padding: '0.75rem', background: submitStatus === 'success' ? '#10b981' : '#be185d', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', opacity: (!formData.name || !formData.phone) ? 0.5 : 1 }}>
+                  {submitStatus === 'loading' ? '...' : submitStatus === 'success' ? '✓' : getText('Submit', 'שלח', 'Отправить')}
+                </button>
+              </div>
+              
+              {submitStatus === 'success' && <p style={{ color: '#10b981', textAlign: 'center', marginTop: '1rem' }}>{getText('Thank you! Your service will be reviewed.', 'תודה! השירות יבדק בקרוב.', 'Спасибо! Ваша услуга будет проверена.')}</p>}
+              {submitStatus === 'error' && <p style={{ color: '#dc2626', textAlign: 'center', marginTop: '1rem' }}>{getText('Error. Please try again.', 'שגיאה. נסו שוב.', 'Ошибка. Попробуйте снова.')}</p>}
+            </div>
+          </div>
+        )}
+
+        {/* WhatsApp Groups */}
         <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: '#1e3a5f' }}>{getText('📱 WhatsApp Groups by Region', '📱 קבוצות וואטסאפ לפי אזור', '📱 WhatsApp группы по регионам')}</h2>
+          <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: '#1e3a5f' }}>{getText('📱 WhatsApp Groups by Region (Israel)', '📱 קבוצות וואטסאפ לפי אזור (ישראל)', '📱 WhatsApp группы по регионам (Израиль)')}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
             {whatsappGroups.map((g, i) => (
               <a key={i} href={g.link} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: '#25D366', color: 'white', borderRadius: '12px', textDecoration: 'none' }}>
@@ -102,6 +188,7 @@ export default function KallahPage() {
           </div>
         </div>
 
+        {/* Category Filter */}
         <div style={{ marginBottom: '1.5rem' }}>
           <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: '#1e3a5f' }}>{getText('📋 Services Directory', '📋 מדריך שירותים', '📋 Каталог услуг')}</h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -111,6 +198,7 @@ export default function KallahPage() {
           </div>
         </div>
 
+        {/* Services List */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
           {filteredServices.map((service, index) => (
             <div key={index} style={{ background: 'white', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #fce7f3' }}>
@@ -128,11 +216,13 @@ export default function KallahPage() {
           ))}
         </div>
 
+        {/* Bottom CTA */}
         <div style={{ marginTop: '3rem', padding: '2rem', background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)', borderRadius: '16px', textAlign: 'center' }}>
           <h3 style={{ color: '#831843', marginBottom: '1rem' }}>{getText('Know a bride who needs help?', 'מכירים כלה שצריכה עזרה?', 'Знаете невесту, которой нужна помощь?')}</h3>
           <p style={{ color: '#9d174d', marginBottom: '1.5rem' }}>{getText("Share this page! It's a great mitzvah.", 'שתפו את הדף הזה! מצווה גדולה להפיץ', 'Поделитесь этой страницей! Большая мицва.')}</p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-            <a href={`https://wa.me/?text=${encodeURIComponent('💒 Hachnasat Kallah - Help for Brides\nhttps://crownheightsgroups.com/kallah')}`} target="_blank" rel="noopener noreferrer" style={{ padding: '0.75rem 1.5rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>💬 {getText('Share on WhatsApp', 'שתפו בוואטסאפ', 'Поделиться')}</a>
+            <a href={`https://wa.me/?text=${encodeURIComponent('💍 Hachnasat Kallah - Help for Brides | הכנסת כלה\nhttps://crownheightsgroups.com/kallah')}`} target="_blank" rel="noopener noreferrer" style={{ padding: '0.75rem 1.5rem', background: '#25D366', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>💬 {getText('Share on WhatsApp', 'שתפו בוואטסאפ', 'Поделиться')}</a>
+            <Link href="/business" style={{ padding: '0.75rem 1.5rem', background: '#8b5cf6', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>🏪 {getText('View in Business', 'צפו בעסקים', 'Смотреть в бизнесе')}</Link>
             <Link href="/groups" style={{ padding: '0.75rem 1.5rem', background: '#1e3a5f', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>👥 {getText('All Groups', 'כל הקבוצות', 'Все группы')}</Link>
           </div>
         </div>
