@@ -13,24 +13,19 @@ export default function LoginPage() {
   const [imageError, setImageError] = useState(false);
   const router = useRouter();
 
-  const handleVerify = (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleVerify = () => {
     setError('');
     setLoading(true);
     if (password === '770') {
       localStorage.setItem('community_verified', 'true');
-      router.push('/auth/register');
+      window.location.href = '/auth/register';
     } else {
       setError('Incorrect answer. Hint: The famous address!');
       setLoading(false);
     }
-    return false;
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleLogin = async () => {
     setError('');
     setLoading(true);
     
@@ -45,11 +40,11 @@ export default function LoginPage() {
       if (!response.ok) {
         setError(data.error || 'Login failed');
         setLoading(false);
-        return false;
+        return;
       }
       
       if (data.token) {
-        document.cookie = `session=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}`;
+        document.cookie = 'session=' + data.token + '; path=/; max-age=604800';
       }
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
@@ -60,17 +55,6 @@ export default function LoginPage() {
       setError('Network error. Please try again.');
       setLoading(false);
     }
-    return false;
-  };
-
-  const onLoginClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    handleLogin(e as unknown as React.FormEvent);
-  };
-
-  const onVerifyClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    handleVerify(e as unknown as React.FormEvent);
   };
 
   return (
@@ -108,20 +92,20 @@ export default function LoginPage() {
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Password</label>
               <input type="password" value={userPassword} onChange={(e) => setUserPassword(e.target.value)} placeholder="Enter your password" style={{ width: '100%', padding: '0.875rem', border: '2px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} />
             </div>
-            <button type="button" onClick={onLoginClick} disabled={loading || !email || !userPassword} style={{ width: '100%', padding: '1rem', background: (loading || !email || !userPassword) ? '#94a3b8' : '#2563eb', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: (loading || !email || !userPassword) ? 'not-allowed' : 'pointer' }}>{loading ? 'Signing in...' : 'Sign In'}</button>
+            <button type="button" onClick={handleLogin} disabled={loading || !email || !userPassword} style={{ width: '100%', padding: '1rem', background: (loading || !email || !userPassword) ? '#94a3b8' : '#2563eb', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: (loading || !email || !userPassword) ? 'not-allowed' : 'pointer' }}>{loading ? 'Signing in...' : 'Sign In'}</button>
           </div>
         )}
 
         {mode === 'verify' && (
           <div>
             <div style={{ background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', padding: '1.25rem', borderRadius: '12px', border: '1px solid #bae6fd', marginBottom: '1.5rem' }}>
-              <div style={{ fontWeight: 'bold', color: '#0369a1', fontSize: '1rem', marginBottom: '0.5rem' }}>🏠 What is the address of Chabad World Headquarters on Eastern Parkway?</div>
+              <div style={{ fontWeight: 'bold', color: '#0369a1', fontSize: '1rem', marginBottom: '0.5rem' }}>🏠 What is the address of Chabad World Headquarters?</div>
               <div style={{ color: '#0c4a6e', fontSize: '0.9rem' }}>Enter only the building number</div>
             </div>
             <div style={{ marginBottom: '1.5rem' }}>
               <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="_ _ _" maxLength={3} style={{ width: '100%', textAlign: 'center', fontSize: '2rem', letterSpacing: '1rem', padding: '1rem', border: '2px solid #ddd', borderRadius: '12px', boxSizing: 'border-box' }} />
             </div>
-            <button type="button" onClick={onVerifyClick} disabled={loading || !password} style={{ width: '100%', padding: '1rem', background: (loading || !password) ? '#94a3b8' : '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: (loading || !password) ? 'not-allowed' : 'pointer' }}>{loading ? 'Checking...' : 'Continue to Register'}</button>
+            <button type="button" onClick={handleVerify} disabled={loading || !password} style={{ width: '100%', padding: '1rem', background: (loading || !password) ? '#94a3b8' : '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: (loading || !password) ? 'not-allowed' : 'pointer' }}>{loading ? 'Checking...' : 'Continue to Register'}</button>
           </div>
         )}
 
