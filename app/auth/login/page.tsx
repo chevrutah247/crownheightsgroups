@@ -46,12 +46,13 @@ export default function LoginPage() {
       document.cookie = 'gate_passed=true; path=/; max-age=31536000';
       if (data.token) {
         document.cookie = 'session=' + data.token + '; path=/; max-age=604800';
+        localStorage.setItem('session_token', data.token);
       }
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
       }
       
-      // Redirect after small delay to ensure cookies are set
+      // Redirect after small delay
       setTimeout(() => { window.location.replace('/'); }, 200);
     } catch (err) {
       setError('Network error. Please try again.');
