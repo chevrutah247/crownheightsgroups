@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [mode, setMode] = useState<'verify' | 'login'>('login');
@@ -42,7 +43,6 @@ export default function LoginPage() {
         return;
       }
       
-      // Set cookies
       document.cookie = 'gate_passed=true; path=/; max-age=31536000';
       if (data.token) {
         document.cookie = 'session=' + data.token + '; path=/; max-age=604800';
@@ -52,7 +52,6 @@ export default function LoginPage() {
         localStorage.setItem('user', JSON.stringify(data.user));
       }
       
-      // Redirect after small delay
       setTimeout(() => { window.location.replace('/'); }, 200);
     } catch (err) {
       setError('Network error. Please try again.');
@@ -91,9 +90,12 @@ export default function LoginPage() {
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" style={{ width: '100%', padding: '0.875rem', border: '2px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} />
             </div>
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ marginBottom: '0.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Password</label>
               <input type="password" value={userPassword} onChange={(e) => setUserPassword(e.target.value)} placeholder="Your password" style={{ width: '100%', padding: '0.875rem', border: '2px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: '1.5rem', textAlign: 'right' }}>
+              <Link href="/auth/forgot-password" style={{ color: '#2563eb', textDecoration: 'none', fontSize: '0.9rem' }}>Forgot password?</Link>
             </div>
             <button type="button" onClick={handleLogin} disabled={loading} style={{ width: '100%', padding: '1rem', background: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}>{loading ? 'Signing in...' : 'Sign In'}</button>
           </div>
