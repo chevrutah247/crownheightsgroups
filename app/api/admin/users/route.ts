@@ -28,7 +28,7 @@ export async function GET() {
       const user = await redis.get(key);
       if (user) {
         const userData = typeof user === 'string' ? JSON.parse(user) : user;
-        users.push({
+        if (userData.isVerified) users.push({
           ...userData,
           password: '***',
           isProtected: userData.email?.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase()

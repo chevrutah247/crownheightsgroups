@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import GlobalSearch from './GlobalSearch';
 
@@ -11,29 +11,40 @@ interface HeaderProps {
 
 export default function Header({ user, onLogout }: HeaderProps) {
   const [showSearch, setShowSearch] = useState(false);
+  const [showMitzvah, setShowMitzvah] = useState(false);
   const [pulse, setPulse] = useState(true);
+  const mitzvahRef = useRef<HTMLDivElement>(null);
 
-  // Убираем пульсацию через 5 секунд
   useEffect(() => {
     const timer = setTimeout(() => setPulse(false), 5000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Горячая клавиша "/" для открытия поиска
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '/' && !showSearch && 
-          !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+      if (e.key === '/' && !showSearch && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
         e.preventDefault();
         setShowSearch(true);
       }
-      if (e.key === 'Escape' && showSearch) {
+      if (e.key === 'Escape') {
         setShowSearch(false);
+        setShowMitzvah(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showSearch]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (mitzvahRef.current && !mitzvahRef.current.contains(e.target as Node)) {
+        setShowMitzvah(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <>
@@ -46,15 +57,59 @@ export default function Header({ user, onLogout }: HeaderProps) {
           <nav className="nav" style={{ flexWrap: 'wrap', gap: '0.25rem 0.5rem', alignItems: 'center' }}>
             <Link href="/" className="nav-link">Home</Link>
             <Link href="/groups" className="nav-link">Groups</Link>
-            <Link href="/charity" className="nav-link" style={{ color: '#e11d48' }}>💝 Charity</Link>
-            <Link href="/shabbos" className="nav-link" style={{ color: '#c9a227' }}>🕯️ Shabbos</Link>
+            
+            {/* Mitzvah Dropdown */}
+            <div ref={mitzvahRef} style={{ position: 'relative' }}>
+              <button 
+                onClick={() => setShowMitzvah(!showMitzvah)}
+                className="nav-link"
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  color: '#e11d48',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '0.5rem',
+                  fontSize: 'inherit',
+                  fontFamily: 'inherit',
+                }}
+              >
+                💝 Mitzvah <span style={{ fontSize: '0.7rem' }}>{showMitzvah ? '▲' : '▼'}</span>
+              </button>
+              {showMitzvah && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  background: 'white',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                  padding: '0.5rem',
+                  zIndex: 1000,
+                  minWidth: '180px',
+                  marginTop: '4px',
+                }}>
+                  <Link href="/charity" onClick={() => setShowMitzvah(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.75rem 1rem', color: '#e11d48', textDecoration: 'none', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#fef2f2'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                    💝 Charity
+                  </Link>
+                  <Link href="/shabbos" onClick={() => setShowMitzvah(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.75rem 1rem', color: '#c9a227', textDecoration: 'none', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#fefce8'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                    🕯️ Shabbos
+                  </Link>
+                  <Link href="/kallah" onClick={() => setShowMitzvah(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.75rem 1rem', color: '#ec4899', textDecoration: 'none', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#fdf2f8'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                    🕍 Kallah
+                  </Link>
+                </div>
+              )}
+            </div>
+
             <Link href="/business" className="nav-link" style={{ color: '#8b5cf6' }}>🏪 Business</Link>
-            <Link href="/events" className="nav-link" style={{ color: '#f59e0b' }}>Events</Link>
+            <Link href="/events" className="nav-link">Events</Link>
             <Link href="/news" className="nav-link">News</Link>
-            <Link href="/kallah" className="nav-link" style={{ color: '#ec4899' }}>🕍 Kallah</Link>          
             <Link href="/services" className="nav-link">Services</Link>
             
-            {/* 🔍 Search Button - ЗАМЕТНАЯ ВЕРСИЯ */}
+            {/* 🔍 Search Button */}
             <button 
               onClick={() => setShowSearch(true)} 
               style={{ 
@@ -73,24 +128,12 @@ export default function Header({ user, onLogout }: HeaderProps) {
                 animation: pulse ? 'pulse 2s ease-in-out infinite' : 'none',
                 boxShadow: pulse ? '0 0 0 0 rgba(59, 130, 246, 0.5)' : 'none',
               }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#2563eb';
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = pulse ? '#3b82f6' : '#f3f4f6';
-                e.currentTarget.style.color = pulse ? 'white' : '#374151';
-              }}
+              onMouseOver={(e) => { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.color = 'white'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = pulse ? '#3b82f6' : '#f3f4f6'; e.currentTarget.style.color = pulse ? 'white' : '#374151'; }}
               title="Search (Press /)"
             >
               🔍 <span>Search</span>
-              <span style={{
-                fontSize: '0.7rem',
-                padding: '2px 6px',
-                background: pulse ? 'rgba(255,255,255,0.2)' : '#e5e7eb',
-                borderRadius: '4px',
-                marginLeft: '4px',
-              }}>/</span>
+              <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: pulse ? 'rgba(255,255,255,0.2)' : '#e5e7eb', borderRadius: '4px', marginLeft: '4px' }}>/</span>
             </button>
 
             {user?.role === 'admin' && (
@@ -98,101 +141,40 @@ export default function Header({ user, onLogout }: HeaderProps) {
             )}
             {user && (
               <>
-                <span className="nav-user">{user.name}</span>
-                <button onClick={onLogout} className="nav-logout" title="Logout">
-                  <span>→</span>
-                </button>
+                <span className="nav-link" style={{ color: '#10b981' }}>{user.name}</span>
+                <button onClick={onLogout} className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>Logout</button>
               </>
             )}
           </nav>
         </div>
       </header>
 
-      {/* CSS для анимации пульсации */}
-      <style jsx global>{`
+      <style jsx>{`
         @keyframes pulse {
-          0% {
-            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
-          }
-          70% {
-            box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
-          }
-          100% {
-            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-          }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+          50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
         }
       `}</style>
 
       {/* Search Modal */}
       {showSearch && (
         <div 
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.6)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'center',
-            paddingTop: '8vh',
-            backdropFilter: 'blur(4px)',
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowSearch(false);
-          }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', zIndex: 9999, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '8vh', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowSearch(false); }}
         >
-          <div 
-            style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '20px',
-              width: '92%',
-              maxWidth: '560px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            }}
-          >
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              marginBottom: '16px' 
-            }}>
-              <h2 style={{ 
-                margin: 0, 
-                fontSize: '18px', 
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '20px', width: '92%', maxWidth: '560px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>🔍</span> Search
               </h2>
               <button 
                 onClick={() => setShowSearch(false)}
-                style={{
-                  background: '#f3f4f6',
-                  border: 'none',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#6b7280',
-                  transition: 'background 0.2s',
-                }}
+                style={{ background: '#f3f4f6', border: 'none', width: '32px', height: '32px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280', transition: 'background 0.2s' }}
                 onMouseOver={(e) => e.currentTarget.style.background = '#e5e7eb'}
                 onMouseOut={(e) => e.currentTarget.style.background = '#f3f4f6'}
-              >
-                ✕
-              </button>
+              >✕</button>
             </div>
-            <GlobalSearch 
-              placeholder="Search groups, businesses, events..." 
-              onClose={() => setShowSearch(false)}
-            />
+            <GlobalSearch placeholder="Search groups, businesses, events..." onClose={() => setShowSearch(false)} />
           </div>
         </div>
       )}
