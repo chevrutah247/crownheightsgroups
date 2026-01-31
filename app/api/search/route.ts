@@ -1,5 +1,5 @@
 // app/api/search/route.ts
-// Глобальный поиск по всему контенту
+// Глобальный поиск - все данные из Redis
 
 import { NextRequest, NextResponse } from 'next/server'
 import { Redis } from '@upstash/redis'
@@ -23,54 +23,11 @@ interface SearchResult {
   score: number
 }
 
-// Категории групп
-const CATEGORIES = [
-  { id: 'torah', name: 'Torah Study', icon: '📖' },
-  { id: 'prayer', name: 'Prayer / Minyan', icon: '🙏' },
-  { id: 'women', name: "Women's Groups", icon: '👩' },
-  { id: 'youth', name: 'Youth / Teens', icon: '👦' },
-  { id: 'singles', name: 'Singles', icon: '💑' },
-  { id: 'families', name: 'Families', icon: '👨‍👩‍👧‍👦' },
-  { id: 'seniors', name: 'Seniors', icon: '👴' },
-  { id: 'health', name: 'Health & Wellness', icon: '💪' },
-  { id: 'mental', name: 'Mental Health', icon: '🧠' },
-  { id: 'support', name: 'Support Groups', icon: '🤝' },
-  { id: 'chesed', name: 'Chesed / Charity', icon: '❤️' },
-  { id: 'bikur', name: 'Bikur Cholim', icon: '🏥' },
-  { id: 'hachnasas', name: 'Hachnasas Orchim', icon: '🏠' },
-  { id: 'kallah', name: 'Hachnasat Kallah', icon: '👰' },
-  { id: 'shidduch', name: 'Shidduchim', icon: '💒' },
-  { id: 'parenting', name: 'Parenting', icon: '👶' },
-  { id: 'education', name: 'Education', icon: '🎓' },
-  { id: 'business', name: 'Business / Networking', icon: '💼' },
-  { id: 'jobs', name: 'Jobs / Career', icon: '📋' },
-  { id: 'housing', name: 'Housing', icon: '🏡' },
-  { id: 'marketplace', name: 'Buy/Sell', icon: '🛒' },
-  { id: 'lost', name: 'Lost & Found', icon: '🔍' },
-  { id: 'community', name: 'Community News', icon: '📰' },
-  { id: 'other', name: 'Other', icon: '📌' },
-]
-
-// Локации
-const LOCATIONS = [
-  { id: 'crown-heights', name: 'Crown Heights', region: 'Brooklyn, NY' },
-  { id: 'brooklyn', name: 'Brooklyn', region: 'New York' },
-  { id: 'flatbush', name: 'Flatbush', region: 'Brooklyn, NY' },
-  { id: 'williamsburg', name: 'Williamsburg', region: 'Brooklyn, NY' },
-  { id: 'boro-park', name: 'Boro Park', region: 'Brooklyn, NY' },
-  { id: 'manhattan', name: 'Manhattan', region: 'New York' },
-  { id: 'queens', name: 'Queens', region: 'New York' },
-  { id: 'monsey', name: 'Monsey', region: 'New York' },
-  { id: 'lakewood', name: 'Lakewood', region: 'New Jersey' },
-  { id: 'israel', name: 'Israel', region: 'International' },
-]
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('q')?.toLowerCase().trim() || ''
   const type = searchParams.get('type') || 'all'
   const limit = parseInt(searchParams.get('limit') || '10')
-  const suggestionsOnly = searchParams.get('suggestions') === 'true'
 
   if (!query || query.length < 2) {
     return NextResponse.json({ 
@@ -85,240 +42,268 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Database not available' }, { status: 500 })
   }
 
+  const results: SearchResult[] = []
+  const suggestions: { text: string; type: string; count?: number }[] = []
+
   try {
-    const results: SearchResult[] = []
-    const suggestions: { text: string; type: string; count?: number }[] = []
+    // Загружаем все данные из Redis
+    const [
+      locationsData,
+      groupCategoriesData,
+      serviceCategoriesData,
+      groupsData,
+      servicesData,
+      eventsData,
+      campaignsData,
+      newsData,
+      businessesData
+    ] = await Promise.all([
+      redis.get('locations'),
+      redis.get('group-categories'),
+      redis.get('service-categories'),
+      redis.get('groups'),
+      redis.get('services'),
+      redis.get('events'),
+      redis.get('campaigns'),
+      redis.get('news'),
+      redis.get('businesses'),
+    ])
+
+    // Парсим данные
+    const locations = parseData(locationsData)
+    const groupCategories = parseData(groupCategoriesData)
+    const serviceCategories = parseData(serviceCategoriesData)
+    const groups = parseData(groupsData)
+    const services = parseData(servicesData)
+    const events = parseData(eventsData)
+    const campaigns = parseData(campaignsData)
+    const news = parseData(newsData)
+    const businesses = parseData(businessesData)
 
     // ==========================================
-    // Поиск по категориям
-    // ==========================================
-    if (type === 'all' || type === 'categories') {
-      const matchingCategories = CATEGORIES.filter(cat =>
-        cat.name.toLowerCase().includes(query) ||
-        cat.id.toLowerCase().includes(query)
-      )
-      
-      // Получаем группы для подсчёта
-      const groupsData = await redis.get('groups')
-      const groups = groupsData 
-        ? (typeof groupsData === 'string' ? JSON.parse(groupsData) : groupsData)
-        : []
-      
-      for (const cat of matchingCategories) {
-        const count = Array.isArray(groups) 
-          ? groups.filter((g: any) => g.category === cat.id).length 
-          : 0
-        results.push({
-          type: 'category',
-          id: cat.id,
-          title: cat.name,
-          subtitle: `${count} groups`,
-          icon: cat.icon,
-          url: `/groups?category=${cat.id}`,
-          score: calculateScore(cat.name, query, 1.5),
-        })
-        suggestions.push({ text: cat.name, type: 'category', count })
-      }
-    }
-
-    // ==========================================
-    // Поиск по локациям
+    // 1. Поиск по ЛОКАЦИЯМ
     // ==========================================
     if (type === 'all' || type === 'locations') {
-      const matchingLocations = LOCATIONS.filter(loc =>
-        loc.name.toLowerCase().includes(query) ||
-        loc.region.toLowerCase().includes(query)
-      )
-      
-      for (const loc of matchingLocations) {
-        results.push({
-          type: 'location',
-          id: loc.id,
-          title: loc.name,
-          subtitle: loc.region,
-          icon: '📍',
-          url: `/groups?location=${loc.id}`,
-          score: calculateScore(loc.name, query, 1.3),
-        })
-        suggestions.push({ text: `${loc.name}, ${loc.region}`, type: 'location' })
+      for (const loc of locations) {
+        const searchText = `${loc.neighborhood || ''} ${loc.city || ''} ${loc.state || ''} ${loc.country || ''}`.toLowerCase()
+        
+        if (searchText.includes(query)) {
+          // Считаем группы в этой локации
+          const groupsCount = groups.filter((g: any) => g.locationId === loc.id).length
+          
+          results.push({
+            type: 'location',
+            id: loc.id,
+            title: loc.neighborhood || loc.city,
+            subtitle: [loc.city, loc.state].filter(Boolean).join(', '),
+            icon: '📍',
+            url: `/groups?location=${loc.id}`,
+            score: calculateScore(loc.neighborhood || loc.city, query, 1.5),
+          })
+          
+          suggestions.push({ 
+            text: `${loc.neighborhood || loc.city}, ${loc.state || ''}`.trim(), 
+            type: 'location',
+            count: groupsCount
+          })
+        }
       }
     }
 
     // ==========================================
-    // Поиск по группам
+    // 2. Поиск по КАТЕГОРИЯМ ГРУПП
+    // ==========================================
+    if (type === 'all' || type === 'categories') {
+      for (const cat of groupCategories) {
+        const searchText = `${cat.name || ''} ${cat.nameRu || ''}`.toLowerCase()
+        
+        if (searchText.includes(query)) {
+          const groupsCount = groups.filter((g: any) => g.categoryId === cat.id).length
+          
+          results.push({
+            type: 'category',
+            id: cat.id,
+            title: cat.name,
+            subtitle: `${groupsCount} groups`,
+            icon: cat.icon || '📁',
+            url: `/groups?category=${cat.id}`,
+            score: calculateScore(cat.name, query, 1.4),
+          })
+          
+          suggestions.push({ 
+            text: cat.name, 
+            type: 'category',
+            count: groupsCount
+          })
+        }
+      }
+    }
+
+    // ==========================================
+    // 3. Поиск по ГРУППАМ
     // ==========================================
     if (type === 'all' || type === 'groups') {
-      const groupsData = await redis.get('groups')
-      const groups = groupsData 
-        ? (typeof groupsData === 'string' ? JSON.parse(groupsData) : groupsData)
-        : []
-      
-      if (Array.isArray(groups)) {
-        for (const group of groups) {
-          const name = (group.name || '').toLowerCase()
-          const description = (group.description || '').toLowerCase()
+      for (const group of groups) {
+        const title = (group.title || '').toLowerCase()
+        const description = (group.description || '').toLowerCase()
+        const tags = (group.tags || []).join(' ').toLowerCase()
+        
+        // Получаем данные о локации группы
+        const location = locations.find((l: any) => l.id === group.locationId)
+        const locationText = location 
+          ? `${location.neighborhood || ''} ${location.city || ''} ${location.state || ''}`.toLowerCase()
+          : ''
+        
+        // Получаем категорию
+        const category = groupCategories.find((c: any) => c.id === group.categoryId)
+        
+        if (title.includes(query) || description.includes(query) || 
+            tags.includes(query) || locationText.includes(query)) {
           
-          if (name.includes(query) || description.includes(query)) {
-            const categoryInfo = CATEGORIES.find(c => c.id === group.category)
-            results.push({
-              type: 'group',
-              id: group.id || group.name,
-              title: group.name,
-              subtitle: categoryInfo?.name || group.category || 'Group',
-              icon: categoryInfo?.icon || '👥',
-              url: group.link || `/groups?search=${encodeURIComponent(group.name)}`,
-              score: calculateScore(group.name, query, name.startsWith(query) ? 2 : 1),
-            })
-          }
+          results.push({
+            type: 'group',
+            id: group.id,
+            title: group.title,
+            subtitle: [location?.neighborhood, category?.name].filter(Boolean).join(' • '),
+            icon: category?.icon || '👥',
+            url: group.whatsappLinks?.[0] || group.whatsappLink || `/groups`,
+            score: calculateScore(group.title, query, title.includes(query) ? 2 : 1),
+          })
         }
       }
     }
 
     // ==========================================
-    // Поиск по бизнесам
+    // 4. Поиск по СЕРВИСАМ
     // ==========================================
-    if (type === 'all' || type === 'businesses') {
-      const bizData = await redis.get('businesses')
-      const businesses = bizData 
-        ? (typeof bizData === 'string' ? JSON.parse(bizData) : bizData)
-        : []
+    if (type === 'all' || type === 'services') {
+      // Категории сервисов
+      for (const cat of serviceCategories) {
+        const searchText = `${cat.name || ''} ${cat.nameRu || ''}`.toLowerCase()
+        
+        if (searchText.includes(query)) {
+          results.push({
+            type: 'service',
+            id: `cat-${cat.id}`,
+            title: cat.name,
+            subtitle: 'Service Category',
+            icon: cat.icon || '🔧',
+            url: `/services?category=${cat.id}`,
+            score: calculateScore(cat.name, query, 1.3),
+          })
+        }
+      }
       
-      if (Array.isArray(businesses)) {
-        for (const biz of businesses) {
-          const name = (biz.name || '').toLowerCase()
-          const description = (biz.description || '').toLowerCase()
-          const city = (biz.city || '').toLowerCase()
+      // Контакты сервисов
+      for (const service of services) {
+        const name = (service.name || '').toLowerCase()
+        const description = (service.description || '').toLowerCase()
+        
+        if (name.includes(query) || description.includes(query)) {
+          const category = serviceCategories.find((c: any) => c.id === service.categoryId)
           
-          if (name.includes(query) || description.includes(query) || city.includes(query)) {
-            results.push({
-              type: 'business',
-              id: biz.id || biz.name,
-              title: biz.name,
-              subtitle: biz.city ? `${biz.city}${biz.country ? ', ' + biz.country : ''}` : biz.category,
-              icon: '🏪',
-              url: `/business?search=${encodeURIComponent(biz.name)}`,
-              score: calculateScore(biz.name, query, name.startsWith(query) ? 2 : 1),
-            })
-          }
+          results.push({
+            type: 'service',
+            id: service.id,
+            title: service.name,
+            subtitle: category?.name || 'Service',
+            icon: category?.icon || '🔧',
+            url: `/services`,
+            score: calculateScore(service.name, query, 1.2),
+          })
         }
       }
     }
 
     // ==========================================
-    // Поиск по новостям
-    // ==========================================
-    if (type === 'all' || type === 'news') {
-      const newsData = await redis.get('news')
-      const news = newsData 
-        ? (typeof newsData === 'string' ? JSON.parse(newsData) : newsData)
-        : []
-      
-      if (Array.isArray(news)) {
-        for (const item of news) {
-          const title = (item.title || '').toLowerCase()
-          const content = (item.content || '').toLowerCase()
-          
-          if (title.includes(query) || content.includes(query)) {
-            results.push({
-              type: 'news',
-              id: item.id || item.title,
-              title: item.title,
-              subtitle: formatDate(item.createdAt || item.date),
-              icon: '📰',
-              url: `/news`,
-              score: calculateScore(item.title, query, 1),
-            })
-          }
-        }
-      }
-    }
-
-    // ==========================================
-    // Поиск по событиям
+    // 5. Поиск по СОБЫТИЯМ
     // ==========================================
     if (type === 'all' || type === 'events') {
-      const eventsData = await redis.get('events')
-      const events = eventsData 
-        ? (typeof eventsData === 'string' ? JSON.parse(eventsData) : eventsData)
-        : []
-      
-      if (Array.isArray(events)) {
-        for (const event of events) {
-          const title = (event.title || event.name || '').toLowerCase()
-          const description = (event.description || '').toLowerCase()
-          
-          if (title.includes(query) || description.includes(query)) {
-            results.push({
-              type: 'event',
-              id: event.id || event.title,
-              title: event.title || event.name,
-              subtitle: formatDate(event.date),
-              icon: '📅',
-              url: `/events`,
-              score: calculateScore(event.title || event.name, query, 1.2),
-            })
-          }
+      for (const event of events) {
+        const title = (event.title || '').toLowerCase()
+        const description = (event.description || '').toLowerCase()
+        const location = (event.location || '').toLowerCase()
+        
+        if (title.includes(query) || description.includes(query) || location.includes(query)) {
+          results.push({
+            type: 'event',
+            id: event.id,
+            title: event.title,
+            subtitle: event.date ? formatDate(event.date) : 'Event',
+            icon: '📅',
+            url: `/events`,
+            score: calculateScore(event.title, query, 1.2),
+          })
         }
       }
     }
 
     // ==========================================
-    // Поиск по благотворительности
+    // 6. Поиск по КАМПАНИЯМ (Charity)
     // ==========================================
     if (type === 'all' || type === 'charity') {
-      const charityData = await redis.get('charities')
-      const charities = charityData 
-        ? (typeof charityData === 'string' ? JSON.parse(charityData) : charityData)
-        : []
-      
-      if (Array.isArray(charities)) {
-        for (const charity of charities) {
-          const name = (charity.name || '').toLowerCase()
-          const description = (charity.description || '').toLowerCase()
-          
-          if (name.includes(query) || description.includes(query)) {
-            results.push({
-              type: 'charity',
-              id: charity.id || charity.name,
-              title: charity.name,
-              subtitle: 'Charity',
-              icon: '❤️',
-              url: `/charity`,
-              score: calculateScore(charity.name, query, 1),
-            })
-          }
+      for (const campaign of campaigns) {
+        const title = (campaign.title || '').toLowerCase()
+        const description = (campaign.description || '').toLowerCase()
+        
+        if (title.includes(query) || description.includes(query)) {
+          results.push({
+            type: 'charity',
+            id: campaign.id,
+            title: campaign.title,
+            subtitle: campaign.goal ? `Goal: $${campaign.goal}` : 'Campaign',
+            icon: '💝',
+            url: `/charity`,
+            score: calculateScore(campaign.title, query, 1),
+          })
         }
       }
     }
 
     // ==========================================
-    // Поиск по Kallah сервисам
+    // 7. Поиск по НОВОСТЯМ
     // ==========================================
-    if (type === 'all' || type === 'kallah') {
-      // Пробуем разные ключи, которые могут использоваться
-      let kallahServices: any[] = []
-      
-      const kallahData = await redis.get('kallah:services') || await redis.get('kallahServices')
-      if (kallahData) {
-        kallahServices = typeof kallahData === 'string' ? JSON.parse(kallahData) : kallahData
+    if (type === 'all' || type === 'news') {
+      for (const item of news) {
+        const title = (item.title || '').toLowerCase()
+        const content = (item.content || '').toLowerCase()
+        
+        if (title.includes(query) || content.includes(query)) {
+          results.push({
+            type: 'news',
+            id: item.id,
+            title: item.title,
+            subtitle: formatDate(item.createdAt || item.date),
+            icon: '📰',
+            url: `/news`,
+            score: calculateScore(item.title, query, 1),
+          })
+        }
       }
-      
-      if (Array.isArray(kallahServices)) {
-        for (const service of kallahServices) {
-          const name = (service.name || '').toLowerCase()
-          const description = (service.description || '').toLowerCase()
-          
-          if (name.includes(query) || description.includes(query)) {
-            results.push({
-              type: 'kallah',
-              id: service.id || service.name,
-              title: service.name,
-              subtitle: service.category || 'Kallah Service',
-              icon: '👰',
-              url: `/kallah`,
-              score: calculateScore(service.name, query, 1),
-            })
-          }
+    }
+
+    // ==========================================
+    // 8. Поиск по БИЗНЕСАМ
+    // ==========================================
+    if (type === 'all' || type === 'businesses') {
+      for (const biz of businesses) {
+        const name = (biz.name || '').toLowerCase()
+        const description = (biz.description || '').toLowerCase()
+        const city = (biz.city || '').toLowerCase()
+        const state = (biz.state || '').toLowerCase()
+        const country = (biz.country || '').toLowerCase()
+        
+        if (name.includes(query) || description.includes(query) || 
+            city.includes(query) || state.includes(query) || country.includes(query)) {
+          results.push({
+            type: 'business',
+            id: biz.id || biz.name,
+            title: biz.name,
+            subtitle: [biz.city, biz.state, biz.country].filter(Boolean).join(', ') || biz.category,
+            icon: '🏪',
+            url: `/business`,
+            score: calculateScore(biz.name, query, name.includes(query) ? 1.5 : 1),
+          })
         }
       }
     }
@@ -326,19 +311,15 @@ export async function GET(request: NextRequest) {
     // Сортируем по релевантности
     results.sort((a, b) => b.score - a.score)
 
-    // Если нужны только подсказки
-    if (suggestionsOnly) {
-      const uniqueSuggestions = Array.from(
-        new Map(suggestions.map(s => [s.text, s])).values()
-      ).sort((a, b) => (b.count || 0) - (a.count || 0))
-      
-      return NextResponse.json({ suggestions: uniqueSuggestions.slice(0, 8) })
-    }
+    // Убираем дубликаты подсказок
+    const uniqueSuggestions = Array.from(
+      new Map(suggestions.map(s => [s.text.toLowerCase(), s])).values()
+    ).sort((a, b) => (b.count || 0) - (a.count || 0))
 
     return NextResponse.json({
       results: results.slice(0, limit),
       total: results.length,
-      suggestions: suggestions.slice(0, 5),
+      suggestions: uniqueSuggestions.slice(0, 5),
       query,
     })
   } catch (error) {
@@ -347,6 +328,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Парсинг данных из Redis
+function parseData(data: any): any[] {
+  if (!data) return []
+  try {
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+// Расчет релевантности
 function calculateScore(text: string, query: string, multiplier: number = 1): number {
   if (!text) return 0
   
@@ -372,6 +365,7 @@ function calculateScore(text: string, query: string, multiplier: number = 1): nu
   return score * multiplier
 }
 
+// Форматирование даты
 function formatDate(dateStr: string): string {
   if (!dateStr) return ''
   try {

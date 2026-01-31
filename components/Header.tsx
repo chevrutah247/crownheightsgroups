@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import GlobalSearch from './GlobalSearch';
 
@@ -11,6 +11,29 @@ interface HeaderProps {
 
 export default function Header({ user, onLogout }: HeaderProps) {
   const [showSearch, setShowSearch] = useState(false);
+  const [pulse, setPulse] = useState(true);
+
+  // Убираем пульсацию через 5 секунд
+  useEffect(() => {
+    const timer = setTimeout(() => setPulse(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Горячая клавиша "/" для открытия поиска
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '/' && !showSearch && 
+          !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault();
+        setShowSearch(true);
+      }
+      if (e.key === 'Escape' && showSearch) {
+        setShowSearch(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSearch]);
 
   return (
     <>
@@ -31,23 +54,43 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <Link href="/kallah" className="nav-link" style={{ color: '#ec4899' }}>🕍 Kallah</Link>          
             <Link href="/services" className="nav-link">Services</Link>
             
-            {/* 🔍 Search Button */}
+            {/* 🔍 Search Button - ЗАМЕТНАЯ ВЕРСИЯ */}
             <button 
               onClick={() => setShowSearch(true)} 
               style={{ 
-                background: 'none', 
+                background: pulse ? '#3b82f6' : '#f3f4f6',
+                color: pulse ? 'white' : '#374151',
                 border: 'none', 
                 cursor: 'pointer',
-                fontSize: '1.1rem',
-                padding: '0.25rem 0.5rem',
-                opacity: 0.8,
-                transition: 'opacity 0.2s',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                padding: '0.5rem 1rem',
+                borderRadius: '9999px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                transition: 'all 0.3s ease',
+                animation: pulse ? 'pulse 2s ease-in-out infinite' : 'none',
+                boxShadow: pulse ? '0 0 0 0 rgba(59, 130, 246, 0.5)' : 'none',
               }}
-              onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
-              onMouseOut={(e) => e.currentTarget.style.opacity = '0.8'}
-              title="Search"
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#2563eb';
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = pulse ? '#3b82f6' : '#f3f4f6';
+                e.currentTarget.style.color = pulse ? 'white' : '#374151';
+              }}
+              title="Search (Press /)"
             >
-              🔍
+              🔍 <span>Search</span>
+              <span style={{
+                fontSize: '0.7rem',
+                padding: '2px 6px',
+                background: pulse ? 'rgba(255,255,255,0.2)' : '#e5e7eb',
+                borderRadius: '4px',
+                marginLeft: '4px',
+              }}>/</span>
             </button>
 
             {user?.role === 'admin' && (
@@ -64,6 +107,21 @@ export default function Header({ user, onLogout }: HeaderProps) {
           </nav>
         </div>
       </header>
+
+      {/* CSS для анимации пульсации */}
+      <style jsx global>{`
+        @keyframes pulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
+          }
+          70% {
+            box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+          }
+        }
+      `}</style>
 
       {/* Search Modal */}
       {showSearch && (
