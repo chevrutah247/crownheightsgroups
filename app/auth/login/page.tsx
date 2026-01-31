@@ -35,15 +35,32 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: userPassword }),
+        credentials: 'include',
       });
       const data = await response.json();
+      
+      console.log('Login response:', data); // Debug
+      
       if (!response.ok) {
         setError(data.error || 'Login failed');
         setLoading(false);
         return;
       }
+      
+      // Save token to cookie manually if returned
+      if (data.token) {
+        document.cookie = `session=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}`;
+      }
+      
+      // Save user to localStorage for immediate use
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+      
+      // Force redirect
       window.location.href = '/';
     } catch (err) {
+      console.error('Login error:', err);
       setError('Network error. Please try again.');
       setLoading(false);
     }
