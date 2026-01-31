@@ -220,42 +220,62 @@ export default function GroupsClient() {
           {searchQuery && <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#666' }}>Searching for "{searchQuery}" in group names and categories</div>}
         </div>
 
-        <div style={{ marginBottom: '1rem' }}>
-          <div style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>📍 Location</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <button onClick={() => setSelectedLocation('')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: !selectedLocation ? '#2563eb' : '#e5e7eb', color: !selectedLocation ? 'white' : '#333', cursor: 'pointer', fontWeight: !selectedLocation ? 'bold' : 'normal' }}>All</button>
-            {[...locations].sort((a, b) => (a.order || 0) - (b.order || 0)).map(loc => (
-              <button key={loc.id} onClick={() => setSelectedLocation(loc.id === selectedLocation ? '' : loc.id)} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: selectedLocation === loc.id ? '#2563eb' : '#e5e7eb', color: selectedLocation === loc.id ? 'white' : '#333', cursor: 'pointer', fontWeight: selectedLocation === loc.id ? 'bold' : 'normal' }}>{loc.neighborhood}</button>
-            ))}
+        {/* Compact Filters Row */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem', alignItems: 'flex-start' }}>
+          
+          {/* Location Dropdown */}
+          <div style={{ minWidth: '180px' }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#666', display: 'block', marginBottom: '0.5rem' }}>📍 Location</label>
+            <select 
+              value={selectedLocation} 
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              style={{ width: '100%', padding: '0.6rem 1rem', borderRadius: '8px', border: '2px solid #e5e7eb', fontSize: '0.95rem', cursor: 'pointer', background: 'white' }}
+            >
+              <option value=''>All Locations</option>
+              {[...locations].sort((a, b) => (a.order || 0) - (b.order || 0)).map(loc => (
+                <option key={loc.id} value={loc.id}>{loc.neighborhood}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category Dropdown */}
+          <div style={{ minWidth: '200px' }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#666', display: 'block', marginBottom: '0.5rem' }}>📁 Category</label>
+            <select 
+              value={selectedCategory} 
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              style={{ width: '100%', padding: '0.6rem 1rem', borderRadius: '8px', border: '2px solid #e5e7eb', fontSize: '0.95rem', cursor: 'pointer', background: 'white' }}
+            >
+              <option value=''>All Categories</option>
+              {[...categories].sort((a, b) => (a.order || 0) - (b.order || 0)).map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Quick Tags */}
+          <div style={{ flex: 1, minWidth: '280px' }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#666', display: 'block', marginBottom: '0.5rem' }}>🏷️ Quick Filters</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+              {AVAILABLE_TAGS.slice(0, 6).map(tag => (
+                <button key={tag.id} onClick={() => setSelectedTags(prev => prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id])} style={{ padding: '0.35rem 0.7rem', borderRadius: '16px', border: 'none', background: selectedTags.includes(tag.id) ? tag.color : '#f1f5f9', color: selectedTags.includes(tag.id) ? 'white' : '#64748b', cursor: 'pointer', fontSize: '0.8rem' }}>{tag.icon} {tag.label}</button>
+              ))}
+              {selectedTags.length > 0 && <button onClick={() => setSelectedTags([])} style={{ padding: '0.35rem 0.7rem', borderRadius: '16px', border: '1px dashed #cbd5e1', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '0.8rem' }}>✕</button>}
+            </div>
           </div>
         </div>
 
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>📁 Category</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <button onClick={() => setSelectedCategory('')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: !selectedCategory ? '#2563eb' : '#e5e7eb', color: !selectedCategory ? 'white' : '#333', cursor: 'pointer', fontWeight: !selectedCategory ? 'bold' : 'normal' }}>All</button>
-            {[...categories].sort((a, b) => (a.order || 0) - (b.order || 0)).map(cat => (
-              <button key={cat.id} onClick={() => setSelectedCategory(cat.id === selectedCategory ? '' : cat.id)} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: 'none', background: selectedCategory === cat.id ? '#2563eb' : '#e5e7eb', color: selectedCategory === cat.id ? 'white' : '#333', cursor: 'pointer', fontWeight: selectedCategory === cat.id ? 'bold' : 'normal' }}>{cat.icon} {cat.name}</button>
-            ))}
+        {/* Active Filters & Sort */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ color: '#666', fontWeight: 500 }}>{filteredGroups.length} groups</span>
+            {(selectedLocation || selectedCategory || selectedTags.length > 0) && (
+              <button onClick={() => { setSelectedLocation(''); setSelectedCategory(''); setSelectedTags([]); }} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: 'none', background: '#fee2e2', color: '#dc2626', cursor: 'pointer', fontSize: '0.8rem' }}>Clear all</button>
+            )}
           </div>
-        </div>
-
-        {/* Tags Filter */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>🏷️ Tags</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            {AVAILABLE_TAGS.map(tag => (
-              <button key={tag.id} onClick={() => setSelectedTags(prev => prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id])} style={{ padding: '0.4rem 0.8rem', borderRadius: '20px', border: 'none', background: selectedTags.includes(tag.id) ? tag.color : '#f1f5f9', color: selectedTags.includes(tag.id) ? 'white' : '#475569', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>{tag.icon} {tag.label}</button>
-            ))}
-            {selectedTags.length > 0 && <button onClick={() => setSelectedTags([])} style={{ padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1px dashed #cbd5e1', background: 'transparent', color: '#64748b', cursor: 'pointer', fontSize: '0.85rem' }}>✕ Clear</button>}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <span style={{ color: '#666' }}>{filteredGroups.length} groups</span>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {[{k: 'popular', l: '🔥 Popular'}, {k: 'date', l: '🕐 Recent'}, {k: 'alpha', l: '🔤 A-Z'}].map(s => (
-              <button key={s.k} onClick={() => setSortBy(s.k as any)} style={{ padding: '0.25rem 0.75rem', borderRadius: '4px', border: 'none', background: sortBy === s.k ? '#2563eb' : '#e5e7eb', color: sortBy === s.k ? 'white' : '#333', cursor: 'pointer', fontSize: '0.85rem' }}>{s.l}</button>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            {[{k: 'popular', l: '🔥'}, {k: 'date', l: '🕐'}, {k: 'alpha', l: '🔤'}].map(s => (
+              <button key={s.k} onClick={() => setSortBy(s.k as any)} title={s.k} style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: 'none', background: sortBy === s.k ? '#2563eb' : '#e5e7eb', color: sortBy === s.k ? 'white' : '#333', cursor: 'pointer', fontSize: '0.9rem' }}>{s.l}</button>
             ))}
           </div>
         </div>
