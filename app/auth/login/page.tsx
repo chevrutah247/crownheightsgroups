@@ -12,11 +12,11 @@ export default function LoginPage() {
   const [imageError, setImageError] = useState(false);
 
   const handleVerify = () => {
-    alert('Verify clicked');
     setError('');
     setLoading(true);
     if (password === '770') {
       localStorage.setItem('community_verified', 'true');
+      document.cookie = 'gate_passed=true; path=/; max-age=31536000';
       window.location.href = '/auth/register';
     } else {
       setError('Incorrect answer. Hint: The famous address!');
@@ -25,7 +25,6 @@ export default function LoginPage() {
   };
 
   const handleLogin = async () => {
-    alert('Login clicked: ' + email);
     setError('');
     setLoading(true);
     
@@ -37,24 +36,25 @@ export default function LoginPage() {
       });
       const data = await response.json();
       
-      alert('Response: ' + JSON.stringify(data));
-      
       if (!response.ok) {
         setError(data.error || 'Login failed');
         setLoading(false);
         return;
       }
       
+      // Set session cookie
       if (data.token) {
         document.cookie = 'session=' + data.token + '; path=/; max-age=604800';
       }
+      // Set gate_passed cookie (required by middleware)
+      document.cookie = 'gate_passed=true; path=/; max-age=31536000';
+      
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
       }
       
       window.location.href = '/';
     } catch (err) {
-      alert('Error: ' + err);
       setError('Network error. Please try again.');
       setLoading(false);
     }
