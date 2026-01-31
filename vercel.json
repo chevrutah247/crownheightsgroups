@@ -1,16 +1,8 @@
 {
-  "trailingSlash": false,
-  "redirects": [
+  "crons": [
     {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "crownheightsgroups.com"
-        }
-      ],
-      "destination": "https://www.crownheightsgroups.com/:path*",
-      "permanent": true
+      "path": "/api/cron/check-links",
+      "schedule": "0 8 * * 1"
     }
   ]
 }

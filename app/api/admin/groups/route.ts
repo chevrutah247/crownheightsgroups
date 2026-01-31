@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       id,
       ...newGroup,
       createdAt: new Date().toISOString(),
-      status: newGroup.status || 'pending',
+      status: 'approved',
       clicksCount: 0,
       isPinned: false,
       pinnedOrder: 999,
