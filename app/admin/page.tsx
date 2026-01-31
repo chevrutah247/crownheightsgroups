@@ -62,10 +62,15 @@ export default function AdminPage() {
     setIsNew(!item);
     if (item) {
       setEditingItem({ ...item });
+      // Set image preview if exists
+      if (item.imageUrl || item.logoUrl) {
+        setImagePreview(item.imageUrl || item.logoUrl);
+      }
     } else {
       // Default values for new items
       if (type === 'group') setEditingItem({ title: '', description: '', whatsappLinks: [''], categoryId: groupCategories[0]?.id || '1', locationId: locations[0]?.id || '1', language: 'English', isPinned: false });
-      if (type === 'service') setEditingItem({ name: '', phone: '', description: '', categoryId: serviceCategories[0]?.id || '1', languages: ['English'], isPinned: false });
+      // UPDATED: Added address, website, email fields for services
+      if (type === 'service') setEditingItem({ name: '', phone: '', description: '', categoryId: serviceCategories[0]?.id || '1', languages: ['English'], isPinned: false, address: '', website: '', email: '', imageUrl: '' });
       if (type === 'event') setEditingItem({ title: '', description: '', date: '', time: '', location: '', organizer: '', contactPhone: '', link: '' });
       if (type === 'campaign') setEditingItem({ title: '', description: '', goal: 0, raised: 0, donationLink: '', organizer: '', status: 'active' });
       if (type === 'group-category') setEditingItem({ name: '', nameRu: '', icon: '📁', order: groupCategories.length });
@@ -258,14 +263,15 @@ return (
           </>
         )}
 
-        {/* SERVICES */}
+        {/* SERVICES - UPDATED with image column */}
         {activeTab === 'services' && (
           <>
             <div className="admin-header"><h1 className="admin-title">Services ({services.length})</h1><button style={btnPrimary} onClick={() => openModal('service')}>+ Add Service</button></div>
             <div className="admin-card">
-              <table className="admin-table"><thead><tr><th>Pin</th><th>Name</th><th>Phone</th><th>Category</th><th>Actions</th></tr></thead>
+              <table className="admin-table"><thead><tr><th>Pin</th><th>📷</th><th>Name</th><th>Phone</th><th>Category</th><th>Actions</th></tr></thead>
                 <tbody>{services.map(s => (<tr key={s.id} style={s.isPinned ? {background:'#fef3c7'} : {}}>
                   <td>{s.isPinned ? '⭐' : ''}</td>
+                  <td>{(s.imageUrl || s.logoUrl) ? <img src={s.imageUrl || s.logoUrl} alt="" style={{width:'40px',height:'40px',objectFit:'cover',borderRadius:'4px'}} /> : '—'}</td>
                   <td><strong>{s.name}</strong></td>
                   <td>{s.phone}</td>
                   <td>{serviceCategories.find(c => c.id === s.categoryId)?.name || '-'}</td>
@@ -423,14 +429,26 @@ return (
                 <div><label><input type="checkbox" checked={editingItem.isPinned||false} onChange={e=>setEditingItem({...editingItem,isPinned:e.target.checked})} /> ⭐ Pin to top</label></div>
               </>)}
 
-              {/* Service fields */}
+              {/* Service fields - UPDATED with address, website, email */}
               {modalType === 'service' && (<>
-                <div><label style={labelStyle}>Name *</label><input style={inputStyle} value={editingItem.name||''} onChange={e=>setEditingItem({...editingItem,name:e.target.value})} /></div>
-                <div><label style={labelStyle}>Phone *</label><input style={inputStyle} value={editingItem.phone||''} onChange={e=>setEditingItem({...editingItem,phone:e.target.value})} /></div>
-                <div><label style={labelStyle}>Description</label><textarea style={inputStyle} rows={3} value={editingItem.description||''} onChange={e=>setEditingItem({...editingItem,description:e.target.value})} /></div>
+                <div><label style={labelStyle}>Name *</label><input style={inputStyle} value={editingItem.name||''} onChange={e=>setEditingItem({...editingItem,name:e.target.value})} placeholder="Business or person name" /></div>
+                <div><label style={labelStyle}>Phone *</label><input style={inputStyle} value={editingItem.phone||''} onChange={e=>setEditingItem({...editingItem,phone:e.target.value})} placeholder="718-555-0100" /></div>
+                <div><label style={labelStyle}>Description</label><textarea style={inputStyle} rows={3} value={editingItem.description||''} onChange={e=>setEditingItem({...editingItem,description:e.target.value})} placeholder="Services offered, specialties, etc." /></div>
                 <div><label style={labelStyle}>Category</label><select style={inputStyle} value={editingItem.categoryId} onChange={e=>setEditingItem({...editingItem,categoryId:e.target.value})}>{serviceCategories.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
-                <div><label style={labelStyle}>📷 Logo / Business Card</label><div onDragOver={handleDragOver} onDrop={handleDrop} style={{border:'2px dashed #ddd',borderRadius:'8px',padding:'1rem',textAlign:'center',background:'#fafafa'}}>{(imagePreview || editingItem.imageUrl || editingItem.logoUrl) ? (<div><img src={imagePreview || editingItem.imageUrl || editingItem.logoUrl} alt='Preview' style={{maxWidth:'100%',maxHeight:'150px',borderRadius:'8px'}} /><br/><button type='button' onClick={()=>{setImagePreview('');setEditingItem({...editingItem,imageUrl:'',logoUrl:''});}} style={{marginTop:'0.5rem',padding:'0.25rem 0.75rem',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'4px',cursor:'pointer'}}>✕ Remove</button></div>) : (<label style={{cursor:'pointer',display:'block'}}><input type='file' accept='image/*' onChange={handleImageUpload} style={{display:'none'}} /><span style={{color:'#666'}}>📎 Click or drag image here</span><br/><span style={{fontSize:'0.8rem',color:'#999'}}>Logo, business card, etc.</span></label>)}</div></div>
-                <div><label><input type="checkbox" checked={editingItem.isPinned||false} onChange={e=>setEditingItem({...editingItem,isPinned:e.target.checked})} /> ⭐ Pin to top</label></div>
+                
+                {/* NEW: Address field */}
+                <div><label style={labelStyle}>📍 Address</label><input style={inputStyle} value={editingItem.address||''} onChange={e=>setEditingItem({...editingItem,address:e.target.value})} placeholder="123 Kingston Ave, Brooklyn, NY" /></div>
+                
+                {/* NEW: Email field */}
+                <div><label style={labelStyle}>✉️ Email</label><input style={inputStyle} type="email" value={editingItem.email||''} onChange={e=>setEditingItem({...editingItem,email:e.target.value})} placeholder="contact@example.com" /></div>
+                
+                {/* NEW: Website field */}
+                <div><label style={labelStyle}>🌐 Website</label><input style={inputStyle} value={editingItem.website||''} onChange={e=>setEditingItem({...editingItem,website:e.target.value})} placeholder="https://example.com" /></div>
+                
+                {/* Image upload */}
+                <div><label style={labelStyle}>📷 Logo / Business Card</label><div onDragOver={handleDragOver} onDrop={handleDrop} style={{border:'2px dashed #ddd',borderRadius:'8px',padding:'1rem',textAlign:'center',background:'#fafafa'}}>{(imagePreview || editingItem.imageUrl || editingItem.logoUrl) ? (<div><img src={imagePreview || editingItem.imageUrl || editingItem.logoUrl} alt='Preview' style={{maxWidth:'100%',maxHeight:'150px',borderRadius:'8px'}} /><br/><button type='button' onClick={()=>{setImagePreview('');setEditingItem({...editingItem,imageUrl:'',logoUrl:''});}} style={{marginTop:'0.5rem',padding:'0.25rem 0.75rem',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'4px',cursor:'pointer'}}>✕ Remove</button></div>) : (<label style={{cursor:'pointer',display:'block'}}><input type='file' accept='image/*' onChange={handleImageUpload} style={{display:'none'}} /><span style={{color:'#666'}}>📎 Click or drag image here</span><br/><span style={{fontSize:'0.8rem',color:'#999'}}>Logo, business card, photo (PNG, JPG up to 2MB)</span></label>)}</div></div>
+                
+                <div><label><input type="checkbox" checked={editingItem.isPinned||false} onChange={e=>setEditingItem({...editingItem,isPinned:e.target.checked})} /> ⭐ Pin to top (Featured)</label></div>
               </>)}
 
               {/* Event fields */}

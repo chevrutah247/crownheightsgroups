@@ -77,6 +77,12 @@ export interface ServiceContact {
   status: 'approved' | 'pending';
   createdAt: string;
   isPinned?: boolean;
+  // NEW: Image fields for business card / logo
+  imageUrl?: string;      // Business card or main image
+  logoUrl?: string;       // Small logo/icon
+  address?: string;       // Physical address
+  website?: string;       // Website URL
+  email?: string;         // Contact email
 }
 
 export interface EmergencyContact {

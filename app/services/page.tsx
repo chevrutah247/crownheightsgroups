@@ -11,6 +11,7 @@ interface Service {
   id: string; name: string; phone: string; categoryId: string; 
   description?: string; address?: string; website?: string;
   isPinned?: boolean; status?: string; imageUrl?: string; logoUrl?: string;
+  email?: string;
 }
 
 export default function ServicesPage() {
@@ -45,7 +46,6 @@ export default function ServicesPage() {
         ]);
         const [servicesData, catsData] = await Promise.all([servicesRes.json(), catsRes.json()]);
         
-        // Show all services (no status filter) or only approved
         if (Array.isArray(servicesData)) {
           const approved = servicesData.filter((s: Service) => !s.status || s.status === 'approved');
           setAllServices(approved);
@@ -91,54 +91,39 @@ export default function ServicesPage() {
           <p className="page-subtitle">Find trusted professionals in our community</p>
         </div>
 
-        {/* Search */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <input 
-            type="text" 
-            placeholder="🔍 Search services by name or phone..." 
-            value={searchQuery} 
-            onChange={e => setSearchQuery(e.target.value)} 
-            style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid #ddd', fontSize: '1rem', boxSizing: 'border-box' }} 
-          />
-        </div>
-
-        {/* Category Filter */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#666' }}>🏷️ Category</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <button 
-              onClick={() => setSelectedCategory('')} 
-              style={{ 
-                padding: '0.5rem 1rem', 
-                borderRadius: '20px', 
-                border: 'none', 
-                background: !selectedCategory ? '#2563eb' : '#e5e7eb', 
-                color: !selectedCategory ? 'white' : '#333', 
-                cursor: 'pointer', 
-                fontWeight: !selectedCategory ? 'bold' : 'normal' 
-              }}
-            >
-              All
-            </button>
-            {categories.sort((a, b) => (a.order || 0) - (b.order || 0)).map(cat => (
-              <button 
-                key={cat.id} 
-                onClick={() => setSelectedCategory(cat.id === selectedCategory ? '' : cat.id)} 
-                style={{ 
-                  padding: '0.5rem 1rem', 
-                  borderRadius: '20px', 
-                  border: 'none', 
-                  background: selectedCategory === cat.id ? '#2563eb' : '#e5e7eb', 
-                  color: selectedCategory === cat.id ? 'white' : '#333', 
-                  cursor: 'pointer', 
-                  fontWeight: selectedCategory === cat.id ? 'bold' : 'normal' 
-                }}
+        {/* Filters Section - Same style as Groups page */}
+        <section className="filters-section">
+          <div className="filters-row">
+            {/* Search */}
+            <div className="filter-group search-group">
+              <label className="filter-label">Search</label>
+              <input
+                type="text"
+                className="filter-input search-input"
+                placeholder="Search services by name or phone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            {/* Category Dropdown */}
+            <div className="filter-group">
+              <label className="filter-label">Category</label>
+              <select
+                className="filter-select"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
               >
-                {cat.icon} {cat.name}
-              </button>
-            ))}
+                <option value="">All Categories</option>
+                {categories.sort((a, b) => (a.order || 0) - (b.order || 0)).map(cat => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.icon} {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
+        </section>
 
         {/* Results count */}
         <div style={{ marginBottom: '1rem', color: '#666' }}>
@@ -158,30 +143,58 @@ export default function ServicesPage() {
                     borderRadius: '12px', 
                     padding: '1.5rem', 
                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    border: service.isPinned ? '2px solid #f59e0b' : '1px solid #eee'
+                    border: service.isPinned ? '2px solid #f59e0b' : '1px solid #eee',
+                    display: 'flex',
+                    flexDirection: 'column'
                   }}
                 >
                   {service.isPinned && (
-                    <div style={{ color: '#f59e0b', fontSize: '0.8rem', marginBottom: '0.5rem' }}>⭐ Featured</div>
+                    <div style={{ color: '#f59e0b', fontSize: '0.8rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>⭐ Featured</div>
                   )}
                   
+                  {/* Image / Business Card */}
                   {(service.imageUrl || service.logoUrl) && (
-                    <img src={service.imageUrl || service.logoUrl} alt={service.name} style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px', marginBottom: '0.75rem' }} />
+                    <div style={{ marginBottom: '1rem' }}>
+                      <img 
+                        src={service.imageUrl || service.logoUrl} 
+                        alt={service.name} 
+                        style={{ 
+                          width: '100%', 
+                          height: '160px', 
+                          objectFit: 'cover', 
+                          borderRadius: '8px',
+                          border: '1px solid #eee'
+                        }} 
+                      />
+                    </div>
                   )}
                   
+                  {/* Category Badge */}
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-                    <span style={{ padding: '2px 8px', background: '#eff6ff', borderRadius: '4px', fontSize: '0.8rem' }}>
+                    <span style={{ 
+                      padding: '4px 10px', 
+                      background: '#eff6ff', 
+                      borderRadius: '6px', 
+                      fontSize: '0.8rem',
+                      color: '#1e40af',
+                      fontWeight: '500'
+                    }}>
                       {cat?.icon} {cat?.name || 'Service'}
                     </span>
                   </div>
                   
-                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{service.name}</h3>
+                  {/* Name */}
+                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.15rem', fontWeight: '600' }}>{service.name}</h3>
                   
+                  {/* Description */}
                   {service.description && (
-                    <p style={{ color: '#666', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>{service.description}</p>
+                    <p style={{ color: '#666', fontSize: '0.9rem', margin: '0 0 1rem 0', lineHeight: '1.5', flex: '1' }}>
+                      {service.description}
+                    </p>
                   )}
                   
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {/* Contact Info */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: 'auto' }}>
                     {/* Phone */}
                     <a 
                       href={'tel:' + service.phone.replace(/[^0-9+]/g, '')} 
@@ -196,17 +209,53 @@ export default function ServicesPage() {
                         borderRadius: '8px', 
                         textDecoration: 'none', 
                         fontWeight: 'bold',
-                        fontSize: '0.95rem'
+                        fontSize: '0.95rem',
+                        transition: 'background 0.2s'
                       }}
+                      onMouseOver={(e) => e.currentTarget.style.background = '#059669'}
+                      onMouseOut={(e) => e.currentTarget.style.background = '#10b981'}
                     >
                       📞 {service.phone}
                     </a>
                     
                     {/* Address */}
                     {service.address && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: '#f3f4f6', borderRadius: '8px', fontSize: '0.85rem', color: '#666' }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.5rem', 
+                        padding: '0.5rem 0.75rem', 
+                        background: '#f3f4f6', 
+                        borderRadius: '8px', 
+                        fontSize: '0.85rem', 
+                        color: '#4b5563' 
+                      }}>
                         📍 {service.address}
                       </div>
+                    )}
+                    
+                    {/* Email */}
+                    {service.email && (
+                      <a 
+                        href={'mailto:' + service.email}
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          gap: '0.5rem', 
+                          padding: '0.5rem', 
+                          background: '#f3f4f6', 
+                          color: '#4b5563', 
+                          borderRadius: '8px', 
+                          textDecoration: 'none',
+                          fontSize: '0.85rem',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = '#e5e7eb'}
+                        onMouseOut={(e) => e.currentTarget.style.background = '#f3f4f6'}
+                      >
+                        ✉️ {service.email}
+                      </a>
                     )}
                     
                     {/* Website */}
@@ -225,8 +274,11 @@ export default function ServicesPage() {
                           color: 'white', 
                           borderRadius: '8px', 
                           textDecoration: 'none',
-                          fontSize: '0.9rem'
+                          fontSize: '0.9rem',
+                          transition: 'background 0.2s'
                         }}
+                        onMouseOver={(e) => e.currentTarget.style.background = '#4f46e5'}
+                        onMouseOut={(e) => e.currentTarget.style.background = '#6366f1'}
                       >
                         🌐 Website
                       </a>
@@ -238,7 +290,8 @@ export default function ServicesPage() {
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-            <h3>No services found</h3>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+            <h3 style={{ marginBottom: '0.5rem' }}>No services found</h3>
             <p>Try adjusting your search or category filter</p>
           </div>
         )}
