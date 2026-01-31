@@ -23,7 +23,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
           <Link href="/business" className="nav-link" style={{ color: '#8b5cf6' }}>🏪 Business</Link>
           <Link href="/events" className="nav-link" style={{ color: '#f59e0b' }}>Events</Link>
           <Link href="/news" className="nav-link">News</Link>
-          <Link href="/kallah" className="nav-link" style={{ color: '#ec4899' }}>💒 Kallah</Link>          
+          <Link href="/kallah" className="nav-link" style={{ color: '#ec4899' }}>🕍 Kallah</Link>          
           <Link href="/services" className="nav-link">Services</Link>
           {user?.role === 'admin' && (
             <Link href="/admin" className="nav-link" style={{ color: '#dc2626' }}>Admin</Link>
