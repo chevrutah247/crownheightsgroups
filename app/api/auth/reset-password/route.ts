@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database error' }, { status: 500 });
 
-    // Verify reset code
+    // Verify reset code - convert both to string for comparison
     const savedCode = await redis.get(`reset:${email.toLowerCase()}`);
-    if (!savedCode || savedCode !== code) {
+    if (!savedCode || String(savedCode) !== String(code)) {
       return NextResponse.json({ error: 'Invalid or expired reset code' }, { status: 400 });
     }
 
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Update password
     user.password = hashPassword(newPassword);
-    await redis.set(`user:${email.toLowerCase()}`, JSON.stringify(user));
+    await redis.set(`user:${email.toLowerCase()}`, user);
 
     // Delete reset code
     await redis.del(`reset:${email.toLowerCase()}`);
