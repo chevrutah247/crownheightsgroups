@@ -96,7 +96,7 @@ export default function AdminPage() {
       reader.onload = (ev) => {
         const base64 = ev.target?.result as string;
         setImagePreview(base64);
-        setEditingItem((prev) => ({...prev, imageUrl: base64}));
+        setEditingItem((prev: any) => ({...prev, imageUrl: base64}));
       };
       reader.readAsDataURL(file);
     }
