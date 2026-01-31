@@ -172,6 +172,16 @@ export default function AdminPage() {
     fetchAll();
   };
 
+  // Restore broken group
+  const handleRestoreGroup = async (group: any) => {
+    await fetch('/api/admin/groups', { 
+      method: 'PUT', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ ...group, status: 'approved', brokenAt: null, brokenLink: null }) 
+    });
+    fetchAll();
+  };
+
   // Toggle user admin
   const handleToggleAdmin = async (user: any) => {
     if (!confirm(`${user.role === 'admin' ? 'Remove' : 'Make'} admin?`)) return;
@@ -185,6 +195,7 @@ export default function AdminPage() {
   const pendingEvents = eventSuggestions.filter(s => s.status === 'pending');
   const pendingCampaigns = campaignSuggestions.filter(s => s.status === 'pending');
   const pendingLocations = locationSuggestions.filter(s => s.status === 'pending');
+  const brokenGroups = groups.filter(g => g.status === 'broken');
   const totalPending = pendingGroups.length + pendingServices.length + pendingEvents.length + pendingCampaigns.length + pendingLocations.length;
 
   const inputStyle: React.CSSProperties = { width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' };
@@ -195,7 +206,7 @@ export default function AdminPage() {
 
   const navItems = [
     { id: 'suggestions' as Tab, label: 'Suggestions', icon: '📬', badge: totalPending },
-    { id: 'groups' as Tab, label: 'Groups', icon: '👥' },
+    { id: 'groups' as Tab, label: 'Groups', icon: '👥', badge: brokenGroups.length > 0 ? brokenGroups.length : undefined },
     { id: 'services' as Tab, label: 'Services', icon: '🔧' },
     { id: 'events' as Tab, label: 'Events', icon: '📅' },
     { id: 'campaigns' as Tab, label: 'Campaigns', icon: '💝' },
@@ -248,6 +259,28 @@ return (
         {activeTab === 'groups' && (
           <>
             <div className="admin-header"><h1 className="admin-title">Groups ({groups.length})</h1><button style={btnPrimary} onClick={() => openModal('group')}>+ Add Group</button></div>
+            
+            {/* Broken Links Alert */}
+            {brokenGroups.length > 0 && (
+              <div className="admin-card" style={{ marginBottom: '1rem', background: '#fef2f2', border: '1px solid #fecaca' }}>
+                <h3 style={{ color: '#dc2626', margin: '0 0 1rem 0' }}>⚠️ Broken Links ({brokenGroups.length})</h3>
+                <p style={{ color: '#991b1b', fontSize: '0.9rem', marginBottom: '1rem' }}>These groups have non-working WhatsApp links and are hidden from the site.</p>
+                {brokenGroups.map(g => (
+                  <div key={g.id} style={{ padding: '1rem', background: 'white', borderRadius: '8px', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div>
+                      <strong>{g.title}</strong>
+                      <div style={{ fontSize: '0.8rem', color: '#666' }}>Broken: {g.brokenAt?.split('T')[0]}</div>
+                      <code style={{ fontSize: '0.75rem', background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px' }}>{g.brokenLink}</code>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button onClick={() => handleRestoreGroup(g)} style={{ ...btnSuccess, padding: '0.4rem 0.8rem' }}>✅ Restore</button>
+                      <button onClick={() => openModal('group', g)} style={{ padding: '0.4rem 0.8rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>✏️ Edit</button>
+                      <button onClick={() => handleDelete('group', g.id)} style={{ ...btnDanger, padding: '0.4rem 0.8rem' }}>🗑️ Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="admin-card">
               <table className="admin-table"><thead><tr><th>Pin</th><th>📷</th><th>Title</th><th>Category</th><th>Location</th><th>Actions</th></tr></thead>
                 <tbody>{groups.map(g => (<tr key={g.id} style={g.isPinned ? {background:'#fef3c7'} : {}}>
