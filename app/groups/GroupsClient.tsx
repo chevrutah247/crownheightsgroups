@@ -14,7 +14,7 @@ interface Category { id: string; name: string; icon: string; slug: string; order
 interface Location { id: string; neighborhood: string; status: string; order?: number; }
 interface Group { 
   id: string; title: string; description: string; categoryId: string; locationId: string; 
-  language: string; status: string; clicksCount: number; isPinned?: boolean; tags?: string[];
+  language: string; status: string; clicksCount: number; isPinned?: boolean; tags?: string[]; imageUrl?: string;
   whatsappLinks?: string[]; whatsappLink?: string;
   telegramLink?: string; facebookLink?: string; twitterLink?: string; websiteLink?: string;
 }
@@ -291,6 +291,7 @@ export default function GroupsClient() {
               return (
                 <div key={group.id || `group-${index}`} style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: group.isPinned ? '2px solid #f59e0b' : '1px solid #eee' }}>
                   {group.isPinned && <div style={{ color: '#f59e0b', fontSize: '0.8rem', marginBottom: '0.5rem' }}>⭐ Featured</div>}
+                  {group.imageUrl && <img src={group.imageUrl} alt={group.title} style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px', marginBottom: '0.75rem' }} />}
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                     <span style={{ padding: '2px 8px', background: '#eff6ff', borderRadius: '4px', fontSize: '0.8rem' }}>{cat?.icon} {cat?.name}</span>
                     {loc && <span style={{ padding: '2px 8px', background: '#f0fdf4', borderRadius: '4px', fontSize: '0.8rem' }}>📍 {loc.neighborhood}</span>}

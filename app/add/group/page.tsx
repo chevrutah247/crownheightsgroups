@@ -18,6 +18,8 @@ export default function AddGroupPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   const [form, setForm] = useState({
     title: '',
@@ -28,7 +30,8 @@ export default function AddGroupPage() {
     websiteLink: '',
     categoryId: '',
     locationId: '',
-    language: 'English'
+    language: 'English',
+    imageUrl: ''
   });
 
   const languages = ['English', 'Hebrew', 'Yiddish', 'Russian', 'Spanish', 'French'];
@@ -50,6 +53,36 @@ export default function AddGroupPage() {
     fetch('/api/admin/locations').then(r => r.json()).then(data => setLocations(Array.isArray(data) ? data : []));
   }, [router]);
 
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setError('Image must be less than 2MB');
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setError('Image must be less than 2MB');
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleLogout = () => { localStorage.clear(); router.push('/auth/login'); };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,6 +103,7 @@ export default function AddGroupPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          imageUrl: imagePreview || '',
           submittedBy: user?.email || 'anonymous',
           status: 'pending'
         })
@@ -146,6 +180,46 @@ export default function AddGroupPage() {
                 rows={3}
                 style={{ ...inputStyle, resize: 'vertical' }}
               />
+            </div>
+
+            {/* Group Image */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={labelStyle}>📷 Group Image (optional)</label>
+              <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.5rem' }}>Add a screenshot or image to make your group stand out</p>
+              <div style={{ border: '2px dashed #ddd', borderRadius: '8px', padding: '1rem', textAlign: 'center', background: '#fafafa' }}>
+                {imagePreview ? (
+                  <div>
+                    <img src={imagePreview} alt='Preview' style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
+                    <button type='button' onClick={() => { setImageFile(null); setImagePreview(''); }} style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>✕ Remove</button>
+                  </div>
+                ) : (
+                  <label style={{ cursor: 'pointer', display: 'block' }}>
+                    <input type='file' accept='image/*' onChange={handleImageChange} style={{ display: 'none' }} />
+                    <span style={{ color: '#666' }}>📎 Click to upload image</span><br />
+                    <span style={{ fontSize: '0.8rem', color: '#999' }}>PNG, JPG up to 2MB</span>
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {/* Group Image */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={labelStyle}>📷 Group Image (optional)</label>
+              <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.5rem' }}>Add a screenshot or image to make your group stand out</p>
+              <div style={{ border: '2px dashed #ddd', borderRadius: '8px', padding: '1rem', textAlign: 'center', background: '#fafafa' }}>
+                {imagePreview ? (
+                  <div>
+                    <img src={imagePreview} alt='Preview' style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
+                    <button type='button' onClick={() => { setImageFile(null); setImagePreview(''); }} style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>✕ Remove</button>
+                  </div>
+                ) : (
+                  <label style={{ cursor: 'pointer', display: 'block' }}>
+                    <input type='file' accept='image/*' onChange={handleImageChange} style={{ display: 'none' }} />
+                    <span style={{ color: '#666' }}>📎 Click to upload image</span><br />
+                    <span style={{ fontSize: '0.8rem', color: '#999' }}>PNG, JPG up to 2MB</span>
+                  </label>
+                )}
+              </div>
             </div>
 
             <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>

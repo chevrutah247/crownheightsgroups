@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
       categoryId: data.categoryId || '1',
       locationId: data.locationId || '1',
       language: data.language || 'English',
+      imageUrl: data.imageUrl || '',
       status: 'pending',
       submittedBy: data.submittedBy || 'anonymous',
       createdAt: new Date().toISOString()
