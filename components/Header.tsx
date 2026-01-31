@@ -141,7 +141,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
             )}
             {user && (
               <>
-                <span className="nav-link" style={{ color: '#10b981' }}>{user.name}</span>
+                <Link href="/profile" className="nav-link" style={{ color: '#10b981' }}>{user.name}</Link>
                 <button onClick={onLogout} className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>Logout</button>
               </>
             )}
