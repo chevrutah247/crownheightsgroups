@@ -27,6 +27,8 @@ interface Business {
 
 const categories = [
   { id: 'all', name: '📋 All', icon: '📋' },
+  { id: 'kallah', name: '💍 Kallah', icon: '💍' },
+  { id: 'gemach', name: '🤝 Gemach', icon: '🤝' },  
   { id: 'retail', name: '🛍️ Retail', icon: '🛍️' },
   { id: 'food', name: '🍕 Food', icon: '🍕' },
   { id: 'services', name: '🔧 Services', icon: '🔧' },
