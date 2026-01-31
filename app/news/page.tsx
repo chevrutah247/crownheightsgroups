@@ -67,6 +67,7 @@ export default function NewsPage() {
     { id: 'community', name: 'Community', icon: '🏘️' },
     { id: 'torah', name: 'Torah', icon: '📖' },
     { id: 'world', name: 'World News', icon: '🌍' },
+    { id: 'russian', name: 'По-русски', icon: '🇷🇺' },
   ];
 
   const filteredByCategory = categoryFilter === 'all' ? news : news.filter(n => n.category === categoryFilter);
