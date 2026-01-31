@@ -34,14 +34,17 @@ export default function Header({ user, onLogout }: HeaderProps) {
             {/* 🔍 Search Button */}
             <button 
               onClick={() => setShowSearch(true)} 
-              className="nav-link"
               style={{ 
                 background: 'none', 
                 border: 'none', 
                 cursor: 'pointer',
                 fontSize: '1.1rem',
-                padding: '0.25rem 0.5rem'
+                padding: '0.25rem 0.5rem',
+                opacity: 0.8,
+                transition: 'opacity 0.2s',
               }}
+              onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
+              onMouseOut={(e) => e.currentTarget.style.opacity = '0.8'}
               title="Search"
             >
               🔍
@@ -68,12 +71,13 @@ export default function Header({ user, onLogout }: HeaderProps) {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
+            background: 'rgba(0, 0, 0, 0.6)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'center',
-            paddingTop: '10vh',
+            paddingTop: '8vh',
+            backdropFilter: 'blur(4px)',
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowSearch(false);
@@ -82,31 +86,54 @@ export default function Header({ user, onLogout }: HeaderProps) {
           <div 
             style={{
               background: 'white',
-              borderRadius: '1rem',
-              padding: '1.5rem',
-              width: '90%',
-              maxWidth: '600px',
+              borderRadius: '16px',
+              padding: '20px',
+              width: '92%',
+              maxWidth: '560px',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>🔍 Search</h2>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: '16px' 
+            }}>
+              <h2 style={{ 
+                margin: 0, 
+                fontSize: '18px', 
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <span>🔍</span> Search
+              </h2>
               <button 
                 onClick={() => setShowSearch(false)}
                 style={{
-                  background: 'none',
+                  background: '#f3f4f6',
                   border: 'none',
-                  fontSize: '1.5rem',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  fontSize: '16px',
                   cursor: 'pointer',
-                  color: '#666',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#6b7280',
+                  transition: 'background 0.2s',
                 }}
+                onMouseOver={(e) => e.currentTarget.style.background = '#e5e7eb'}
+                onMouseOut={(e) => e.currentTarget.style.background = '#f3f4f6'}
               >
                 ✕
               </button>
             </div>
             <GlobalSearch 
               placeholder="Search groups, businesses, events..." 
-              className=""
+              onClose={() => setShowSearch(false)}
             />
           </div>
         </div>
