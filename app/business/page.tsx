@@ -101,14 +101,14 @@ export default function BusinessPage() {
     return cat ? cat.name.replace(cat.icon + ' ', '') : catId;
   };
 
-  // Get unique countries and cities
-  const countries = [...new Set(businesses.map(b => b.country).filter(Boolean))] as string[];
-  const cities = [...new Set(
-    businesses
-      .filter(b => countryFilter === 'all' || b.country === countryFilter)
-      .map(b => b.city)
-      .filter(Boolean)
-  )] as string[];
+ // Get unique countries and cities
+ const countries = Array.from(new Set(businesses.map(b => b.country).filter(Boolean))) as string[];
+ const cities = Array.from(new Set(
+   businesses
+     .filter(b => countryFilter === 'all' || b.country === countryFilter)
+     .map(b => b.city)
+     .filter(Boolean)
+ )) as string[];
 
   const filteredBusinesses = businesses.filter(b => {
     const matchesCategory = filter === 'all' || b.category === filter;
