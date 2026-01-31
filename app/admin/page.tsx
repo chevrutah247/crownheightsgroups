@@ -244,9 +244,10 @@ return (
           <>
             <div className="admin-header"><h1 className="admin-title">Groups ({groups.length})</h1><button style={btnPrimary} onClick={() => openModal('group')}>+ Add Group</button></div>
             <div className="admin-card">
-              <table className="admin-table"><thead><tr><th>Pin</th><th>Title</th><th>Category</th><th>Location</th><th>Actions</th></tr></thead>
+              <table className="admin-table"><thead><tr><th>Pin</th><th>📷</th><th>Title</th><th>Category</th><th>Location</th><th>Actions</th></tr></thead>
                 <tbody>{groups.map(g => (<tr key={g.id} style={g.isPinned ? {background:'#fef3c7'} : {}}>
                   <td>{g.isPinned ? '⭐' : ''}</td>
+                  <td>{g.imageUrl ? '✅' : '—'}</td>
                   <td><strong>{g.title}</strong></td>
                   <td>{groupCategories.find(c => c.id === g.categoryId)?.name || '-'}</td>
                   <td>{locations.find(l => l.id === g.locationId)?.neighborhood || '-'}</td>
