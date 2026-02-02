@@ -1,16 +1,20 @@
 import { Redis } from '@upstash/redis';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300;
+
 const redis = new Redis({
   url: process.env.KV_REST_API_URL || '',
   token: process.env.KV_REST_API_TOKEN || '',
 });
 
-export const maxDuration = 300;
-
 async function checkWhatsAppLink(url: string): Promise<boolean> {
   try {
-    const response = await fetch(url, {
+    // Clean URL from invisible characters
+    const cleanUrl = url.replace(/[^\x20-\x7E]/g, '').trim();
+    
+    const response = await fetch(cleanUrl, {
       redirect: 'follow',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -22,12 +26,6 @@ async function checkWhatsAppLink(url: string): Promise<boolean> {
     // Check for empty og:title - sign of deleted/invalid group
     const ogTitleMatch = html.match(/<meta property="og:title" content="([^"]*)"/);
     if (ogTitleMatch && ogTitleMatch[1] === '') {
-      console.log('Empty og:title - group deleted');
-      return false;
-    }
-    
-    // Check for "invalid" or "expired" in page
-    if (html.includes('invalid') || html.includes('expired') || html.includes('no longer available')) {
       return false;
     }
     
