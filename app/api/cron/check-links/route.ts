@@ -1,5 +1,10 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import { NextResponse } from 'next/server';
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL || '',
+  token: process.env.KV_REST_API_TOKEN || '',
+});
 
 export const maxDuration = 300;
 
@@ -42,13 +47,8 @@ async function checkWhatsAppLink(url: string): Promise<boolean> {
 }
 
 export async function GET(request: Request) {
-  // Auth check disabled for testing
-  if (false) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
-    const groupsData = await kv.get('groups');
+    const groupsData = await redis.get('groups');
     let groups = Array.isArray(groupsData) ? groupsData : JSON.parse(groupsData as string || '[]');
     
     const approvedGroups = groups.filter((g: any) => g.status === 'approved');
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
     }
 
     if (brokenGroups.length > 0) {
-      await kv.set('groups', JSON.stringify(groups));
+      await redis.set('groups', JSON.stringify(groups));
     }
 
     return NextResponse.json({
