@@ -204,6 +204,15 @@ export default function GroupsClient() {
     <span style={{ marginLeft: '0.5rem', color: '#9d174d', fontSize: '0.9rem' }}>→ Help for Brides</span>
   </Link>
 
+  {/* JewishJobs Banner - show when Jobs category or tag selected */}
+  {((selectedCategory && categories.find(c => c.id === selectedCategory)?.slug === 'jobs') || selectedTags.includes('jobs')) && (
+    <a href="https://www.jewishjobs.com/" target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginBottom: '1.5rem', padding: '1rem', background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)', borderRadius: '12px', textDecoration: 'none', textAlign: 'center' }}>
+      <span style={{ fontSize: '1.5rem' }}>💼</span>
+      <span style={{ marginLeft: '0.5rem', color: '#1e40af', fontWeight: 'bold' }}>JewishJobs.com</span>
+      <span style={{ marginLeft: '0.5rem', color: '#1d4ed8', fontSize: '0.9rem' }}>→ Find Jewish Job Opportunities</span>
+    </a>
+  )}
+
   {user?.role !== 'admin' && (
           <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: clickLimit.remaining > 0 ? '#f0fdf4' : '#fef2f2', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span>{clickLimit.remaining > 0 ? '✅' : '⏰'}</span>
