@@ -77,6 +77,38 @@ export async function POST(request: NextRequest) {
       suggestions = typeof stored === 'string' ? JSON.parse(stored) : stored;
       if (!Array.isArray(suggestions)) suggestions = [];
     }
+    // Check for duplicate title in existing groups
+    const existingGroups = await redis.get('groups');
+    let groups: any[] = [];
+    if (existingGroups) {
+      groups = typeof existingGroups === 'string' ? JSON.parse(existingGroups) : existingGroups;
+    }
+    
+    const duplicateTitle = groups.find(g => 
+      g.title.toLowerCase().trim() === data.title?.toLowerCase().trim()
+    );
+    if (duplicateTitle) {
+      return NextResponse.json({ 
+        error: '⚠️ A group with this name already exists: "' + duplicateTitle.title + '"',
+        duplicate: true
+      }, { status: 400 });
+    }
+    
+    // Check for duplicate WhatsApp link
+    if (data.whatsappLink) {
+      const cleanLink = data.whatsappLink.replace(/[?#].*$/, '').toLowerCase();
+      const duplicateLink = groups.find(g => {
+        const existingLinks = g.whatsappLinks || (g.whatsappLink ? [g.whatsappLink] : []);
+        return existingLinks.some((l: string) => l && l.replace(/[?#].*$/, '').toLowerCase() === cleanLink);
+      });
+      if (duplicateLink) {
+        return NextResponse.json({ 
+          error: '⚠️ This WhatsApp link is already registered for group: "' + duplicateLink.title + '"',
+          duplicate: true
+        }, { status: 400 });
+      }
+    }
+
     const id = String(Date.now());
     const suggestion = {
       id,

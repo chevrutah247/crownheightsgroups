@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-type Tab = 'suggestions' | 'groups' | 'services' | 'events' | 'campaigns' | 'group-categories' | 'service-categories' | 'locations' | 'users' | 'reports';
+type Tab = 'suggestions' | 'groups' | 'services' | 'businesses' | 'events' | 'campaigns' | 'group-categories' | 'service-categories' | 'locations' | 'users' | 'reports';
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>('suggestions');
@@ -11,6 +11,7 @@ export default function AdminPage() {
   const [services, setServices] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [businesses, setBusinesses] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [groupCategories, setGroupCategories] = useState<any[]>([]);
   const [serviceCategories, setServiceCategories] = useState<any[]>([]);
@@ -133,6 +134,7 @@ export default function AdminPage() {
     
     if (modalType === 'group') endpoint = '/api/admin/groups';
     if (modalType === 'service') endpoint = '/api/admin/services';
+    if (modalType === 'business') endpoint = '/api/business';
     if (modalType === 'event') endpoint = '/api/events';
     if (modalType === 'campaign') endpoint = '/api/campaigns';
     if (modalType === 'group-category') endpoint = '/api/admin/group-categories';
@@ -151,6 +153,7 @@ export default function AdminPage() {
     let endpoint = '';
     if (type === 'group') endpoint = '/api/admin/groups';
     if (type === 'service') endpoint = '/api/admin/services';
+    if (type === 'business') endpoint = '/api/business';
     if (type === 'event') endpoint = '/api/events';
     if (type === 'campaign') endpoint = '/api/campaigns';
     if (type === 'group-category') endpoint = '/api/admin/group-categories';
@@ -208,6 +211,7 @@ export default function AdminPage() {
     { id: 'suggestions' as Tab, label: 'Suggestions', icon: '📬', badge: totalPending },
     { id: 'groups' as Tab, label: 'Groups', icon: '👥', badge: brokenGroups.length > 0 ? brokenGroups.length : undefined },
     { id: 'services' as Tab, label: 'Services', icon: '🔧' },
+    { id: 'businesses' as Tab, label: 'Businesses', icon: '🏪' },
     { id: 'events' as Tab, label: 'Events', icon: '📅' },
     { id: 'campaigns' as Tab, label: 'Campaigns', icon: '💝' },
     { id: 'group-categories' as Tab, label: 'Group Categories', icon: '📁' },
@@ -309,6 +313,28 @@ return (
                   <td>{s.phone}</td>
                   <td>{serviceCategories.find(c => c.id === s.categoryId)?.name || '-'}</td>
                   <td><button className="action-btn edit" onClick={() => openModal('service', s)}>Edit</button><button className="action-btn delete" onClick={() => handleDelete('service', s.id)}>Delete</button></td>
+                </tr>))}</tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* BUSINESSES */}
+        {activeTab === 'businesses' && (
+          <>
+            <div className="admin-header"><h1 className="admin-title">Businesses ({businesses.length})</h1><button style={btnPrimary} onClick={() => openModal('business')}>+ Add Business</button></div>
+            <div className="admin-card">
+              <table className="admin-table"><thead><tr><th>📷</th><th>Name</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>{businesses.map(b => (<tr key={b.id} style={b.status === 'pending' ? {background:'#fef3c7'} : {}}>
+                  <td>{b.logoUrl ? '✅' : '—'}</td>
+                  <td><strong>{b.businessName}</strong><br/><small style={{color:'#666'}}>{b.phone}</small></td>
+                  <td>{b.category}</td>
+                  <td><span style={{padding:'4px 8px',borderRadius:'4px',background:b.status==='approved'?'#dcfce7':b.status==='pending'?'#fef3c7':'#fee2e2',color:b.status==='approved'?'#166534':b.status==='pending'?'#92400e':'#dc2626',fontSize:'0.8rem'}}>{b.status}</span></td>
+                  <td>
+                    {b.status === 'pending' && <button className="action-btn" style={{background:'#10b981',color:'white',marginRight:'0.25rem'}} onClick={async()=>{await fetch('/api/business',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...b,status:'approved'})});fetchAll();}}>✅</button>}
+                    <button className="action-btn edit" onClick={() => openModal('business', b)}>Edit</button>
+                    <button className="action-btn delete" onClick={() => handleDelete('business', b.id)}>Delete</button>
+                  </td>
                 </tr>))}</tbody>
               </table>
             </div>
@@ -482,6 +508,18 @@ return (
                 <div><label style={labelStyle}>📷 Logo / Business Card</label><div onDragOver={handleDragOver} onDrop={handleDrop} style={{border:'2px dashed #ddd',borderRadius:'8px',padding:'1rem',textAlign:'center',background:'#fafafa'}}>{(imagePreview || editingItem.imageUrl || editingItem.logoUrl) ? (<div><img src={imagePreview || editingItem.imageUrl || editingItem.logoUrl} alt='Preview' style={{maxWidth:'100%',maxHeight:'150px',borderRadius:'8px'}} /><br/><button type='button' onClick={()=>{setImagePreview('');setEditingItem({...editingItem,imageUrl:'',logoUrl:''});}} style={{marginTop:'0.5rem',padding:'0.25rem 0.75rem',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'4px',cursor:'pointer'}}>✕ Remove</button></div>) : (<label style={{cursor:'pointer',display:'block'}}><input type='file' accept='image/*' onChange={handleImageUpload} style={{display:'none'}} /><span style={{color:'#666'}}>📎 Click or drag image here</span><br/><span style={{fontSize:'0.8rem',color:'#999'}}>Logo, business card, photo (PNG, JPG up to 2MB)</span></label>)}</div></div>
                 
                 <div><label><input type="checkbox" checked={editingItem.isPinned||false} onChange={e=>setEditingItem({...editingItem,isPinned:e.target.checked})} /> ⭐ Pin to top (Featured)</label></div>
+              </>)}
+
+              {/* Business fields */}
+              {modalType === 'business' && (<>
+                <div><label style={labelStyle}>Business Name *</label><input style={inputStyle} value={editingItem.businessName||''} onChange={e=>setEditingItem({...editingItem,businessName:e.target.value})} /></div>
+                <div><label style={labelStyle}>Phone *</label><input style={inputStyle} value={editingItem.phone||''} onChange={e=>setEditingItem({...editingItem,phone:e.target.value})} /></div>
+                <div><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={editingItem.email||''} onChange={e=>setEditingItem({...editingItem,email:e.target.value})} /></div>
+                <div><label style={labelStyle}>Description</label><textarea style={inputStyle} rows={3} value={editingItem.description||''} onChange={e=>setEditingItem({...editingItem,description:e.target.value})} /></div>
+                <div><label style={labelStyle}>Category</label><input style={inputStyle} value={editingItem.category||''} onChange={e=>setEditingItem({...editingItem,category:e.target.value})} /></div>
+                <div><label style={labelStyle}>Website</label><input style={inputStyle} value={editingItem.website||''} onChange={e=>setEditingItem({...editingItem,website:e.target.value})} /></div>
+                <div><label style={labelStyle}>📷 Logo/Image</label><div onDragOver={handleDragOver} onDrop={handleDrop} style={{border:'2px dashed #ddd',borderRadius:'8px',padding:'1rem',textAlign:'center',background:'#fafafa'}}>{(imagePreview || editingItem.logoUrl) ? (<div><img src={imagePreview || editingItem.logoUrl} alt='Preview' style={{maxWidth:'100%',maxHeight:'150px',borderRadius:'8px'}} /><br/><button type='button' onClick={()=>{setImagePreview('');setEditingItem({...editingItem,logoUrl:''});}} style={{marginTop:'0.5rem',padding:'0.25rem 0.75rem',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'4px',cursor:'pointer'}}>✕ Remove</button></div>) : (<label style={{cursor:'pointer',display:'block'}}><input type='file' accept='image/*' onChange={handleImageUpload} style={{display:'none'}} /><span style={{color:'#666'}}>📎 Click or drag image</span></label>)}</div></div>
+                <div><label style={labelStyle}>Status</label><select style={inputStyle} value={editingItem.status||'pending'} onChange={e=>setEditingItem({...editingItem,status:e.target.value})}><option value="pending">Pending</option><option value="approved">Approved</option></select></div>
               </>)}
 
               {/* Event fields */}
