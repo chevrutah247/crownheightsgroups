@@ -1,15 +1,19 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+function getRedis() {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (url && token) return new Redis({ url, token });
+  return null;
+}
 
 export async function POST(request: Request) {
   try {
-    const group = await request.json();
+    const redis = getRedis();
+    if (!redis) return NextResponse.json({ error: 'Redis not configured' }, { status: 500 });
 
+    const group = await request.json();
     const groups: any[] = await redis.get('groups') || [];
 
     const existingLinks = new Set<string>();
