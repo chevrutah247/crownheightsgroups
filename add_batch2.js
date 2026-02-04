@@ -2,12 +2,20 @@ const https = require('https');
 
 function postJSON(urlStr, body) {
   return new Promise((resolve, reject) => {
-    const url = new URL(urlStr);
     const payload = JSON.stringify(body);
-    const req = https.request(urlStr, {
+    const url = new URL(urlStr);
+    const options = {
+      hostname: url.hostname,
+      path: url.pathname,
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
-    }, (res) => {
+    };
+    const req = https.request(options, (res) => {
+      if (res.statusCode === 307 || res.statusCode === 308) {
+        const loc = res.headers.location;
+        res.resume();
+        return postJSON(loc, body).then(resolve).catch(reject);
+      }
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => resolve({ status: res.statusCode, data }));
@@ -42,7 +50,7 @@ async function main() {
     { title: 'Kosher Recipes', link: 'https://chat.whatsapp.com/EiVfUoa0Tt3FFpnZ5PNVhJ', categoryId: '10', locationId: '20' },
   ];
 
-  let added = 0, skipped = 0;
+  let added = 0, skipped = 0, failed = 0;
 
   for (const g of newGroups) {
     const group = {
@@ -62,26 +70,27 @@ async function main() {
 
     try {
       const res = await postJSON('https://www.crownheightsgroups.com/api/admin/import-group', group);
-      const parsed = JSON.parse(res.data);
       if (res.status === 200) {
+        const parsed = JSON.parse(res.data);
         console.log('✅', g.title, '- total:', parsed.total);
         added++;
       } else if (res.status === 409) {
-        console.log('⏭️  SKIP:', g.title, '-', parsed.error);
+        console.log('⏭️  SKIP:', g.title);
         skipped++;
       } else {
-        console.log('❌ ERROR:', g.title, '-', res.status, res.data);
+        console.log('❌', g.title, '- status:', res.status, res.data.substring(0,100));
+        failed++;
       }
     } catch (e) {
       console.log('❌ FAIL:', g.title, e.message);
+      failed++;
     }
 
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 1500));
   }
 
   console.log('\n--- SUMMARY ---');
-  console.log('Added:', added);
-  console.log('Skipped:', skipped);
+  console.log('Added:', added, '| Skipped:', skipped, '| Failed:', failed);
 }
 
 main().catch(console.error);
