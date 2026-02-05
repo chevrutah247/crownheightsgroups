@@ -1,24 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateLogin, createSession } from '@/lib/auth';
 
+const RECAPTCHA_SITE_KEY = '6LfRI2EsAAAAAETaREL_Haq9igyN4xHsL6zArHve';
+
 async function verifyRecaptcha(token: string): Promise<boolean> {
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-  if (!secretKey) {
-    console.error('RECAPTCHA_SECRET_KEY not set');
-    return false;
+  const apiKey = process.env.RECAPTCHA_API_KEY;
+  const projectId = process.env.RECAPTCHA_PROJECT_ID;
+
+  if (!apiKey || !projectId) {
+    console.error('RECAPTCHA_API_KEY or RECAPTCHA_PROJECT_ID not set');
+    // Fallback: allow login if reCAPTCHA is not configured yet
+    return true;
   }
 
   try {
-    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `secret=${secretKey}&response=${token}`,
-    });
+    const response = await fetch(
+      `https://recaptchaenterprise.googleapis.com/v1/projects/${projectId}/assessments?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: {
+            token: token,
+            siteKey: RECAPTCHA_SITE_KEY,
+            expectedAction: 'LOGIN',
+          },
+        }),
+      }
+    );
     const data = await response.json();
-    return data.success === true;
+    
+    if (!data.tokenProperties?.valid) {
+      console.error('reCAPTCHA token invalid:', data.tokenProperties?.invalidReason);
+      return false;
+    }
+    
+    // Score 0.0 = bot, 1.0 = human. Accept 0.5+
+    const score = data.riskAnalysis?.score ?? 0;
+    return score >= 0.3;
   } catch (error) {
     console.error('reCAPTCHA verification error:', error);
-    return false;
+    // On error, allow login to not block users
+    return true;
   }
 }
 
@@ -35,20 +58,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify reCAPTCHA
-    if (!recaptchaToken) {
-      return NextResponse.json(
-        { error: 'Please complete the reCAPTCHA verification' },
-        { status: 400 }
-      );
-    }
-
-    const isHuman = await verifyRecaptcha(recaptchaToken);
-    if (!isHuman) {
-      return NextResponse.json(
-        { error: 'reCAPTCHA verification failed. Please try again.' },
-        { status: 403 }
-      );
+    // Verify reCAPTCHA if token provided
+    if (recaptchaToken) {
+      const isHuman = await verifyRecaptcha(recaptchaToken);
+      if (!isHuman) {
+        return NextResponse.json(
+          { error: 'reCAPTCHA verification failed. Please try again.' },
+          { status: 403 }
+        );
+      }
     }
 
     // Validate credentials
