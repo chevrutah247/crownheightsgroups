@@ -1,3 +1,4 @@
 {
-  "/gate/page": "app/gate/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/cyber-reminder/test/route": "app/api/cyber-reminder/test/route.js"
 }
