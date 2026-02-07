@@ -39,15 +39,11 @@ export default function CyberSafetyPage() {
     
     setSubscribeStatus('loading');
     try {
-      const res = await fetch('/api/cyber-reminder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
+      // Send test email immediately
+      const res = await fetch(`/api/cyber-reminder/test?email=${encodeURIComponent(email)}`);
       
       if (res.ok) {
         setSubscribeStatus('success');
-        setEmail('');
       } else {
         setSubscribeStatus('error');
       }
@@ -113,43 +109,22 @@ export default function CyberSafetyPage() {
       
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
         
-        {/* Hero Section with Banner */}
+        {/* HEADER BANNER - Only the shield with CrownHeightsGroups.com */}
         <div style={{ 
           borderRadius: '24px', 
           overflow: 'hidden',
           marginBottom: '2rem',
           boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
         }}>
-          {/* Banner Image */}
           <img 
-            src="/images/cyber-safety-banner.png" 
-            alt="Cyber Safety Center - Protect Yourself from Scammers"
+            src="/images/banner-header.png" 
+            alt="CrownHeightsGroups.com - Cyber Safety"
             style={{ 
               width: '100%', 
               height: 'auto',
-              maxHeight: '400px',
-              objectFit: 'cover',
               display: 'block'
             }}
           />
-          
-          {/* Text Overlay Below Image */}
-          <div style={{ 
-            background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%)', 
-            padding: '2rem', 
-            textAlign: 'center',
-            color: 'white'
-          }}>
-            <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              Cyber Safety Center
-            </h1>
-            <p style={{ fontSize: '1.5rem', opacity: 0.9, margin: 0 }}>
-              Simple steps to protect yourself from scammers
-            </p>
-            <p style={{ fontSize: '1.1rem', opacity: 0.7, marginTop: '0.5rem' }}>
-              CrownHeightsGroups.com
-            </p>
-          </div>
         </div>
 
         <style>{`
@@ -297,6 +272,24 @@ export default function CyberSafetyPage() {
                   This password has 19 characters, uppercase and lowercase letters, numbers, and symbols.
                 </p>
               </div>
+            </div>
+
+            {/* ========== MIDDLE BANNER - Cyber Safety Center ========== */}
+            <div style={{ 
+              borderRadius: '20px', 
+              overflow: 'hidden',
+              marginBottom: '2rem',
+              boxShadow: '0 6px 30px rgba(0,0,0,0.12)'
+            }}>
+              <img 
+                src="/images/banner-middle.png" 
+                alt="Cyber Safety Center"
+                style={{ 
+                  width: '100%', 
+                  height: 'auto',
+                  display: 'block'
+                }}
+              />
             </div>
 
             {/* SECTION 3: Scan Computer */}
@@ -519,58 +512,95 @@ export default function CyberSafetyPage() {
               </div>
 
               {subscribeStatus === 'success' ? (
-                <div style={{ 
-                  background: '#dcfce7', 
-                  borderRadius: '12px', 
-                  padding: '1.5rem', 
-                  textAlign: 'center' 
-                }}>
-                  <span style={{ fontSize: '3rem' }}>✅</span>
-                  <p style={{ color: '#166534', fontSize: '1.1rem', margin: '0.5rem 0 0 0', fontWeight: '500' }}>
-                    You're subscribed! First email comes in 30 days.
-                  </p>
+                <div>
+                  {/* Success message */}
+                  <div style={{ 
+                    background: '#dcfce7', 
+                    borderRadius: '12px', 
+                    padding: '1.5rem', 
+                    textAlign: 'center',
+                    marginBottom: '1rem'
+                  }}>
+                    <span style={{ fontSize: '3rem' }}>✅</span>
+                    <p style={{ color: '#166534', fontSize: '1.1rem', margin: '0.5rem 0 0 0', fontWeight: '500' }}>
+                      Email sent! Check your inbox.
+                    </p>
+                  </div>
+                  
+                  {/* SPAM WARNING after success */}
+                  <div style={{ 
+                    background: '#fef2f2', 
+                    border: '2px solid #f87171', 
+                    borderRadius: '12px', 
+                    padding: '1rem',
+                    textAlign: 'center'
+                  }}>
+                    <span style={{ fontSize: '2rem' }}>⚠️</span>
+                    <p style={{ color: '#b91c1c', fontSize: '1.1rem', margin: '0.5rem 0 0 0', fontWeight: 'bold' }}>
+                      Check your SPAM folder!
+                    </p>
+                    <p style={{ color: '#991b1b', fontSize: '0.95rem', margin: '0.5rem 0 0 0' }}>
+                      If you don't see the email in your inbox, check <strong>Spam/Junk</strong> folder immediately and mark it as "Not Spam"
+                    </p>
+                  </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubscribe}>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Your email..."
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '1rem',
-                      fontSize: '1.1rem',
-                      borderRadius: '12px',
-                      border: '2px solid #fcd34d',
-                      marginBottom: '0.75rem',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                  <button
-                    type="submit"
-                    disabled={subscribeStatus === 'loading'}
-                    style={{
-                      width: '100%',
-                      padding: '1rem',
-                      fontSize: '1.1rem',
-                      fontWeight: 'bold',
-                      background: subscribeStatus === 'loading' ? '#9ca3af' : 'linear-gradient(135deg, #f59e0b, #d97706)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      cursor: subscribeStatus === 'loading' ? 'wait' : 'pointer'
-                    }}
-                  >
-                    {subscribeStatus === 'loading' ? '⏳ Subscribing...' : '🔔 Subscribe'}
-                  </button>
-                  {subscribeStatus === 'error' && (
-                    <p style={{ color: '#dc2626', fontSize: '0.95rem', margin: '0.5rem 0 0 0', textAlign: 'center' }}>
-                      Error. Please try again.
+                <div>
+                  {/* SPAM WARNING before form */}
+                  <div style={{ 
+                    background: '#fffbeb', 
+                    border: '2px solid #fbbf24', 
+                    borderRadius: '12px', 
+                    padding: '0.75rem',
+                    marginBottom: '1rem',
+                    textAlign: 'center'
+                  }}>
+                    <p style={{ color: '#92400e', fontSize: '0.9rem', margin: 0 }}>
+                      ⚠️ <strong>Important:</strong> Email arrives instantly! If not in inbox — check <strong>SPAM folder</strong>
                     </p>
-                  )}
-                </form>
+                  </div>
+
+                  <form onSubmit={handleSubscribe}>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Your email..."
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '1rem',
+                        fontSize: '1.1rem',
+                        borderRadius: '12px',
+                        border: '2px solid #fcd34d',
+                        marginBottom: '0.75rem',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={subscribeStatus === 'loading'}
+                      style={{
+                        width: '100%',
+                        padding: '1rem',
+                        fontSize: '1.1rem',
+                        fontWeight: 'bold',
+                        background: subscribeStatus === 'loading' ? '#9ca3af' : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        cursor: subscribeStatus === 'loading' ? 'wait' : 'pointer'
+                      }}
+                    >
+                      {subscribeStatus === 'loading' ? '⏳ Sending...' : '🔔 Subscribe'}
+                    </button>
+                    {subscribeStatus === 'error' && (
+                      <p style={{ color: '#dc2626', fontSize: '0.95rem', margin: '0.5rem 0 0 0', textAlign: 'center' }}>
+                        Error. Please try again.
+                      </p>
+                    )}
+                  </form>
+                </div>
               )}
 
               <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.5)', borderRadius: '12px' }}>
