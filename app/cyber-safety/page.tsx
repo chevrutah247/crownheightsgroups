@@ -113,22 +113,43 @@ export default function CyberSafetyPage() {
       
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
         
-        {/* Hero Section */}
+        {/* Hero Section with Banner */}
         <div style={{ 
-          background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%)', 
           borderRadius: '24px', 
-          padding: '3rem 2rem', 
-          textAlign: 'center',
-          color: 'white',
-          marginBottom: '2rem'
+          overflow: 'hidden',
+          marginBottom: '2rem',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
         }}>
-          <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>🛡️</div>
-          <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-            Cyber Safety Center
-          </h1>
-          <p style={{ fontSize: '1.5rem', opacity: 0.9 }}>
-            Simple steps to protect yourself from scammers
-          </p>
+          {/* Banner Image */}
+          <img 
+            src="/images/cyber-safety-banner.png" 
+            alt="Cyber Safety Center - Protect Yourself from Scammers"
+            style={{ 
+              width: '100%', 
+              height: 'auto',
+              maxHeight: '400px',
+              objectFit: 'cover',
+              display: 'block'
+            }}
+          />
+          
+          {/* Text Overlay Below Image */}
+          <div style={{ 
+            background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%)', 
+            padding: '2rem', 
+            textAlign: 'center',
+            color: 'white'
+          }}>
+            <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+              Cyber Safety Center
+            </h1>
+            <p style={{ fontSize: '1.5rem', opacity: 0.9, margin: 0 }}>
+              Simple steps to protect yourself from scammers
+            </p>
+            <p style={{ fontSize: '1.1rem', opacity: 0.7, marginTop: '0.5rem' }}>
+              CrownHeightsGroups.com
+            </p>
+          </div>
         </div>
 
         <style>{`
