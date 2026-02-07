@@ -1,374 +1,394 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { Redis } from '@upstash/redis';
+// app/api/cyber-reminder/send/route.ts
+import { NextResponse } from 'next/server';
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
-
-const REMINDER_KEY = 'cyber:reminder:subscribers';
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-
-export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    console.log('Cron job running');
-  }
-
-  try {
-    const subscribers = await redis.hgetall(REMINDER_KEY) as Record<string, string>;
-    
-    if (!subscribers || Object.keys(subscribers).length === 0) {
-      return NextResponse.json({ message: 'No subscribers', sent: 0 });
-    }
-
-    const now = new Date();
-    let sentCount = 0;
-    const errors: string[] = [];
-
-    for (const [email, dataStr] of Object.entries(subscribers)) {
-      try {
-        const data = JSON.parse(dataStr);
-        const nextReminder = new Date(data.nextReminderDate);
-        
-        if (now >= nextReminder) {
-          const sent = await sendReminderEmail(email);
-          
-          if (sent) {
-            data.lastReminderSent = now.toISOString();
-            data.nextReminderDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
-            await redis.hset(REMINDER_KEY, { [email]: JSON.stringify(data) });
-            sentCount++;
-          }
-        }
-      } catch (err) {
-        errors.push(`Error: ${email}`);
-      }
-    }
-
-    return NextResponse.json({ sent: sentCount, total: Object.keys(subscribers).length });
-  } catch (error) {
-    return NextResponse.json({ error: 'Cron failed' }, { status: 500 });
-  }
-}
-
-async function sendReminderEmail(email: string): Promise<boolean> {
-  if (!RESEND_API_KEY) {
-    console.log(`[DRY RUN] Would send to: ${email}`);
-    return true;
-  }
-
-  const html = buildEmailHtml(email);
-
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'Crown Heights Groups <security@crownheightsgroups.com>',
-        to: email,
-        subject: '🛡️ Monthly Security Checkup - Protect Yourself from Scammers',
-        html
-      })
-    });
-
-    return response.ok;
-  } catch (error) {
-    console.error(`Failed to send to ${email}:`, error);
-    return false;
-  }
-}
-
-function buildEmailHtml(email: string): string {
-  return `<!DOCTYPE html>
-<html>
+// Email HTML template
+const getEmailHTML = (email: string, fbiAlerts: string) => `
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Monthly Cyber Safety Reminder</title>
 </head>
-<body style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; padding: 15px; background: #f0f4f8;">
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: Arial, sans-serif;">
   
-  <!-- HEADER -->
-  <div style="background: linear-gradient(135deg, #1e3a5f, #3b82f6); padding: 35px 25px; border-radius: 20px 20px 0 0; text-align: center;">
-    <div style="font-size: 65px; margin-bottom: 15px;">🛡️🔒</div>
-    <h1 style="color: white; margin: 0; font-size: 30px;">Monthly Security Checkup</h1>
-    <p style="color: rgba(255,255,255,0.9); margin: 12px 0 0 0; font-size: 18px;">from <strong>CrownHeightsGroups.com</strong></p>
-  </div>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          
+          <!-- Header Banner -->
+          <tr>
+            <td>
+              <img src="https://crownheightsgroups.com/images/email-header.png" alt="CrownHeightsGroups.com - Cyber Safety" width="600" style="display: block; width: 100%;">
+            </td>
+          </tr>
+          
+          <!-- Greeting -->
+          <tr>
+            <td style="padding: 30px 40px 20px 40px;">
+              <h1 style="color: #1e3a5f; font-size: 28px; margin: 0 0 15px 0;">
+                🛡️ Your Monthly Safety Check
+              </h1>
+              <p style="color: #333; font-size: 20px; line-height: 1.6; margin: 0;">
+                Hello Friend! It's time for your <strong>monthly cyber safety check</strong>. 
+                Follow these simple steps to stay protected from scammers.
+              </p>
+            </td>
+          </tr>
+          
+          <!-- STEP 1: Do Not Call -->
+          <tr>
+            <td style="padding: 20px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e8f5e9; border-radius: 12px; border-left: 6px solid #4caf50;">
+                <tr>
+                  <td style="padding: 25px;">
+                    <h2 style="color: #2e7d32; font-size: 24px; margin: 0 0 15px 0;">
+                      ✅ Step 1: Stop Spam Calls (One Time Only!)
+                    </h2>
+                    <p style="color: #333; font-size: 18px; line-height: 1.6; margin: 0 0 15px 0;">
+                      Register your phone number to reduce unwanted sales calls. 
+                      <strong>You only need to do this ONCE</strong> — it stays active forever!
+                    </p>
+                    <p style="margin: 0;">
+                      <a href="https://www.donotcall.gov/" target="_blank" 
+                         style="display: inline-block; background-color: #4caf50; color: white; 
+                                padding: 15px 30px; font-size: 18px; font-weight: bold; 
+                                text-decoration: none; border-radius: 8px;">
+                        📞 Register at DoNotCall.gov →
+                      </a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- STEP 2: Scan Computer -->
+          <tr>
+            <td style="padding: 20px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e3f2fd; border-radius: 12px; border-left: 6px solid #2196f3;">
+                <tr>
+                  <td style="padding: 25px;">
+                    <h2 style="color: #1565c0; font-size: 24px; margin: 0 0 15px 0;">
+                      🖥️ Step 2: Scan Your Windows Computer
+                    </h2>
+                    <p style="color: #333; font-size: 18px; line-height: 1.6; margin: 0 0 20px 0;">
+                      Run these <strong>FREE</strong> tools to check for viruses:
+                    </p>
+                    
+                    <div style="background-color: white; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                      <h3 style="color: #1565c0; font-size: 20px; margin: 0 0 10px 0;">
+                        A) Windows Built-in Scanner (MRT)
+                      </h3>
+                      <p style="color: #333; font-size: 18px; line-height: 1.6; margin: 0 0 10px 0;">
+                        Already on your computer! Just follow these steps:
+                      </p>
+                      <ol style="color: #333; font-size: 18px; line-height: 1.8; margin: 0; padding-left: 25px;">
+                        <li>Press <strong>Windows key + R</strong> on your keyboard</li>
+                        <li>Type: <code style="background: #f0f0f0; padding: 3px 8px; border-radius: 4px; font-size: 20px;">MRT</code></li>
+                        <li>Press <strong>Enter</strong></li>
+                        <li>Click <strong>"Next"</strong> and select <strong>"Full Scan"</strong></li>
+                        <li>Wait for it to finish (may take 30-60 minutes)</li>
+                      </ol>
+                    </div>
+                    
+                    <div style="background-color: white; padding: 20px; border-radius: 8px;">
+                      <h3 style="color: #1565c0; font-size: 20px; margin: 0 0 10px 0;">
+                        B) Dr.Web CureIt! (Extra Protection)
+                      </h3>
+                      <p style="color: #333; font-size: 18px; line-height: 1.6; margin: 0 0 15px 0;">
+                        Download this FREE scanner for a deeper check:
+                      </p>
+                      <a href="https://free.drweb.com/cureit/" target="_blank" 
+                         style="display: inline-block; background-color: #2196f3; color: white; 
+                                padding: 15px 30px; font-size: 18px; font-weight: bold; 
+                                text-decoration: none; border-radius: 8px;">
+                        ⬇️ Download Dr.Web CureIt! →
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- STEP 3: Check Email + Change Password -->
+          <tr>
+            <td style="padding: 20px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fff3e0; border-radius: 12px; border-left: 6px solid #ff9800;">
+                <tr>
+                  <td style="padding: 25px;">
+                    <h2 style="color: #e65100; font-size: 24px; margin: 0 0 15px 0;">
+                      📧 Step 3: Check Your Email for Leaks
+                    </h2>
+                    <p style="color: #333; font-size: 18px; line-height: 1.6; margin: 0 0 20px 0;">
+                      Hackers steal passwords from websites. Check if YOUR email was leaked:
+                    </p>
+                    
+                    <div style="background-color: white; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                      <ol style="color: #333; font-size: 18px; line-height: 1.8; margin: 0; padding-left: 25px;">
+                        <li>Go to the website below</li>
+                        <li>Type your email address</li>
+                        <li>Click <strong>"pwned?"</strong></li>
+                      </ol>
+                      <p style="margin: 20px 0 15px 0;">
+                        <a href="https://haveibeenpwned.com/" target="_blank" 
+                           style="display: inline-block; background-color: #ff9800; color: white; 
+                                  padding: 15px 30px; font-size: 18px; font-weight: bold; 
+                                  text-decoration: none; border-radius: 8px;">
+                          🔍 Check at HaveIBeenPwned.com →
+                        </a>
+                      </p>
+                    </div>
+                    
+                    <div style="background-color: #ffebee; padding: 20px; border-radius: 8px; border: 2px solid #f44336;">
+                      <h3 style="color: #c62828; font-size: 22px; margin: 0 0 10px 0;">
+                        ⚠️ If You See RED — Change Your Password NOW!
+                      </h3>
+                      <p style="color: #333; font-size: 18px; line-height: 1.6; margin: 0 0 15px 0;">
+                        If the website shows your email was leaked, <strong>change your password immediately</strong>:
+                      </p>
+                      <a href="https://myaccount.google.com/signinoptions/password" target="_blank" 
+                         style="display: inline-block; background-color: #c62828; color: white; 
+                                padding: 15px 30px; font-size: 18px; font-weight: bold; 
+                                text-decoration: none; border-radius: 8px;">
+                        🔐 Change Gmail Password →
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- STEP 4: Check Links -->
+          <tr>
+            <td style="padding: 20px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fce4ec; border-radius: 12px; border-left: 6px solid #e91e63;">
+                <tr>
+                  <td style="padding: 25px;">
+                    <h2 style="color: #c2185b; font-size: 24px; margin: 0 0 15px 0;">
+                      🔗 Step 4: NEVER Click Unknown Links!
+                    </h2>
+                    
+                    <div style="background-color: #ffebee; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px dashed #e91e63;">
+                      <p style="color: #c62828; font-size: 20px; font-weight: bold; line-height: 1.6; margin: 0;">
+                        🚨 DANGER: Scammers send links that look real but contain viruses!
+                        If you click a bad link, hackers can steal your passwords, 
+                        bank information, and take control of your computer!
+                      </p>
+                    </div>
+                    
+                    <p style="color: #333; font-size: 18px; line-height: 1.6; margin: 0 0 15px 0;">
+                      <strong>Before clicking ANY link</strong> someone sends you — check it first:
+                    </p>
+                    
+                    <div style="background-color: white; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                      <ol style="color: #333; font-size: 18px; line-height: 1.8; margin: 0; padding-left: 25px;">
+                        <li>Go to <strong>VirusTotal.com</strong></li>
+                        <li>Click the <strong>"URL"</strong> tab</li>
+                        <li>Paste the suspicious link</li>
+                        <li>Click <strong>"Search"</strong></li>
+                      </ol>
+                    </div>
+                    
+                    <div style="background-color: #ffcdd2; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                      <p style="color: #b71c1c; font-size: 20px; font-weight: bold; margin: 0;">
+                        🚩 See even ONE red flag? DO NOT CLICK THAT LINK!
+                      </p>
+                    </div>
+                    
+                    <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 15px 0; font-style: italic;">
+                      💡 Pro Tip: You can also check PDF files, Word documents, 
+                      and any files people send you — upload them to VirusTotal before opening!
+                    </p>
+                    
+                    <a href="https://www.virustotal.com/" target="_blank" 
+                       style="display: inline-block; background-color: #e91e63; color: white; 
+                              padding: 15px 30px; font-size: 18px; font-weight: bold; 
+                              text-decoration: none; border-radius: 8px;">
+                      🛡️ Check Links at VirusTotal.com →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- FBI Scam Alerts -->
+          <tr>
+            <td style="padding: 20px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1e3a5f; border-radius: 12px;">
+                <tr>
+                  <td style="padding: 25px;">
+                    <h2 style="color: #ffd700; font-size: 22px; margin: 0 0 15px 0;">
+                      🚨 Latest Scam Alerts from FBI
+                    </h2>
+                    <p style="color: #ffffff; font-size: 16px; line-height: 1.6; margin: 0 0 15px 0;">
+                      Stay informed about the newest scams targeting our community:
+                    </p>
+                    <div style="color: #e0e0e0; font-size: 16px; line-height: 1.6;">
+                      ${fbiAlerts}
+                    </div>
+                    <p style="margin: 15px 0 0 0;">
+                      <a href="https://www.ic3.gov/" target="_blank" 
+                         style="color: #ffd700; font-size: 16px; text-decoration: underline;">
+                        Read more at IC3.gov (FBI Internet Crime Center) →
+                      </a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Visit Website CTA -->
+          <tr>
+            <td style="padding: 20px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #3b82f6 0%, #1e3a5f 100%); border-radius: 12px;">
+                <tr>
+                  <td align="center" style="padding: 30px;">
+                    <p style="color: #ffffff; font-size: 20px; margin: 0 0 20px 0;">
+                      📖 For detailed instructions with pictures, visit:
+                    </p>
+                    <a href="https://crownheightsgroups.com/cyber-safety" target="_blank" 
+                       style="display: inline-block; background-color: #ffd700; color: #1e3a5f; 
+                              padding: 18px 40px; font-size: 22px; font-weight: bold; 
+                              text-decoration: none; border-radius: 10px;">
+                      🔒 CrownHeightsGroups.com/cyber-safety
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f5f5f5; border-top: 1px solid #e0e0e0;">
+              <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0; text-align: center;">
+                You received this email because you subscribed to monthly cyber safety reminders 
+                at CrownHeightsGroups.com
+                <br><br>
+                <a href="https://crownheightsgroups.com/api/cyber-reminder/unsubscribe?email=${encodeURIComponent(email)}" 
+                   style="color: #999; text-decoration: underline;">
+                  Unsubscribe from these reminders
+                </a>
+                <br><br>
+                🛡️ Stay Safe! — CrownHeightsGroups.com
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
   
-  <div style="background: white; padding: 35px 30px; border-radius: 0 0 20px 20px;">
-    
-    <p style="font-size: 21px; color: #333; line-height: 1.7; margin: 0 0 30px 0;">
-      Hello! 👋<br><br>
-      It's time for your <strong>monthly security checkup</strong>!<br>
-      Follow these 4 simple steps to protect yourself from scammers.
-    </p>
-
-    <!-- ===== STEP 1: DO NOT CALL ===== -->
-    <div style="background: #ede9fe; border: 3px solid #8b5cf6; border-radius: 20px; padding: 25px; margin-bottom: 25px;">
-      <h2 style="color: #5b21b6; margin: 0 0 15px 0; font-size: 24px;">
-        📵 STEP 1: Stop Unwanted Phone Calls
-      </h2>
-      
-      <div style="background: #f5f3ff; border-radius: 12px; padding: 15px; margin-bottom: 15px;">
-        <p style="margin: 0; font-size: 17px; color: #333; line-height: 1.6;">
-          ✅ <strong>You only need to do this ONCE — it lasts forever!</strong><br>
-          Register on the National Do Not Call list to reduce spam calls. It's FREE!
-        </p>
-      </div>
-      
-      <div style="background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-        <h3 style="margin: 0 0 15px 0; color: #1e3a5f; font-size: 19px;">📋 Step-by-Step Instructions:</h3>
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e5e7eb; color: #333;">
-            <strong>1.</strong> Click the purple button below
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e5e7eb; color: #333;">
-            <strong>2.</strong> Click <strong>"Register Your Phone"</strong>
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e5e7eb; color: #333;">
-            <strong>3.</strong> Type your <strong>phone number</strong>
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e5e7eb; color: #333;">
-            <strong>4.</strong> Type your <strong>email address</strong>
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e5e7eb; color: #333;">
-            <strong>5.</strong> Click <strong>"Submit"</strong>
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; color: #333;">
-            <strong>6.</strong> Check your email and click the confirmation link
-          </td></tr>
-        </table>
-      </div>
-      
-      <a href="https://www.donotcall.gov/" style="display: block; text-align: center; padding: 20px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border-radius: 15px; text-decoration: none; font-size: 20px; font-weight: bold;">
-        📵 Register at DoNotCall.gov →
-      </a>
-    </div>
-
-    <!-- ===== STEP 2: SCAN COMPUTER ===== -->
-    <div style="background: #eff6ff; border: 3px solid #3b82f6; border-radius: 20px; padding: 25px; margin-bottom: 25px;">
-      <h2 style="color: #1d4ed8; margin: 0 0 15px 0; font-size: 24px;">
-        🖥️ STEP 2: Scan Your Windows Computer
-      </h2>
-      
-      <p style="font-size: 17px; color: #333; margin: 0 0 20px 0;">
-        Run these <strong>TWO free scans</strong> to find and remove viruses:
-      </p>
-      
-      <!-- MRT -->
-      <div style="background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-        <h3 style="margin: 0 0 15px 0; color: #0369a1; font-size: 19px;">🛠️ Scan #1: Windows MRT (Already on your computer!)</h3>
-        
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e5e7eb; color: #333;">
-            <strong>1.</strong> On your keyboard, press and hold the <strong>Windows key ⊞</strong> then press <strong>R</strong>
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e5e7eb; color: #333;">
-            <strong>2.</strong> A small box appears. Type: <code style="background: #1e3a5f; color: white; padding: 4px 12px; border-radius: 5px; font-size: 19px;">mrt</code>
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e5e7eb; color: #333;">
-            <strong>3.</strong> Press <strong>Enter</strong> on your keyboard
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e5e7eb; color: #333;">
-            <strong>4.</strong> Click <strong>"Next"</strong>
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e5e7eb; color: #333;">
-            <strong>5.</strong> Select <strong>"Full scan"</strong> and click Next
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; color: #333;">
-            <strong>6.</strong> Wait 30-60 minutes for scan to complete
-          </td></tr>
-        </table>
-      </div>
-      
-      <!-- Dr.Web -->
-      <div style="background: #f0fdf4; border: 2px solid #22c55e; border-radius: 15px; padding: 20px;">
-        <h3 style="margin: 0 0 15px 0; color: #166534; font-size: 19px;">🩺 Scan #2: Dr.Web CureIt! (Free Download)</h3>
-        
-        <p style="font-size: 16px; color: #666; margin: 0 0 15px 0;">
-          This powerful scanner finds viruses that other programs miss. No installation needed!
-        </p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-          <tr><td style="padding: 8px 0; font-size: 17px; border-bottom: 1px solid #dcfce7; color: #333;">
-            <strong>1.</strong> Click the green button below
-          </td></tr>
-          <tr><td style="padding: 8px 0; font-size: 17px; border-bottom: 1px solid #dcfce7; color: #333;">
-            <strong>2.</strong> Click "Download" on the website
-          </td></tr>
-          <tr><td style="padding: 8px 0; font-size: 17px; border-bottom: 1px solid #dcfce7; color: #333;">
-            <strong>3.</strong> Open the downloaded file
-          </td></tr>
-          <tr><td style="padding: 8px 0; font-size: 17px; color: #333;">
-            <strong>4.</strong> Click <strong>"Start scan"</strong> and wait
-          </td></tr>
-        </table>
-        
-        <a href="https://free.drweb.com/download+cureit+free/" style="display: block; text-align: center; padding: 18px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border-radius: 12px; text-decoration: none; font-size: 19px; font-weight: bold;">
-          ⬇️ Download Dr.Web CureIt! (Free) →
-        </a>
-      </div>
-    </div>
-
-    <!-- ===== STEP 3: CHECK EMAIL ===== -->
-    <div style="background: #fef2f2; border: 3px solid #dc2626; border-radius: 20px; padding: 25px; margin-bottom: 25px;">
-      <h2 style="color: #991b1b; margin: 0 0 15px 0; font-size: 24px;">
-        📧 STEP 3: Check If Your Email Was Stolen!
-      </h2>
-      
-      <div style="background: #fecaca; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
-        <p style="margin: 0; font-size: 18px; color: #7f1d1d; line-height: 1.6;">
-          ⚠️ <strong>WARNING:</strong> Hackers steal millions of email addresses every year. If yours was stolen, they might know your password!
-        </p>
-      </div>
-      
-      <div style="background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-        <h3 style="margin: 0 0 15px 0; color: #1e3a5f; font-size: 19px;">📋 How to check your email:</h3>
-        
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #fecaca; color: #333;">
-            <strong>1.</strong> Click the red button below
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #fecaca; color: #333;">
-            <strong>2.</strong> Type your email address in the box
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #fecaca; color: #333;">
-            <strong>3.</strong> Click the <strong>"pwned?"</strong> button
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; color: #333;">
-            <strong>4.</strong> Check the result:<br>
-            <span style="margin-left: 25px;">🟢 <strong>GREEN</strong> = You're safe! Great!</span><br>
-            <span style="margin-left: 25px;">🔴 <strong>RED</strong> = Email was stolen! <strong>Change password NOW!</strong></span>
-          </td></tr>
-        </table>
-      </div>
-      
-      <a href="https://haveibeenpwned.com/" style="display: block; text-align: center; padding: 20px; background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; border-radius: 15px; text-decoration: none; font-size: 20px; font-weight: bold; margin-bottom: 20px;">
-        📧 Check My Email Now →
-      </a>
-      
-      <!-- Gmail Password Change -->
-      <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 15px; padding: 20px;">
-        <h3 style="margin: 0 0 15px 0; color: #92400e; font-size: 19px;">🔑 If email was leaked — Change Your Gmail Password:</h3>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-          <tr><td style="padding: 8px 0; font-size: 16px; border-bottom: 1px solid #fde68a; color: #333;">
-            <strong>1.</strong> Click the orange button below
-          </td></tr>
-          <tr><td style="padding: 8px 0; font-size: 16px; border-bottom: 1px solid #fde68a; color: #333;">
-            <strong>2.</strong> Sign in if asked
-          </td></tr>
-          <tr><td style="padding: 8px 0; font-size: 16px; border-bottom: 1px solid #fde68a; color: #333;">
-            <strong>3.</strong> Enter your <strong>current</strong> password
-          </td></tr>
-          <tr><td style="padding: 8px 0; font-size: 16px; border-bottom: 1px solid #fde68a; color: #333;">
-            <strong>4.</strong> Create a <strong>NEW strong password</strong>
-          </td></tr>
-          <tr><td style="padding: 8px 0; font-size: 16px; color: #333;">
-            <strong>5.</strong> Click <strong>"Change Password"</strong>
-          </td></tr>
-        </table>
-        
-        <p style="margin: 0 0 15px 0; font-size: 15px; color: #78350f;">
-          💡 <strong>Strong password example:</strong> <code style="background: #fef9c3; padding: 4px 10px; border-radius: 5px;">Shabbat$Shalom2024!</code><br>
-          Use 12+ characters with UPPERCASE, lowercase, numbers, and symbols!
-        </p>
-        
-        <a href="https://myaccount.google.com/signinoptions/password" style="display: block; text-align: center; padding: 16px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-radius: 12px; text-decoration: none; font-size: 17px; font-weight: bold;">
-          🔑 Change Gmail Password →
-        </a>
-      </div>
-    </div>
-
-    <!-- ===== STEP 4: DON'T CLICK LINKS ===== -->
-    <div style="background: #faf5ff; border: 3px solid #7c3aed; border-radius: 20px; padding: 25px; margin-bottom: 25px;">
-      <h2 style="color: #5b21b6; margin: 0 0 15px 0; font-size: 24px;">
-        🔗 STEP 4: NEVER Click Suspicious Links!
-      </h2>
-      
-      <div style="background: #fee2e2; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
-        <p style="margin: 0; font-size: 18px; color: #7f1d1d; line-height: 1.7;">
-          🚨 <strong>DANGER!</strong> Scammers send bad links through:<br>
-          • Email • Text messages • WhatsApp • Facebook<br><br>
-          If you click a bad link, <strong>hackers can steal your money and take control of your computer!</strong>
-        </p>
-      </div>
-      
-      <div style="background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-        <h3 style="margin: 0 0 15px 0; color: #1e3a5f; font-size: 19px;">📋 How to check if a link is safe:</h3>
-        
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e9d5ff; color: #333;">
-            <strong>1.</strong> <strong>DON'T CLICK</strong> the suspicious link!
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e9d5ff; color: #333;">
-            <strong>2.</strong> <strong>Right-click</strong> on the link → select <strong>"Copy link"</strong>
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e9d5ff; color: #333;">
-            <strong>3.</strong> Go to <strong>VirusTotal.com</strong> (click button below)
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e9d5ff; color: #333;">
-            <strong>4.</strong> Click the <strong>"URL"</strong> tab
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; border-bottom: 1px solid #e9d5ff; color: #333;">
-            <strong>5.</strong> <strong>Paste</strong> the link (press Ctrl+V) and press Enter
-          </td></tr>
-          <tr><td style="padding: 10px 0; font-size: 17px; color: #333;">
-            <strong>6.</strong> Look at results:<br>
-            <span style="margin-left: 25px;">✅ All green = Safe to click</span><br>
-            <span style="margin-left: 25px;">🚩 <strong>Even ONE red flag = DON'T CLICK!</strong></span>
-          </td></tr>
-        </table>
-      </div>
-      
-      <div style="background: #fef3c7; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
-        <p style="margin: 0; font-size: 17px; color: #92400e; line-height: 1.6;">
-          💡 <strong>PRO TIP:</strong> You can also upload <strong>PDF files</strong> and <strong>attachments</strong> to VirusTotal to check if they have viruses!
-        </p>
-      </div>
-      
-      <a href="https://www.virustotal.com/gui/home/url" style="display: block; text-align: center; padding: 20px; background: linear-gradient(135deg, #7c3aed, #5b21b6); color: white; border-radius: 15px; text-decoration: none; font-size: 20px; font-weight: bold;">
-        🔍 Check Links on VirusTotal →
-      </a>
-    </div>
-
-    <!-- ===== RECENT SCAM ALERTS ===== -->
-    <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 15px; padding: 20px; margin-bottom: 25px;">
-      <h3 style="margin: 0 0 15px 0; color: #92400e; font-size: 20px;">🚨 Recent FBI Scam Alerts:</h3>
-      <ul style="margin: 0; padding-left: 25px; font-size: 16px; line-height: 2; color: #333;">
-        <li><strong>QR Code Scams</strong> — Don't scan random QR codes!</li>
-        <li><strong>Fake Tech Support</strong> — Microsoft will NEVER call you!</li>
-        <li><strong>AI Voice Cloning</strong> — Scammers can fake voices of family members</li>
-        <li><strong>Cryptocurrency Scams</strong> — If it sounds too good, it's fake!</li>
-      </ul>
-      <p style="margin: 15px 0 0 0;"><a href="https://www.ic3.gov/PSA" style="color: #92400e; font-weight: bold;">→ See all FBI scam alerts</a></p>
-    </div>
-
-    <!-- ===== FOOTER ===== -->
-    <div style="text-align: center; padding-top: 25px; border-top: 2px solid #e5e7eb;">
-      <p style="font-size: 18px; color: #333; margin: 0 0 20px 0;">
-        📚 For complete guide with pictures, visit:
-      </p>
-      <a href="https://crownheightsgroups.com/cyber-safety" style="display: inline-block; padding: 20px 40px; background: linear-gradient(135deg, #1e3a5f, #3b82f6); color: white; border-radius: 15px; text-decoration: none; font-size: 22px; font-weight: bold;">
-        🛡️ CrownHeightsGroups.com/cyber-safety
-      </a>
-      
-      <p style="font-size: 15px; color: #666; margin: 30px 0 0 0; line-height: 1.6;">
-        This is your monthly security reminder from <strong>Crown Heights Groups</strong>.<br>
-        Stay safe! 💙
-      </p>
-      
-      <p style="font-size: 13px; color: #999; margin: 20px 0 0 0;">
-        <a href="https://crownheightsgroups.com/api/cyber-reminder/unsubscribe?email=${encodeURIComponent(email)}" style="color: #999;">
-          Unsubscribe from these reminders
-        </a>
-      </p>
-    </div>
-    
-  </div>
 </body>
-</html>`;
+</html>
+`;
+
+// Fetch FBI/IC3 alerts
+async function fetchFBIAlerts(): Promise<string> {
+  try {
+    const response = await fetch('https://www.ic3.gov/Media/RSS/cybercrimes.xml', {
+      next: { revalidate: 3600 }
+    });
+    
+    if (!response.ok) {
+      return '<p>• Be cautious of unsolicited calls claiming to be from government agencies</p><p>• Never share personal information with unknown callers</p>';
+    }
+    
+    const xml = await response.text();
+    
+    // Simple XML parsing for RSS items
+    const items: string[] = [];
+    const itemRegex = /<item>[\s\S]*?<title>(.*?)<\/title>[\s\S]*?<\/item>/g;
+    let match;
+    let count = 0;
+    
+    while ((match = itemRegex.exec(xml)) !== null && count < 3) {
+      const title = match[1]
+        .replace(/<!\[CDATA\[|\]\]>/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+      items.push(\`<p style="margin: 8px 0;">• \${title}</p>\`);
+      count++;
+    }
+    
+    return items.length > 0 
+      ? items.join('') 
+      : '<p>• Be cautious of unsolicited calls claiming to be from government agencies</p><p>• Never share personal information with unknown callers</p>';
+  } catch (error) {
+    console.error('Error fetching FBI alerts:', error);
+    return '<p>• Be cautious of unsolicited calls claiming to be from government agencies</p><p>• Never share personal information with unknown callers</p>';
+  }
+}
+
+// GET - Check who needs emails (for debugging)
+export async function GET() {
+  // This would connect to your database to check subscribers
+  return NextResponse.json({
+    message: 'Cyber reminder send endpoint',
+    note: 'POST to this endpoint to trigger email sends, or let Vercel cron handle it'
+  });
+}
+
+// POST - Send reminder emails (called by Vercel Cron)
+export async function POST(request: Request) {
+  // Verify cron secret for security
+  const authHeader = request.headers.get('authorization');
+  if (authHeader !== \`Bearer \${process.env.CRON_SECRET}\`) {
+    // Allow in development or if no secret set
+    if (process.env.NODE_ENV === 'production' && process.env.CRON_SECRET) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
+  try {
+    // Get FBI alerts for the email
+    const fbiAlerts = await fetchFBIAlerts();
+    
+    // Here you would:
+    // 1. Query your database for subscribers who need reminders (30 days since last email)
+    // 2. Send emails using Resend
+    // 3. Update the last_sent timestamp
+    
+    // Example with Resend:
+    /*
+    const { Resend } = await import('resend');
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    
+    // Get subscribers from database
+    const subscribers = await getSubscribersNeedingReminder();
+    
+    for (const subscriber of subscribers) {
+      await resend.emails.send({
+        from: 'Cyber Safety <safety@crownheightsgroups.com>',
+        to: subscriber.email,
+        subject: '🛡️ Your Monthly Cyber Safety Reminder',
+        html: getEmailHTML(subscriber.email, fbiAlerts),
+      });
+      
+      // Update last_sent in database
+      await updateLastSent(subscriber.email);
+    }
+    */
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Reminder emails sent',
+      fbiAlertsIncluded: fbiAlerts.length > 0
+    });
+    
+  } catch (error) {
+    console.error('Error sending reminders:', error);
+    return NextResponse.json(
+      { error: 'Failed to send reminders' },
+      { status: 500 }
+    );
+  }
 }
