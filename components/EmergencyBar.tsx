@@ -153,15 +153,24 @@ export default function EmergencyBar() {
                   <p style={{ margin: '0.25rem 0 0 0', color: '#666', fontSize: '0.85rem' }}>Never send passwords, credit card info, or personal details via WhatsApp</p>
                 </div>
               </div>
+              
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', background: '#fef2f2', borderRadius: '10px', border: '1px solid #fecaca' }}>
+                <span style={{ fontSize: '1.25rem' }}>📧</span>
+                <div>
+                  <strong style={{ color: '#991b1b' }}>Check Email Leaks</strong>
+                  <p style={{ margin: '0.25rem 0 0 0', color: '#666', fontSize: '0.85rem' }}>Use HaveIBeenPwned to check if your email was in a data breach — if yes, change your password IMMEDIATELY!</p>
+                </div>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               <a 
                 href="https://www.virustotal.com/gui/home/upload" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 style={{ 
                   flex: 1,
+                  minWidth: '140px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -172,10 +181,32 @@ export default function EmergencyBar() {
                   borderRadius: '12px', 
                   textDecoration: 'none', 
                   fontWeight: 'bold',
-                  fontSize: '1rem'
+                  fontSize: '0.9rem'
                 }}
               >
-                🔍 Open VirusTotal
+                🔍 VirusTotal
+              </a>
+              <a 
+                href="https://haveibeenpwned.com/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ 
+                  flex: 1,
+                  minWidth: '140px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  padding: '1rem', 
+                  background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', 
+                  color: 'white', 
+                  borderRadius: '12px', 
+                  textDecoration: 'none', 
+                  fontWeight: 'bold',
+                  fontSize: '0.9rem'
+                }}
+              >
+                📧 HaveIBeenPwned
               </a>
               <button 
                 onClick={() => setShowCyberModal(false)}
