@@ -198,7 +198,7 @@ const getEmailHTML = (email: string, fbiAlerts: string) => `
                       🚨 Latest Scam Alerts from FBI
                     </h2>
                     <div style="color: #e0e0e0; font-size: 16px; line-height: 1.6;">
-                      \${fbiAlerts}
+                      ${fbiAlerts}
                     </div>
                     <p style="margin: 15px 0 0 0;">
                       <a href="https://www.ic3.gov/" target="_blank" style="color: #ffd700;">
