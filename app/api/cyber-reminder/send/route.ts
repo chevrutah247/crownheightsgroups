@@ -83,44 +83,44 @@ async function sendReminderEmail(email: string): Promise<boolean> {
 </head>
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
   <div style="background: linear-gradient(135deg, #1e3a5f, #3b82f6); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 28px;">🛡️ Напоминание о безопасности</h1>
-    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Ежемесячная проверка вашего компьютера</p>
+    <h1 style="color: white; margin: 0; font-size: 28px;">🛡️ Monthly Security Reminder</h1>
+    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Time for your monthly computer checkup!</p>
   </div>
   
   <div style="background: white; padding: 30px; border-radius: 0 0 16px 16px;">
     <p style="font-size: 18px; color: #333; line-height: 1.6;">
-      Привет! 👋<br><br>
-      Прошёл месяц с последней проверки. Пора убедиться, что ваш компьютер и данные в безопасности!
+      Hi! 👋<br><br>
+      It's been a month since your last security check. Time to make sure your computer and data are safe!
     </p>
     
     <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 12px; padding: 20px; margin: 20px 0;">
-      <h2 style="color: #92400e; margin: 0 0 15px 0; font-size: 20px;">📋 Чек-лист на сегодня:</h2>
+      <h2 style="color: #92400e; margin: 0 0 15px 0; font-size: 20px;">📋 Today's Checklist:</h2>
       
       <div style="margin-bottom: 15px;">
         <p style="margin: 0; font-size: 16px; color: #333;">
-          <strong>☐ 1. Проверьте email на утечки</strong><br>
-          <a href="https://haveibeenpwned.com/" style="color: #dc2626;">→ Открыть HaveIBeenPwned</a>
+          <strong>☐ 1. Check email for breaches</strong><br>
+          <a href="https://haveibeenpwned.com/" style="color: #dc2626;">→ Open HaveIBeenPwned</a>
         </p>
       </div>
       
       <div style="margin-bottom: 15px;">
         <p style="margin: 0; font-size: 16px; color: #333;">
-          <strong>☐ 2. Смените пароль (если нужно)</strong><br>
-          <span style="color: #666;">Если email был в утечке — срочно!</span>
+          <strong>☐ 2. Change password (if needed)</strong><br>
+          <span style="color: #666;">If your email was in a breach — change it now!</span>
         </p>
       </div>
       
       <div style="margin-bottom: 15px;">
         <p style="margin: 0; font-size: 16px; color: #333;">
-          <strong>☐ 3. Запустите Windows MRT</strong><br>
-          <span style="color: #666;">Win + R → введите "mrt" → Full scan</span>
+          <strong>☐ 3. Run Windows MRT</strong><br>
+          <span style="color: #666;">Win + R → type "mrt" → Full scan</span>
         </p>
       </div>
       
       <div>
         <p style="margin: 0; font-size: 16px; color: #333;">
-          <strong>☐ 4. Запустите Dr.Web CureIt!</strong><br>
-          <a href="https://free.drweb.com/download+cureit+free/" style="color: #22c55e;">→ Скачать бесплатно</a>
+          <strong>☐ 4. Run Dr.Web CureIt!</strong><br>
+          <a href="https://free.drweb.com/download+cureit+free/" style="color: #22c55e;">→ Download free</a>
         </p>
       </div>
     </div>
@@ -128,13 +128,13 @@ async function sendReminderEmail(email: string): Promise<boolean> {
     <div style="text-align: center; margin: 30px 0;">
       <a href="https://crownheightsgroups.com/cyber-safety" 
          style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #5b21b6); color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-size: 18px; font-weight: bold;">
-        🔒 Открыть полную инструкцию
+        🔒 Open Full Guide
       </a>
     </div>
     
     <p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">
-      Это автоматическое напоминание от Crown Heights Groups.<br>
-      <a href="https://crownheightsgroups.com/api/cyber-reminder/unsubscribe?email=${encodeURIComponent(email)}" style="color: #999;">Отписаться от напоминаний</a>
+      This is an automatic reminder from Crown Heights Groups.<br>
+      <a href="https://crownheightsgroups.com/api/cyber-reminder/unsubscribe?email=${encodeURIComponent(email)}" style="color: #999;">Unsubscribe from reminders</a>
     </p>
   </div>
 </body>
@@ -151,7 +151,7 @@ async function sendReminderEmail(email: string): Promise<boolean> {
       body: JSON.stringify({
         from: 'Crown Heights Groups <noreply@crownheightsgroups.com>',
         to: email,
-        subject: '🛡️ Напоминание: проверьте безопасность компьютера',
+        subject: '🛡️ Monthly Reminder: Check Your Computer Security',
         html: emailContent
       })
     });

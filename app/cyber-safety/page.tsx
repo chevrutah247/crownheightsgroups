@@ -9,6 +9,7 @@ interface RSSItem {
   title: string;
   link: string;
   date: string;
+  category?: string;
 }
 
 export default function CyberSafetyPage() {
@@ -18,7 +19,6 @@ export default function CyberSafetyPage() {
   const [newsLoading, setNewsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch cyber security news
     const fetchNews = async () => {
       try {
         const res = await fetch('/api/cyber-news');
@@ -127,22 +127,21 @@ export default function CyberSafetyPage() {
             Cyber Safety Center
           </h1>
           <p style={{ fontSize: '1.5rem', opacity: 0.9 }}>
-            Простые шаги для защиты от мошенников
+            Simple steps to protect yourself from scammers
           </p>
         </div>
+
+        <style>{`
+          @media (max-width: 900px) {
+            .cyber-grid { grid-template-columns: 1fr !important; }
+            .cyber-sidebar { order: -1; }
+          }
+        `}</style>
 
         <div className="cyber-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(300px, 350px)', gap: '2rem', alignItems: 'start' }}>
           
           {/* Main Content */}
           <div>
-          
-          {/* Mobile sidebar - shows at top on small screens */}
-          <style>{`
-            @media (max-width: 900px) {
-              .cyber-grid { grid-template-columns: 1fr !important; }
-              .cyber-sidebar { order: -1; }
-            }
-          `}</style>
             
             {/* SECTION 1: Check Email Leaks */}
             <div style={sectionStyle}>
@@ -150,10 +149,10 @@ export default function CyberSafetyPage() {
                 <span style={{ fontSize: '3rem' }}>📧</span>
                 <div>
                   <h2 style={{ color: '#dc2626', margin: 0, fontSize: '2rem' }}>
-                    Шаг 1: Проверьте утечки email
+                    Step 1: Check for Email Leaks
                   </h2>
                   <p style={{ color: '#666', margin: '0.25rem 0 0 0', fontSize: '1.1rem' }}>
-                    Узнайте, не попал ли ваш email к мошенникам
+                    Find out if your email was stolen by hackers
                   </p>
                 </div>
               </div>
@@ -166,8 +165,8 @@ export default function CyberSafetyPage() {
                 marginBottom: '1.5rem'
               }}>
                 <p style={{ margin: 0, fontSize: '1.25rem', color: '#991b1b', lineHeight: '1.6' }}>
-                  ⚠️ <strong>Важно!</strong> Хакеры регулярно взламывают сайты и крадут email адреса с паролями. 
-                  Если ваш email есть в базе утечек — <strong>срочно меняйте пароль!</strong>
+                  ⚠️ <strong>Important!</strong> Hackers regularly breach websites and steal email addresses with passwords. 
+                  If your email is in a breach database — <strong>change your password immediately!</strong>
                 </p>
               </div>
 
@@ -175,11 +174,11 @@ export default function CyberSafetyPage() {
                 <div style={stepNumberStyle}>1</div>
                 <div>
                   <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem', color: '#1e3a5f' }}>
-                    Откройте сайт проверки
+                    Open the checking website
                   </h3>
                   <p style={{ margin: 0, color: '#666', fontSize: '1.1rem', lineHeight: '1.6' }}>
-                    Нажмите зелёную кнопку ниже. Откроется сайт <strong>HaveIBeenPwned</strong> — 
-                    это надёжный сервис от известного эксперта по безопасности.
+                    Click the green button below. It will open <strong>HaveIBeenPwned</strong> — 
+                    a trusted service from a well-known security expert.
                   </p>
                 </div>
               </div>
@@ -188,10 +187,10 @@ export default function CyberSafetyPage() {
                 <div style={stepNumberStyle}>2</div>
                 <div>
                   <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem', color: '#1e3a5f' }}>
-                    Введите свой email
+                    Enter your email
                   </h3>
                   <p style={{ margin: 0, color: '#666', fontSize: '1.1rem', lineHeight: '1.6' }}>
-                    В поле на сайте введите свой email адрес и нажмите кнопку <strong>"pwned?"</strong>
+                    Type your email address in the field and click the <strong>"pwned?"</strong> button
                   </p>
                 </div>
               </div>
@@ -200,11 +199,11 @@ export default function CyberSafetyPage() {
                 <div style={stepNumberStyle}>3</div>
                 <div>
                   <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem', color: '#1e3a5f' }}>
-                    Посмотрите результат
+                    Check the result
                   </h3>
                   <p style={{ margin: 0, color: '#666', fontSize: '1.1rem', lineHeight: '1.6' }}>
-                    🟢 <strong>Зелёный фон</strong> = Ваш email не найден в утечках. Отлично!<br/>
-                    🔴 <strong>Красный фон</strong> = Ваш email был украден! <strong>Срочно меняйте пароль!</strong>
+                    🟢 <strong>Green background</strong> = Your email was not found in breaches. Great!<br/>
+                    🔴 <strong>Red background</strong> = Your email was stolen! <strong>Change your password NOW!</strong>
                   </p>
                 </div>
               </div>
@@ -215,7 +214,7 @@ export default function CyberSafetyPage() {
                 rel="noopener noreferrer"
                 style={buttonStyle('linear-gradient(135deg, #059669, #047857)')}
               >
-                📧 Проверить мой Email
+                📧 Check My Email
               </a>
             </div>
 
@@ -225,10 +224,10 @@ export default function CyberSafetyPage() {
                 <span style={{ fontSize: '3rem' }}>🔑</span>
                 <div>
                   <h2 style={{ color: '#f59e0b', margin: 0, fontSize: '2rem' }}>
-                    Шаг 2: Смените пароль
+                    Step 2: Change Your Password
                   </h2>
                   <p style={{ color: '#666', margin: '0.25rem 0 0 0', fontSize: '1.1rem' }}>
-                    Если email был в утечке — немедленно меняйте пароль!
+                    If your email was breached — change your password immediately!
                   </p>
                 </div>
               </div>
@@ -241,14 +240,14 @@ export default function CyberSafetyPage() {
                 marginBottom: '1.5rem'
               }}>
                 <h3 style={{ margin: '0 0 1rem 0', color: '#92400e', fontSize: '1.3rem' }}>
-                  💡 Как создать надёжный пароль:
+                  💡 How to create a strong password:
                 </h3>
                 <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#78350f', fontSize: '1.15rem', lineHeight: '2' }}>
-                  <li>Минимум <strong>12 символов</strong></li>
-                  <li>Используйте <strong>БОЛЬШИЕ</strong> и <strong>маленькие</strong> буквы</li>
-                  <li>Добавьте <strong>цифры</strong> (например: 7, 42, 2024)</li>
-                  <li>Добавьте <strong>символы</strong> (например: !, @, #, $)</li>
-                  <li>❌ НЕ используйте имена, даты рождения, "123456"</li>
+                  <li>At least <strong>12 characters</strong></li>
+                  <li>Use <strong>UPPERCASE</strong> and <strong>lowercase</strong> letters</li>
+                  <li>Add <strong>numbers</strong> (e.g.: 7, 42, 2024)</li>
+                  <li>Add <strong>symbols</strong> (e.g.: !, @, #, $)</li>
+                  <li>❌ DON'T use names, birthdays, or "123456"</li>
                 </ul>
               </div>
 
@@ -259,7 +258,7 @@ export default function CyberSafetyPage() {
                 padding: '1.5rem'
               }}>
                 <h3 style={{ margin: '0 0 0.75rem 0', color: '#166534', fontSize: '1.3rem' }}>
-                  ✅ Пример хорошего пароля:
+                  ✅ Example of a good password:
                 </h3>
                 <code style={{ 
                   display: 'block',
@@ -274,7 +273,7 @@ export default function CyberSafetyPage() {
                   Shabbat$Shalom2024!
                 </code>
                 <p style={{ margin: '0.75rem 0 0 0', color: '#166534', fontSize: '1rem' }}>
-                  Этот пароль содержит 19 символов, большие и маленькие буквы, цифры и символы.
+                  This password has 19 characters, uppercase and lowercase letters, numbers, and symbols.
                 </p>
               </div>
             </div>
@@ -285,10 +284,10 @@ export default function CyberSafetyPage() {
                 <span style={{ fontSize: '3rem' }}>🖥️</span>
                 <div>
                   <h2 style={{ color: '#3b82f6', margin: 0, fontSize: '2rem' }}>
-                    Шаг 3: Проверьте компьютер на вирусы
+                    Step 3: Scan Your Computer for Viruses
                   </h2>
                   <p style={{ color: '#666', margin: '0.25rem 0 0 0', fontSize: '1.1rem' }}>
-                    Запустите проверку встроенными и бесплатными инструментами
+                    Use built-in and free tools to check for malware
                   </p>
                 </div>
               </div>
@@ -302,16 +301,16 @@ export default function CyberSafetyPage() {
                 marginBottom: '1.5rem'
               }}>
                 <h3 style={{ margin: '0 0 1rem 0', color: '#1d4ed8', fontSize: '1.5rem' }}>
-                  🛠️ Способ 1: Встроенная утилита Windows (MRT)
+                  🛠️ Option 1: Windows Built-in Tool (MRT)
                 </h3>
                 <p style={{ margin: '0 0 1rem 0', color: '#666', fontSize: '1.1rem', lineHeight: '1.6' }}>
-                  В каждом Windows уже есть <strong>бесплатный инструмент</strong> для удаления вирусов. 
-                  Microsoft обновляет его каждый месяц.
+                  Every Windows computer has a <strong>free built-in tool</strong> to remove viruses. 
+                  Microsoft updates it every month automatically.
                 </p>
                 
                 <div style={{ background: 'white', borderRadius: '12px', padding: '1.25rem' }}>
                   <h4 style={{ margin: '0 0 1rem 0', color: '#1e3a5f', fontSize: '1.2rem' }}>
-                    📋 Инструкция:
+                    📋 Instructions:
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1.15rem' }}>
@@ -321,7 +320,7 @@ export default function CyberSafetyPage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 'bold', flexShrink: 0
                       }}>1</span>
-                      <span>Нажмите клавиши <strong style={{ background: '#e5e7eb', padding: '4px 8px', borderRadius: '4px' }}>Win + R</strong> одновременно</span>
+                      <span>Press <strong style={{ background: '#e5e7eb', padding: '4px 8px', borderRadius: '4px' }}>Win + R</strong> keys together</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1.15rem' }}>
                       <span style={{ 
@@ -330,7 +329,7 @@ export default function CyberSafetyPage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 'bold', flexShrink: 0
                       }}>2</span>
-                      <span>Введите <code style={{ background: '#1e3a5f', color: 'white', padding: '4px 12px', borderRadius: '4px', fontSize: '1.25rem' }}>mrt</code> и нажмите Enter</span>
+                      <span>Type <code style={{ background: '#1e3a5f', color: 'white', padding: '4px 12px', borderRadius: '4px', fontSize: '1.25rem' }}>mrt</code> and press Enter</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1.15rem' }}>
                       <span style={{ 
@@ -339,7 +338,7 @@ export default function CyberSafetyPage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 'bold', flexShrink: 0
                       }}>3</span>
-                      <span>Выберите <strong>"Full scan"</strong> (Полная проверка)</span>
+                      <span>Select <strong>"Full scan"</strong> option</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1.15rem' }}>
                       <span style={{ 
@@ -348,13 +347,13 @@ export default function CyberSafetyPage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 'bold', flexShrink: 0
                       }}>4</span>
-                      <span>Дождитесь окончания проверки (20-60 минут)</span>
+                      <span>Wait for scan to complete (20-60 minutes)</span>
                     </div>
                   </div>
                 </div>
                 
                 <p style={{ margin: '1rem 0 0 0', color: '#059669', fontSize: '1.1rem', fontWeight: '500' }}>
-                  ⏰ Рекомендуем запускать раз в месяц!
+                  ⏰ Recommended: Run once a month!
                 </p>
               </div>
 
@@ -366,22 +365,22 @@ export default function CyberSafetyPage() {
                 padding: '1.5rem'
               }}>
                 <h3 style={{ margin: '0 0 1rem 0', color: '#166534', fontSize: '1.5rem' }}>
-                  🩺 Способ 2: Dr.Web CureIt! (бесплатно)
+                  🩺 Option 2: Dr.Web CureIt! (Free)
                 </h3>
                 <p style={{ margin: '0 0 1rem 0', color: '#666', fontSize: '1.1rem', lineHeight: '1.6' }}>
-                  <strong>Бесплатный антивирусный сканер</strong> от известной компании Dr.Web. 
-                  Не требует установки — просто скачайте и запустите.
+                  A <strong>free antivirus scanner</strong> from the trusted Dr.Web company. 
+                  No installation needed — just download and run it.
                 </p>
                 
                 <div style={{ background: 'white', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem' }}>
                   <h4 style={{ margin: '0 0 0.75rem 0', color: '#1e3a5f', fontSize: '1.1rem' }}>
-                    ✅ Преимущества:
+                    ✅ Benefits:
                   </h4>
                   <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#666', fontSize: '1.1rem', lineHeight: '1.8' }}>
-                    <li>Не нужно устанавливать</li>
-                    <li>Работает вместе с вашим обычным антивирусом</li>
-                    <li>Находит вирусы, которые другие пропускают</li>
-                    <li>Полностью бесплатно для дома</li>
+                    <li>No installation required</li>
+                    <li>Works alongside your regular antivirus</li>
+                    <li>Finds viruses that others miss</li>
+                    <li>Completely free for home use</li>
                   </ul>
                 </div>
 
@@ -391,7 +390,7 @@ export default function CyberSafetyPage() {
                   rel="noopener noreferrer"
                   style={buttonStyle('linear-gradient(135deg, #22c55e, #16a34a)')}
                 >
-                  ⬇️ Скачать Dr.Web CureIt!
+                  ⬇️ Download Dr.Web CureIt!
                 </a>
               </div>
             </div>
@@ -402,10 +401,10 @@ export default function CyberSafetyPage() {
                 <span style={{ fontSize: '3rem' }}>🔗</span>
                 <div>
                   <h2 style={{ color: '#7c3aed', margin: 0, fontSize: '2rem' }}>
-                    Шаг 4: Проверяйте подозрительные ссылки
+                    Step 4: Check Suspicious Links
                   </h2>
                   <p style={{ color: '#666', margin: '0.25rem 0 0 0', fontSize: '1.1rem' }}>
-                    Прежде чем кликнуть — проверьте!
+                    Before you click — verify it's safe!
                   </p>
                 </div>
               </div>
@@ -418,19 +417,19 @@ export default function CyberSafetyPage() {
                 marginBottom: '1.5rem'
               }}>
                 <p style={{ margin: '0 0 1rem 0', color: '#5b21b6', fontSize: '1.2rem', lineHeight: '1.6' }}>
-                  🚨 <strong>Мошенники часто отправляют опасные ссылки</strong> через WhatsApp, email, SMS. 
-                  Перед тем как кликнуть — проверьте ссылку на VirusTotal!
+                  🚨 <strong>Scammers often send dangerous links</strong> through WhatsApp, email, and text messages. 
+                  Before clicking any link — check it on VirusTotal!
                 </p>
                 
                 <div style={{ background: 'white', borderRadius: '12px', padding: '1.25rem' }}>
                   <h4 style={{ margin: '0 0 1rem 0', color: '#1e3a5f', fontSize: '1.2rem' }}>
-                    📋 Как проверить ссылку:
+                    📋 How to check a link:
                   </h4>
                   <ol style={{ margin: 0, paddingLeft: '1.5rem', color: '#666', fontSize: '1.1rem', lineHeight: '2' }}>
-                    <li><strong>Скопируйте</strong> подозрительную ссылку (не кликайте!)</li>
-                    <li>Откройте <strong>VirusTotal.com</strong></li>
-                    <li>Вставьте ссылку и нажмите <strong>Search</strong></li>
-                    <li>Если есть ❌ красные отметки — <strong>не открывайте!</strong></li>
+                    <li><strong>Copy</strong> the suspicious link (don't click it!)</li>
+                    <li>Open <strong>VirusTotal.com</strong></li>
+                    <li>Paste the link and click <strong>Search</strong></li>
+                    <li>If you see ❌ red marks — <strong>don't open it!</strong></li>
                   </ol>
                 </div>
               </div>
@@ -441,7 +440,7 @@ export default function CyberSafetyPage() {
                 rel="noopener noreferrer"
                 style={buttonStyle('linear-gradient(135deg, #7c3aed, #5b21b6)')}
               >
-                🔍 Проверить ссылку на VirusTotal
+                🔍 Check a Link on VirusTotal
               </a>
             </div>
 
@@ -451,18 +450,18 @@ export default function CyberSafetyPage() {
                 <span style={{ fontSize: '3rem' }}>📵</span>
                 <div>
                   <h2 style={{ color: '#0891b2', margin: 0, fontSize: '2rem' }}>
-                    Бонус: Уменьшите спам-звонки
+                    Bonus: Reduce Spam Calls
                   </h2>
                   <p style={{ color: '#666', margin: '0.25rem 0 0 0', fontSize: '1.1rem' }}>
-                    Зарегистрируйте номер в списке "Do Not Call"
+                    Register your number on the "Do Not Call" list
                   </p>
                 </div>
               </div>
 
               <p style={{ margin: '0 0 1.5rem 0', color: '#666', fontSize: '1.15rem', lineHeight: '1.6' }}>
-                Зарегистрируйте ваш телефон на официальном сайте <strong>Do Not Call Registry</strong>. 
-                Это <strong>бесплатно</strong> и уменьшит количество маркетинговых звонков. 
-                Регистрация действует навсегда.
+                Register your phone number on the official <strong>Do Not Call Registry</strong>. 
+                It's <strong>free</strong> and will reduce the number of telemarketing calls. 
+                Registration lasts forever.
               </p>
 
               <a 
@@ -471,7 +470,7 @@ export default function CyberSafetyPage() {
                 rel="noopener noreferrer"
                 style={buttonStyle('linear-gradient(135deg, #0891b2, #0e7490)')}
               >
-                📵 Зарегистрироваться на DoNotCall.gov
+                📵 Register on DoNotCall.gov
               </a>
             </div>
 
@@ -491,10 +490,10 @@ export default function CyberSafetyPage() {
               <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
                 <span style={{ fontSize: '3rem' }}>🔔</span>
                 <h3 style={{ color: '#92400e', margin: '0.5rem 0', fontSize: '1.4rem' }}>
-                  Напоминания о проверке
+                  Monthly Reminders
                 </h3>
                 <p style={{ color: '#78350f', margin: 0, fontSize: '1rem' }}>
-                  Получайте email раз в месяц с напоминанием проверить безопасность
+                  Get an email every 30 days reminding you to check your security
                 </p>
               </div>
 
@@ -507,7 +506,7 @@ export default function CyberSafetyPage() {
                 }}>
                   <span style={{ fontSize: '3rem' }}>✅</span>
                   <p style={{ color: '#166534', fontSize: '1.1rem', margin: '0.5rem 0 0 0', fontWeight: '500' }}>
-                    Вы подписаны! Первое письмо придёт через 30 дней.
+                    You're subscribed! First email comes in 30 days.
                   </p>
                 </div>
               ) : (
@@ -516,7 +515,7 @@ export default function CyberSafetyPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Ваш email..."
+                    placeholder="Your email..."
                     required
                     style={{
                       width: '100%',
@@ -543,11 +542,11 @@ export default function CyberSafetyPage() {
                       cursor: subscribeStatus === 'loading' ? 'wait' : 'pointer'
                     }}
                   >
-                    {subscribeStatus === 'loading' ? '⏳ Подписка...' : '🔔 Подписаться'}
+                    {subscribeStatus === 'loading' ? '⏳ Subscribing...' : '🔔 Subscribe'}
                   </button>
                   {subscribeStatus === 'error' && (
                     <p style={{ color: '#dc2626', fontSize: '0.95rem', margin: '0.5rem 0 0 0', textAlign: 'center' }}>
-                      Ошибка. Попробуйте ещё раз.
+                      Error. Please try again.
                     </p>
                   )}
                 </form>
@@ -555,12 +554,12 @@ export default function CyberSafetyPage() {
 
               <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.5)', borderRadius: '12px' }}>
                 <p style={{ margin: 0, fontSize: '0.9rem', color: '#78350f' }}>
-                  📧 Каждые 30 дней вы получите письмо с напоминанием:
+                  📧 Every 30 days you'll get a reminder to:
                 </p>
                 <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1.25rem', fontSize: '0.9rem', color: '#92400e' }}>
-                  <li>Проверить email на утечки</li>
-                  <li>Сменить пароль если нужно</li>
-                  <li>Запустить проверку на вирусы</li>
+                  <li>Check email for breaches</li>
+                  <li>Change password if needed</li>
+                  <li>Run virus scan</li>
                 </ul>
               </div>
             </div>
@@ -571,12 +570,12 @@ export default function CyberSafetyPage() {
                 🚨 FBI Scam Alerts
               </h3>
               <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                Последние предупреждения о мошенничестве от IC3 (Internet Crime Complaint Center)
+                Latest warnings from IC3 (Internet Crime Complaint Center)
               </p>
               
               {newsLoading ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                  ⏳ Загрузка новостей...
+                  ⏳ Loading news...
                 </div>
               ) : news.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -592,8 +591,7 @@ export default function CyberSafetyPage() {
                         background: '#fef2f2',
                         borderRadius: '10px',
                         textDecoration: 'none',
-                        borderLeft: '4px solid #dc2626',
-                        transition: 'transform 0.2s'
+                        borderLeft: '4px solid #dc2626'
                       }}
                     >
                       <div style={{ color: '#1e3a5f', fontSize: '0.95rem', fontWeight: '500', lineHeight: '1.4' }}>
@@ -601,7 +599,7 @@ export default function CyberSafetyPage() {
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
                         <span style={{ color: '#dc2626', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                          {(item as any).category || 'FBI'}
+                          {item.category || 'FBI'}
                         </span>
                         <span style={{ color: '#9ca3af', fontSize: '0.8rem' }}>
                           {item.date}
@@ -612,7 +610,7 @@ export default function CyberSafetyPage() {
                 </div>
               ) : (
                 <p style={{ color: '#666', fontSize: '0.95rem' }}>
-                  Новости временно недоступны
+                  News temporarily unavailable
                 </p>
               )}
 
@@ -633,7 +631,7 @@ export default function CyberSafetyPage() {
                   fontSize: '0.95rem'
                 }}
               >
-                🚨 Все предупреждения IC3
+                🚨 All IC3 Alerts
               </a>
               
               <a 
@@ -653,24 +651,24 @@ export default function CyberSafetyPage() {
                   fontSize: '0.95rem'
                 }}
               >
-                👴 О мошенничестве против пожилых
+                👴 Elder Fraud Info
               </a>
             </div>
 
             {/* Quick Links */}
             <div style={sectionStyle}>
               <h3 style={{ color: '#1e3a5f', margin: '0 0 1rem 0', fontSize: '1.2rem' }}>
-                🔗 Быстрые ссылки
+                🔗 Quick Links
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <a href="https://haveibeenpwned.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#dc2626', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb', textDecoration: 'none' }}>
-                  📧 Проверить email утечки
+                  📧 Check email breaches
                 </a>
                 <a href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener noreferrer" style={{ color: '#059669', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb', textDecoration: 'none' }}>
-                  🔍 Проверить файл
+                  🔍 Scan a file
                 </a>
                 <a href="https://www.virustotal.com/gui/home/url" target="_blank" rel="noopener noreferrer" style={{ color: '#7c3aed', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb', textDecoration: 'none' }}>
-                  🔗 Проверить ссылку
+                  🔗 Check a link
                 </a>
                 <a href="https://free.drweb.com/download+cureit+free/" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb', textDecoration: 'none' }}>
                   🩺 Dr.Web CureIt!
@@ -679,7 +677,7 @@ export default function CyberSafetyPage() {
                   📵 Do Not Call Registry
                 </a>
                 <a href="https://www.ic3.gov/" target="_blank" rel="noopener noreferrer" style={{ color: '#1e3a5f', fontSize: '1rem', padding: '0.5rem 0', textDecoration: 'none' }}>
-                  🏛️ IC3 - Сообщить о мошенничестве
+                  🏛️ IC3 - Report a scam
                 </a>
               </div>
             </div>
