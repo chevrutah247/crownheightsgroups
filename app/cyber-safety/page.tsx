@@ -131,10 +131,18 @@ export default function CyberSafetyPage() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', alignItems: 'start' }}>
+        <div className="cyber-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(300px, 350px)', gap: '2rem', alignItems: 'start' }}>
           
           {/* Main Content */}
           <div>
+          
+          {/* Mobile sidebar - shows at top on small screens */}
+          <style>{`
+            @media (max-width: 900px) {
+              .cyber-grid { grid-template-columns: 1fr !important; }
+              .cyber-sidebar { order: -1; }
+            }
+          `}</style>
             
             {/* SECTION 1: Check Email Leaks */}
             <div style={sectionStyle}>
@@ -470,7 +478,7 @@ export default function CyberSafetyPage() {
           </div>
 
           {/* Sidebar */}
-          <div>
+          <div className="cyber-sidebar">
             
             {/* Subscribe to Reminders */}
             <div style={{ 
@@ -560,8 +568,11 @@ export default function CyberSafetyPage() {
             {/* Cyber News */}
             <div style={sectionStyle}>
               <h3 style={{ color: '#1e3a5f', margin: '0 0 1rem 0', fontSize: '1.3rem' }}>
-                🚨 Новости безопасности
+                🚨 FBI Scam Alerts
               </h3>
+              <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                Последние предупреждения о мошенничестве от IC3 (Internet Crime Complaint Center)
+              </p>
               
               {newsLoading ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
@@ -569,7 +580,7 @@ export default function CyberSafetyPage() {
                 </div>
               ) : news.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {news.slice(0, 5).map((item, i) => (
+                  {news.slice(0, 6).map((item, i) => (
                     <a
                       key={i}
                       href={item.link}
@@ -578,17 +589,23 @@ export default function CyberSafetyPage() {
                       style={{
                         display: 'block',
                         padding: '0.75rem',
-                        background: '#f8fafc',
+                        background: '#fef2f2',
                         borderRadius: '10px',
                         textDecoration: 'none',
-                        borderLeft: '4px solid #dc2626'
+                        borderLeft: '4px solid #dc2626',
+                        transition: 'transform 0.2s'
                       }}
                     >
                       <div style={{ color: '#1e3a5f', fontSize: '0.95rem', fontWeight: '500', lineHeight: '1.4' }}>
                         {item.title}
                       </div>
-                      <div style={{ color: '#9ca3af', fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                        {item.date}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                        <span style={{ color: '#dc2626', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                          {(item as any).category || 'FBI'}
+                        </span>
+                        <span style={{ color: '#9ca3af', fontSize: '0.8rem' }}>
+                          {item.date}
+                        </span>
                       </div>
                     </a>
                   ))}
@@ -600,7 +617,7 @@ export default function CyberSafetyPage() {
               )}
 
               <a 
-                href="https://www.fbi.gov/how-we-can-help-you/scams-and-safety" 
+                href="https://www.ic3.gov/PSA" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 style={{
@@ -616,7 +633,27 @@ export default function CyberSafetyPage() {
                   fontSize: '0.95rem'
                 }}
               >
-                🚨 FBI Scam Alerts
+                🚨 Все предупреждения IC3
+              </a>
+              
+              <a 
+                href="https://www.ic3.gov/CrimeInfo/ElderFraud" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  marginTop: '0.5rem',
+                  padding: '0.75rem',
+                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                  color: 'white',
+                  borderRadius: '10px',
+                  textDecoration: 'none',
+                  textAlign: 'center',
+                  fontWeight: 'bold',
+                  fontSize: '0.95rem'
+                }}
+              >
+                👴 О мошенничестве против пожилых
               </a>
             </div>
 
@@ -626,20 +663,23 @@ export default function CyberSafetyPage() {
                 🔗 Быстрые ссылки
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <a href="https://haveibeenpwned.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#dc2626', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb' }}>
+                <a href="https://haveibeenpwned.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#dc2626', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb', textDecoration: 'none' }}>
                   📧 Проверить email утечки
                 </a>
-                <a href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener noreferrer" style={{ color: '#059669', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb' }}>
+                <a href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener noreferrer" style={{ color: '#059669', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb', textDecoration: 'none' }}>
                   🔍 Проверить файл
                 </a>
-                <a href="https://www.virustotal.com/gui/home/url" target="_blank" rel="noopener noreferrer" style={{ color: '#7c3aed', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb' }}>
+                <a href="https://www.virustotal.com/gui/home/url" target="_blank" rel="noopener noreferrer" style={{ color: '#7c3aed', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb', textDecoration: 'none' }}>
                   🔗 Проверить ссылку
                 </a>
-                <a href="https://free.drweb.com/download+cureit+free/" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb' }}>
+                <a href="https://free.drweb.com/download+cureit+free/" target="_blank" rel="noopener noreferrer" style={{ color: '#22c55e', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb', textDecoration: 'none' }}>
                   🩺 Dr.Web CureIt!
                 </a>
-                <a href="https://www.donotcall.gov/" target="_blank" rel="noopener noreferrer" style={{ color: '#0891b2', fontSize: '1rem', padding: '0.5rem 0' }}>
+                <a href="https://www.donotcall.gov/" target="_blank" rel="noopener noreferrer" style={{ color: '#0891b2', fontSize: '1rem', padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb', textDecoration: 'none' }}>
                   📵 Do Not Call Registry
+                </a>
+                <a href="https://www.ic3.gov/" target="_blank" rel="noopener noreferrer" style={{ color: '#1e3a5f', fontSize: '1rem', padding: '0.5rem 0', textDecoration: 'none' }}>
+                  🏛️ IC3 - Сообщить о мошенничестве
                 </a>
               </div>
             </div>
