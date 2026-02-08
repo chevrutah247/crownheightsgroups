@@ -114,7 +114,7 @@ export default function EventsPage() {
 
         {/* Free Trips Banner */}
         <div style={{ background: 'linear-gradient(135deg, #166534, #22c55e)', borderRadius: '16px', padding: '1.5rem', marginBottom: '2rem', color: 'white' }}>
-          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem' }}>🌲 FREE Trips to Upstate NY!</h3>
+          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem' }}><img src="https://www.oorah.org/img/logos/OorahWhiteLogo.png" alt="Oorah" style={{ height: '35px', marginRight: '0.5rem', verticalAlign: 'middle' }} /> FREE Trips to Upstate NY!</h3>
           <p style={{ margin: '0 0 1rem 0', opacity: 0.9, fontSize: '0.95rem' }}>Nature retreats, family events & more — completely free!</p>
           <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', opacity: 0.8 }}>* First register at TorahMates to qualify</p>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
