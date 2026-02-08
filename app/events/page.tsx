@@ -111,6 +111,17 @@ export default function EventsPage() {
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <h1 style={{ color: '#1e3a5f', marginBottom: '0.5rem' }}>📅 Community Events</h1>
           <p style={{ color: '#666' }}>Upcoming events in Crown Heights</p>
+
+        {/* Free Trips Banner */}
+        <div style={{ background: 'linear-gradient(135deg, #166534, #22c55e)', borderRadius: '16px', padding: '1.5rem', marginBottom: '2rem', color: 'white' }}>
+          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem' }}>🌲 FREE Trips to Upstate NY!</h3>
+          <p style={{ margin: '0 0 1rem 0', opacity: 0.9, fontSize: '0.95rem' }}>Nature retreats, family events & more — completely free!</p>
+          <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', opacity: 0.8 }}>* First register at TorahMates to qualify</p>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <a href="https://www.torahmates.org/" target="_blank" rel="noopener noreferrer" style={{ background: 'white', color: '#166534', padding: '0.75rem 1.25rem', borderRadius: '25px', fontWeight: 'bold', textDecoration: 'none' }}>1️⃣ Join TorahMates</a>
+            <a href="https://www.oorah.org/events/" target="_blank" rel="noopener noreferrer" style={{ background: 'linear-gradient(135deg, #ffd700, #f59e0b)', color: '#1e3a5f', padding: '0.75rem 1.25rem', borderRadius: '25px', fontWeight: 'bold', textDecoration: 'none' }}>2️⃣ Browse Free Trips →</a>
+          </div>
+        </div>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>

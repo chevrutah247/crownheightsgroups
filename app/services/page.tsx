@@ -91,6 +91,15 @@ export default function ServicesPage() {
           <p className="page-subtitle">Find trusted professionals in our community</p>
         </div>
 
+        {/* Torah Learning Banner */}
+        <div style={{ background: 'linear-gradient(135deg, #1e3a5f, #3b82f6)', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.5rem', color: 'white', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <div>
+            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem' }}>📚 Want to Learn Torah?</h3>
+            <p style={{ margin: 0, opacity: 0.9, fontSize: '0.95rem' }}>Free one-on-one learning with a partner. Any level, any topic.</p>
+          </div>
+          <a href="https://www.torahmates.org/" target="_blank" rel="noopener noreferrer" style={{ background: 'linear-gradient(135deg, #ffd700, #f59e0b)', color: '#1e3a5f', padding: '0.75rem 1.5rem', borderRadius: '25px', fontWeight: 'bold', textDecoration: 'none', whiteSpace: 'nowrap' }}>Sign Up Free →</a>
+        </div>
+
         {/* Filters Section - Clean inline styles */}
         <div style={{ 
           display: 'flex', 
