@@ -114,12 +114,17 @@ export default function EventsPage() {
 
         {/* Free Trips Banner */}
         <div style={{ background: 'linear-gradient(135deg, #166534, #22c55e)', borderRadius: '16px', padding: '1.5rem', marginBottom: '2rem', color: 'white' }}>
-          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem' }}><img src="https://www.oorah.org/img/logos/OorahWhiteLogo.png" alt="Oorah" style={{ height: '35px', marginRight: '0.5rem', verticalAlign: 'middle' }} /> FREE Trips to Upstate NY!</h3>
-          <p style={{ margin: '0 0 1rem 0', opacity: 0.9, fontSize: '0.95rem' }}>Nature retreats, family events & more — completely free!</p>
-          <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', opacity: 0.8 }}>* First register at TorahMates to qualify</p>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <a href="https://www.torahmates.org/" target="_blank" rel="noopener noreferrer" style={{ background: 'white', color: '#166534', padding: '0.75rem 1.25rem', borderRadius: '25px', fontWeight: 'bold', textDecoration: 'none' }}>1️⃣ Join TorahMates</a>
-            <a href="https://www.oorah.org/events/" target="_blank" rel="noopener noreferrer" style={{ background: 'linear-gradient(135deg, #ffd700, #f59e0b)', color: '#1e3a5f', padding: '0.75rem 1.25rem', borderRadius: '25px', fontWeight: 'bold', textDecoration: 'none' }}>2️⃣ Browse Free Trips →</a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+            <img src="https://www.oorah.org/img/logos/OorahWhiteLogo.png" alt="Oorah" style={{ height: '45px' }} />
+            <div style={{ flex: 1, minWidth: '200px' }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.3rem', fontWeight: 'bold' }}>FREE Trips to Upstate NY!</h3>
+              <p style={{ margin: 0, opacity: 0.9, fontSize: '0.95rem' }}>Nature retreats, family events & more — completely free!</p>
+              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', opacity: 0.7 }}>* First register at TorahMates to qualify</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+            <a href="https://www.torahmates.org/" target="_blank" rel="noopener noreferrer" style={{ background: 'white', color: '#166534', padding: '0.75rem 1.25rem', borderRadius: '25px', fontWeight: 'bold', textDecoration: 'none', fontSize: '0.95rem' }}>1️⃣ Join TorahMates</a>
+            <a href="https://www.oorah.org/events/" target="_blank" rel="noopener noreferrer" style={{ background: 'linear-gradient(135deg, #ffd700, #f59e0b)', color: '#1e3a5f', padding: '0.75rem 1.25rem', borderRadius: '25px', fontWeight: 'bold', textDecoration: 'none', fontSize: '0.95rem' }}>2️⃣ Browse Free Trips →</a>
           </div>
         </div>
         </div>
