@@ -248,19 +248,31 @@ export default function HomePage() {
               boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
               transition: 'transform 0.2s, box-shadow 0.2s',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <img 
-                    src="https://upload.wikimedia.org/wikipedia/en/thumb/6/6a/Mega_Millions_Lottery_logo.svg/200px-Mega_Millions_Lottery_logo.svg.png" 
-                    alt="Mega Millions" 
-                    style={{ height: '35px', objectFit: 'contain' }}
-                  />
-                  <span style={{ color: '#ffd700', fontSize: '1.2rem', fontWeight: 'bold' }}>+</span>
-                  <img 
-                    src="https://upload.wikimedia.org/wikipedia/en/thumb/e/e6/Powerball_logo.svg/200px-Powerball_logo.svg.png" 
-                    alt="Powerball" 
-                    style={{ height: '35px', objectFit: 'contain' }}
-                  />
+                  <span style={{ 
+                    background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', 
+                    color: '#1a1a2e', 
+                    padding: '0.35rem 0.7rem', 
+                    borderRadius: '6px', 
+                    fontWeight: 'bold', 
+                    fontSize: '0.75rem',
+                    fontStyle: 'italic',
+                    letterSpacing: '0.5px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>MEGA MILLIONS</span>
+                  <span style={{ color: '#ffd700', fontSize: '1rem', fontWeight: 'bold' }}>+</span>
+                  <span style={{ 
+                    background: 'linear-gradient(135deg, #E31837 0%, #C41230 100%)', 
+                    color: 'white', 
+                    padding: '0.35rem 0.7rem', 
+                    borderRadius: '6px', 
+                    fontWeight: 'bold', 
+                    fontSize: '0.75rem',
+                    fontStyle: 'italic',
+                    letterSpacing: '0.5px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>POWERBALL</span>
                 </div>
                 <div>
                   <h3 style={{ 

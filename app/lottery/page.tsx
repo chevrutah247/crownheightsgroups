@@ -83,21 +83,33 @@ export default function LotteryPage() {
             display: 'flex', 
             justifyContent: 'center', 
             alignItems: 'center', 
-            gap: '1.5rem', 
+            gap: '1rem', 
             marginBottom: '1.5rem',
             flexWrap: 'wrap'
           }}>
-            <img 
-              src="https://upload.wikimedia.org/wikipedia/en/thumb/6/6a/Mega_Millions_Lottery_logo.svg/200px-Mega_Millions_Lottery_logo.svg.png" 
-              alt="Mega Millions" 
-              style={{ height: '50px', objectFit: 'contain' }}
-            />
+            <span style={{ 
+              background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', 
+              color: '#1a1a2e', 
+              padding: '0.75rem 1.5rem', 
+              borderRadius: '10px', 
+              fontWeight: 'bold', 
+              fontSize: '1.1rem',
+              fontStyle: 'italic',
+              letterSpacing: '1px',
+              boxShadow: '0 4px 12px rgba(255,215,0,0.4)'
+            }}>MEGA MILLIONS</span>
             <span style={{ color: '#ffd700', fontSize: '2rem', fontWeight: 'bold' }}>+</span>
-            <img 
-              src="https://upload.wikimedia.org/wikipedia/en/thumb/e/e6/Powerball_logo.svg/200px-Powerball_logo.svg.png" 
-              alt="Powerball" 
-              style={{ height: '50px', objectFit: 'contain' }}
-            />
+            <span style={{ 
+              background: 'linear-gradient(135deg, #E31837 0%, #C41230 100%)', 
+              color: 'white', 
+              padding: '0.75rem 1.5rem', 
+              borderRadius: '10px', 
+              fontWeight: 'bold', 
+              fontSize: '1.1rem',
+              fontStyle: 'italic',
+              letterSpacing: '1px',
+              boxShadow: '0 4px 12px rgba(227,24,55,0.4)'
+            }}>POWERBALL</span>
           </div>
 
           <h1 style={{ 
