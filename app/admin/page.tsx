@@ -25,6 +25,10 @@ export default function AdminPage() {
   const [adminNumbers, setAdminNumbers] = useState('');
   const [sendingEmails, setSendingEmails] = useState(false);
   const [lotteryMessage, setLotteryMessage] = useState('');
+  const [lotteryHistory, setLotteryHistory] = useState<any[]>([]);
+  const [selectedHistoryWeek, setSelectedHistoryWeek] = useState<any>(null);
+  const [historyParticipants, setHistoryParticipants] = useState<any[]>([]);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   
   const [groupSuggestions, setGroupSuggestions] = useState<any[]>([]);
   const [serviceSuggestions, setServiceSuggestions] = useState<any[]>([]);
@@ -69,6 +73,10 @@ export default function AdminPage() {
         }
         if (d.participants) setLotteryParticipants(d.participants);
       }).catch(() => {}),
+      // Fetch lottery history
+      fetch('/api/lottery/admin/history').then(r => r.json()).then(d => {
+        if (d.weeks) setLotteryHistory(d.weeks);
+      }).catch(() => {}),
     ]);
     setLoading(false);
   };
@@ -111,6 +119,21 @@ export default function AdminPage() {
       setLotteryMessage('❌ Error sending emails');
     } finally {
       setSendingEmails(false);
+    }
+  };
+
+  // View history week details
+  const viewHistoryWeek = async (week: any) => {
+    try {
+      const res = await fetch(`/api/lottery/admin/history?poolWeekId=${week.id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setSelectedHistoryWeek(data.poolWeek);
+        setHistoryParticipants(data.participants || []);
+        setShowHistoryModal(true);
+      }
+    } catch (error) {
+      console.error('Error fetching week details:', error);
     }
   };
 
@@ -361,8 +384,8 @@ export default function AdminPage() {
             </div>
 
             {/* Participants List */}
-            <div className="admin-card">
-              <h3 style={{ margin: '0 0 1rem 0' }}>👥 Participants ({lotteryParticipants.length})</h3>
+            <div className="admin-card" style={{ marginBottom: '1rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0' }}>👥 This Week's Participants ({lotteryParticipants.length})</h3>
               {lotteryParticipants.length === 0 ? (
                 <p style={{ color: '#666' }}>No participants yet this week.</p>
               ) : (
@@ -399,6 +422,63 @@ export default function AdminPage() {
                         <td></td>
                       </tr>
                     </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* HISTORY SECTION */}
+            <div className="admin-card" style={{ marginTop: '1.5rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0' }}>📜 Pool History (All Weeks)</h3>
+              {lotteryHistory.length === 0 ? (
+                <p style={{ color: '#666' }}>No history yet.</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Week</th>
+                        <th>Status</th>
+                        <th>Participants</th>
+                        <th>Total</th>
+                        <th>Numbers</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lotteryHistory.map((week) => (
+                        <tr key={week.id} style={{ background: week.id === lotteryPoolWeek?.id ? '#fef3c7' : 'transparent' }}>
+                          <td>
+                            <strong>{new Date(week.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</strong>
+                            <span style={{ color: '#666' }}> - </span>
+                            <strong>{new Date(week.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</strong>
+                            {week.id === lotteryPoolWeek?.id && <span style={{ marginLeft: '0.5rem', background: '#22c55e', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem' }}>CURRENT</span>}
+                          </td>
+                          <td>
+                            <span style={{
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.8rem',
+                              background: week.status === 'open' ? '#dcfce7' : week.status === 'numbers_sent' ? '#dbeafe' : '#f3f4f6',
+                              color: week.status === 'open' ? '#166534' : week.status === 'numbers_sent' ? '#1d4ed8' : '#666'
+                            }}>
+                              {week.status?.toUpperCase()}
+                            </span>
+                          </td>
+                          <td style={{ fontWeight: 'bold' }}>{week.total_participants || 0}</td>
+                          <td style={{ color: '#22c55e', fontWeight: 'bold' }}>${(week.total_amount || 0).toFixed(2)}</td>
+                          <td>{week.admin_numbers ? '✅' : '—'}</td>
+                          <td>
+                            <button 
+                              onClick={() => viewHistoryWeek(week)}
+                              style={{ padding: '0.4rem 0.8rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+                            >
+                              👁️ View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
                   </table>
                 </div>
               )}
@@ -688,6 +768,98 @@ export default function AdminPage() {
             <div style={{display:'flex',gap:'1rem',marginTop:'1.5rem'}}>
               <button onClick={closeModal} style={{flex:1,padding:'0.75rem',border:'1px solid #ddd',borderRadius:'8px',background:'white',cursor:'pointer'}}>Cancel</button>
               <button onClick={handleSave} disabled={saving} style={{...btnPrimary,flex:1,opacity:saving?0.7:1}}>{saving?'Saving...':'Save'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LOTTERY HISTORY MODAL */}
+      {showHistoryModal && selectedHistoryWeek && (
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}}>
+          <div style={{background:'white',borderRadius:'12px',padding:'2rem',width:'95%',maxWidth:'900px',maxHeight:'90vh',overflow:'auto'}}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0 }}>
+                📜 Pool Week: {new Date(selectedHistoryWeek.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(selectedHistoryWeek.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </h2>
+              <button onClick={() => setShowHistoryModal(false)} style={{ padding: '0.5rem 1rem', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', background: 'white' }}>✕ Close</button>
+            </div>
+
+            {/* Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.8rem', color: '#666' }}>Status</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#22c55e' }}>{selectedHistoryWeek.status?.toUpperCase()}</div>
+              </div>
+              <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.8rem', color: '#666' }}>Participants</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#92400e' }}>{historyParticipants.length}</div>
+              </div>
+              <div style={{ background: '#dcfce7', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.8rem', color: '#666' }}>Total</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#166534' }}>${historyParticipants.reduce((sum, p) => sum + (p.amount_paid || 0), 0).toFixed(2)}</div>
+              </div>
+            </div>
+
+            {/* Numbers */}
+            {selectedHistoryWeek.admin_numbers && (
+              <div style={{ background: '#fef3c7', border: '2px solid #fcd34d', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                <h3 style={{ color: '#92400e', margin: '0 0 1rem 0' }}>🎱 Lottery Numbers</h3>
+                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.95rem', background: 'white', padding: '1rem', borderRadius: '8px' }}>{selectedHistoryWeek.admin_numbers}</pre>
+              </div>
+            )}
+
+            {/* Participants Table */}
+            <div>
+              <h3 style={{ margin: '0 0 1rem 0' }}>👥 Participants</h3>
+              {historyParticipants.length === 0 ? (
+                <p style={{ color: '#666' }}>No participants in this week.</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Their Numbers</th>
+                        <th>Paid</th>
+                        <th>Joined</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {historyParticipants.map((p, i) => (
+                        <tr key={p.id}>
+                          <td>{i + 1}</td>
+                          <td><strong>{p.first_name} {p.last_name}</strong></td>
+                          <td>{p.email}</td>
+                          <td>{p.phone || '-'}</td>
+                          <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{p.user_numbers ? JSON.parse(p.user_numbers) : '-'}</td>
+                          <td style={{ color: '#22c55e', fontWeight: 'bold' }}>${(p.amount_paid || 0).toFixed(2)}</td>
+                          <td style={{ fontSize: '0.85rem' }}>{formatDate(p.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Export Button */}
+            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+              <button 
+                onClick={() => {
+                  const data = historyParticipants.map((p, i) => 
+                    `${i+1}. ${p.first_name} ${p.last_name} | ${p.email} | ${p.phone || '-'} | $${p.amount_paid}`
+                  ).join('\n');
+                  const full = `Week: ${new Date(selectedHistoryWeek.week_start).toLocaleDateString()} - ${new Date(selectedHistoryWeek.week_end).toLocaleDateString()}\n\nNumbers:\n${selectedHistoryWeek.admin_numbers || 'Not set'}\n\nParticipants:\n${data}`;
+                  navigator.clipboard.writeText(full);
+                  alert('Copied to clipboard!');
+                }}
+                style={{ padding: '0.75rem 1.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                📋 Copy All Data
+              </button>
             </div>
           </div>
         </div>
