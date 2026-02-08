@@ -232,6 +232,44 @@ export default function HomePage() {
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
 
+        {/* 📚 TORAH LEARNING BANNER */}
+        <section style={{ marginBottom: '1.5rem' }}>
+          <a href="https://www.torahmates.org/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'block' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 100%)',
+              borderRadius: '20px',
+              padding: '1.5rem 2rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              border: '2px solid rgba(255, 255, 255, 0.2)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <img src="https://www.oorah.org/img/logos/TMLogo.png" alt="TorahMates" style={{ height: '50px', objectFit: 'contain' }} />
+                <div>
+                  <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', color: 'white', fontWeight: 'bold' }}>Want to Learn Torah?</h3>
+                  <p style={{ margin: 0, color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem' }}>Free one-on-one learning with a partner • Any level • Any topic</p>
+                </div>
+              </div>
+              <div style={{
+                background: 'linear-gradient(135deg, #ffd700, #f59e0b)',
+                color: '#1e3a5f',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '25px',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                whiteSpace: 'nowrap'
+              }}>
+                Sign Up Free →
+              </div>
+            </div>
+          </a>
+        </section>
+
         {/* 🎰 LOTTERY POOL BANNER */}
         <section style={{ marginBottom: '2.5rem' }}>
           <Link href="/lottery" style={{ textDecoration: 'none', display: 'block' }}>
