@@ -142,12 +142,12 @@ export default function LotteryJoinPage() {
       // @ts-ignore
       const card = window.squareCard;
       if (!card) {
-        throw new Error('Payment not initialized');
+        throw new Error('Payment not initialized. Please refresh the page.');
       }
 
       const result = await card.tokenize();
       if (result.status !== 'OK') {
-        throw new Error(result.errors?.[0]?.message || 'Payment failed');
+        throw new Error(result.errors?.[0]?.message || 'Card validation failed');
       }
 
       // Send to our API
@@ -165,19 +165,28 @@ export default function LotteryJoinPage() {
         }),
       });
 
-      const data = await response.json();
+      // Handle response safely
+      let data;
+      const text = await response.text();
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (parseError) {
+        console.error('Response parse error:', text);
+        throw new Error('Server error. Please try again.');
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Payment failed');
       }
 
       setResultData({
-        referralCode: data.user.referralCode,
-        poolWeekEnd: data.entry.poolWeekEnd,
+        referralCode: data.user?.referralCode || '',
+        poolWeekEnd: data.entry?.poolWeekEnd || '',
       });
       setSuccess(true);
 
     } catch (err: any) {
+      console.error('Payment error:', err);
       setError(err.message || 'Payment failed. Please try again.');
     } finally {
       setLoading(false);
