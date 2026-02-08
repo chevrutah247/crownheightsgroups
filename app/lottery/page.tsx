@@ -8,6 +8,15 @@ import EmergencyBar from '@/components/EmergencyBar';
 
 export default function LotteryPage() {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [hasAccess, setHasAccess] = useState(false);
+
+  // Check if user has lottery access (stored email)
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('lottery_email');
+    if (storedEmail) {
+      setHasAccess(true);
+    }
+  }, []);
 
   // Countdown to Thursday 10 PM EST
   useEffect(() => {
@@ -75,6 +84,27 @@ export default function LotteryPage() {
       
       <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem' }}>
         
+        {/* Dashboard Link for members */}
+        {hasAccess && (
+          <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
+            <Link href="/lottery/dashboard" style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem 1.25rem',
+              background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+              color: 'white',
+              borderRadius: '25px',
+              textDecoration: 'none',
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+              boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)'
+            }}>
+              👤 My Dashboard
+            </Link>
+          </div>
+        )}
+
         {/* Hero Section */}
         <section style={{ textAlign: 'center', marginBottom: '3rem' }}>
           

@@ -8,19 +8,21 @@ import EmergencyBar from '@/components/EmergencyBar';
 
 export default function LotteryDashboardPage() {
   const [email, setEmail] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [userData, setUserData] = useState<any>(null);
   const [entries, setEntries] = useState<any[]>([]);
   const [currentPool, setCurrentPool] = useState<any>(null);
+  const [hasPaidThisWeek, setHasPaidThisWeek] = useState(false);
 
-  // Check if user email is stored
+  // Check if user has access on load
   useEffect(() => {
     const storedEmail = localStorage.getItem('lottery_email');
     if (storedEmail) {
       setEmail(storedEmail);
       fetchUserData(storedEmail);
+    } else {
+      setLoading(false);
     }
   }, []);
 
@@ -39,12 +41,19 @@ export default function LotteryDashboardPage() {
       setUserData(data.user);
       setEntries(data.entries || []);
       setCurrentPool(data.currentPool);
-      setIsLoggedIn(true);
+      
+      // Check if user has paid for CURRENT week
+      const currentWeekEntry = (data.entries || []).find(
+        (e: any) => e.pool_week_id === data.currentPool?.id && e.status === 'paid'
+      );
+      setHasPaidThisWeek(!!currentWeekEntry);
+      
+      // Update localStorage
       localStorage.setItem('lottery_email', userEmail);
       
     } catch (err: any) {
       setError(err.message);
-      setIsLoggedIn(false);
+      localStorage.removeItem('lottery_email');
     } finally {
       setLoading(false);
     }
@@ -59,10 +68,10 @@ export default function LotteryDashboardPage() {
 
   const handleLogout = () => {
     localStorage.removeItem('lottery_email');
-    setIsLoggedIn(false);
     setUserData(null);
     setEntries([]);
     setEmail('');
+    setHasPaidThisWeek(false);
   };
 
   const copyReferralLink = () => {
@@ -80,8 +89,17 @@ export default function LotteryDashboardPage() {
     });
   };
 
-  // Not logged in - show login form
-  if (!isLoggedIn) {
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'white', fontSize: '1.2rem' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  // Not logged in OR no payment this week - show login/payment required
+  if (!userData || !hasPaidThisWeek) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)' }}>
         <EmergencyBar />
@@ -98,70 +116,124 @@ export default function LotteryDashboardPage() {
               🎰 Lottery Dashboard
             </h1>
             
-            <p style={{ textAlign: 'center', color: '#666', marginBottom: '2rem' }}>
-              Enter your email to view your lottery pool history
-            </p>
-
-            <form onSubmit={handleLogin}>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Your email address"
-                required
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  fontSize: '1.1rem',
-                  borderRadius: '12px',
-                  border: '2px solid #e5e7eb',
-                  marginBottom: '1rem',
-                  boxSizing: 'border-box'
-                }}
-              />
-
-              {error && (
+            {userData && !hasPaidThisWeek ? (
+              // User exists but hasn't paid this week
+              <>
                 <div style={{
-                  background: '#fee2e2',
-                  color: '#dc2626',
-                  padding: '1rem',
-                  borderRadius: '8px',
-                  marginBottom: '1rem',
-                  textAlign: 'center'
-                }}>
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  background: loading ? '#9ca3af' : 'linear-gradient(135deg, #ffd700, #f59e0b)',
-                  color: '#1e3a5f',
-                  border: 'none',
+                  background: '#fef3c7',
+                  border: '2px solid #fcd34d',
                   borderRadius: '12px',
-                  fontSize: '1.1rem',
+                  padding: '1.5rem',
+                  textAlign: 'center',
+                  marginBottom: '1.5rem'
+                }}>
+                  <p style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: '#92400e' }}>
+                    👋 Welcome back, <strong>{userData.first_name}</strong>!
+                  </p>
+                  <p style={{ margin: 0, color: '#a16207' }}>
+                    You need to join this week's pool to access the dashboard.
+                  </p>
+                </div>
+                
+                <Link href="/lottery/join" style={{
+                  display: 'block',
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #ffd700, #f59e0b)',
+                  color: '#1e3a5f',
+                  padding: '1rem',
+                  borderRadius: '12px',
+                  textDecoration: 'none',
                   fontWeight: 'bold',
-                  cursor: loading ? 'wait' : 'pointer'
-                }}
-              >
-                {loading ? 'Loading...' : 'View My Dashboard'}
-              </button>
-            </form>
+                  fontSize: '1.1rem',
+                  marginBottom: '1rem'
+                }}>
+                  🎟️ Join This Week's Pool - $3
+                </Link>
 
-            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-              <p style={{ color: '#666', marginBottom: '1rem' }}>Not a member yet?</p>
-              <Link href="/lottery/join" style={{
-                color: '#3b82f6',
-                fontWeight: 'bold',
-                textDecoration: 'none'
-              }}>
-                Join This Week's Pool →
-              </Link>
-            </div>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: 'transparent',
+                    color: '#666',
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Use different email
+                </button>
+              </>
+            ) : (
+              // No user - show email form
+              <>
+                <p style={{ textAlign: 'center', color: '#666', marginBottom: '2rem' }}>
+                  Enter your email to view your lottery pool dashboard
+                </p>
+
+                <form onSubmit={handleLogin}>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Your email address"
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '1rem',
+                      fontSize: '1.1rem',
+                      borderRadius: '12px',
+                      border: '2px solid #e5e7eb',
+                      marginBottom: '1rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+
+                  {error && (
+                    <div style={{
+                      background: '#fee2e2',
+                      color: '#dc2626',
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      marginBottom: '1rem',
+                      textAlign: 'center'
+                    }}>
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    style={{
+                      width: '100%',
+                      padding: '1rem',
+                      background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      marginBottom: '1rem'
+                    }}
+                  >
+                    Check My Status
+                  </button>
+                </form>
+
+                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                  <p style={{ color: '#666', marginBottom: '1rem' }}>Not a member yet?</p>
+                  <Link href="/lottery/join" style={{
+                    color: '#3b82f6',
+                    fontWeight: 'bold',
+                    textDecoration: 'none'
+                  }}>
+                    Join This Week's Pool →
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </main>
         
@@ -170,7 +242,7 @@ export default function LotteryDashboardPage() {
     );
   }
 
-  // Logged in - show dashboard
+  // Logged in AND paid this week - show full dashboard
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)' }}>
       <EmergencyBar />
@@ -212,6 +284,24 @@ export default function LotteryDashboardPage() {
           </button>
         </div>
 
+        {/* This Week Status */}
+        <div style={{
+          background: '#dcfce7',
+          border: '2px solid #86efac',
+          borderRadius: '16px',
+          padding: '1.5rem',
+          marginBottom: '1.5rem',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>✅</div>
+          <div style={{ color: '#166534', fontWeight: 'bold', fontSize: '1.1rem' }}>
+            You're in this week's pool!
+          </div>
+          <div style={{ color: '#166534', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+            Pool closes: {currentPool?.week_end ? formatDate(currentPool.week_end) : 'TBD'}
+          </div>
+        </div>
+
         {/* Stats Row */}
         <div style={{
           display: 'grid',
@@ -250,11 +340,39 @@ export default function LotteryDashboardPage() {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b' }}>
-              ${(entries.reduce((sum, e) => sum + (e.amount_paid || 0), 0)).toFixed(2)}
+              {currentPool?.total_participants || 0}
             </div>
-            <div style={{ color: '#666', fontSize: '0.9rem' }}>Total Contributed</div>
+            <div style={{ color: '#666', fontSize: '0.9rem' }}>This Week's Players</div>
           </div>
         </div>
+
+        {/* Current Numbers (if sent) */}
+        {currentPool?.admin_numbers && (
+          <div style={{
+            background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+            border: '2px solid #fcd34d',
+            borderRadius: '16px',
+            padding: '1.5rem',
+            marginBottom: '1.5rem'
+          }}>
+            <h3 style={{ color: '#92400e', margin: '0 0 1rem 0' }}>🎱 This Week's Numbers</h3>
+            <pre style={{ 
+              margin: 0, 
+              whiteSpace: 'pre-wrap', 
+              fontFamily: 'monospace',
+              fontSize: '1rem',
+              color: '#1e3a5f',
+              background: 'white',
+              padding: '1rem',
+              borderRadius: '8px'
+            }}>
+              {currentPool.admin_numbers}
+            </pre>
+            <p style={{ color: '#92400e', fontSize: '0.85rem', marginTop: '1rem', marginBottom: 0 }}>
+              🔵 Mega Millions: Tue & Fri 11 PM ET | 🔴 Powerball: Mon, Wed & Sat 10:59 PM ET
+            </p>
+          </div>
+        )}
 
         {/* Referral Section */}
         <div style={{
@@ -265,10 +383,10 @@ export default function LotteryDashboardPage() {
           marginBottom: '1.5rem'
         }}>
           <h3 style={{ color: '#22c55e', margin: '0 0 1rem 0' }}>
-            🎁 Your Referral Link
+            🎁 Earn $1 Credit - Refer Friends!
           </h3>
           <p style={{ color: '#94a3b8', marginBottom: '1rem', fontSize: '0.9rem' }}>
-            Share this link with friends. You'll get $1 credit for each friend who joins!
+            For each friend who joins, you get $1 off your next entry!
           </p>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <input
@@ -303,98 +421,6 @@ export default function LotteryDashboardPage() {
           </div>
         </div>
 
-        {/* Current Pool Status */}
-        {currentPool && (
-          <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            padding: '1.5rem',
-            marginBottom: '1.5rem'
-          }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: '#1e3a5f' }}>
-              🎯 Current Week's Pool
-            </h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-              <div>
-                <div style={{ color: '#666', fontSize: '0.85rem' }}>Status</div>
-                <div style={{ 
-                  fontWeight: 'bold',
-                  color: currentPool.status === 'open' ? '#22c55e' : '#f59e0b'
-                }}>
-                  {currentPool.status?.toUpperCase()}
-                </div>
-              </div>
-              <div>
-                <div style={{ color: '#666', fontSize: '0.85rem' }}>Participants</div>
-                <div style={{ fontWeight: 'bold' }}>{currentPool.total_participants || 0}</div>
-              </div>
-              <div>
-                <div style={{ color: '#666', fontSize: '0.85rem' }}>Pool Total</div>
-                <div style={{ fontWeight: 'bold', color: '#22c55e' }}>
-                  ${(currentPool.total_amount || 0).toFixed(2)}
-                </div>
-              </div>
-              <div>
-                <div style={{ color: '#666', fontSize: '0.85rem' }}>Closes</div>
-                <div style={{ fontWeight: 'bold' }}>{formatDate(currentPool.week_end)}</div>
-              </div>
-            </div>
-
-            {currentPool.admin_numbers && (
-              <div style={{
-                background: '#fef3c7',
-                borderRadius: '8px',
-                padding: '1rem',
-                marginTop: '1rem'
-              }}>
-                <div style={{ fontWeight: 'bold', color: '#92400e', marginBottom: '0.5rem' }}>
-                  🎱 This Week's Numbers:
-                </div>
-                <pre style={{ 
-                  margin: 0, 
-                  whiteSpace: 'pre-wrap', 
-                  fontFamily: 'monospace',
-                  fontSize: '0.9rem',
-                  color: '#1e3a5f'
-                }}>
-                  {currentPool.admin_numbers}
-                </pre>
-              </div>
-            )}
-
-            {!entries.find(e => e.pool_week_id === currentPool.id) && currentPool.status === 'open' && (
-              <Link href="/lottery/join" style={{
-                display: 'block',
-                textAlign: 'center',
-                background: 'linear-gradient(135deg, #ffd700, #f59e0b)',
-                color: '#1e3a5f',
-                padding: '1rem',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                fontWeight: 'bold',
-                marginTop: '1rem'
-              }}>
-                🎟️ Join This Week's Pool
-              </Link>
-            )}
-
-            {entries.find(e => e.pool_week_id === currentPool.id) && (
-              <div style={{
-                background: '#dcfce7',
-                color: '#166534',
-                padding: '1rem',
-                borderRadius: '8px',
-                textAlign: 'center',
-                marginTop: '1rem',
-                fontWeight: 'bold'
-              }}>
-                ✅ You're in this week's pool!
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Entry History */}
         <div style={{
           background: 'white',
@@ -402,25 +428,25 @@ export default function LotteryDashboardPage() {
           padding: '1.5rem'
         }}>
           <h3 style={{ margin: '0 0 1rem 0', color: '#1e3a5f' }}>
-            📜 Your Entry History
+            📜 Your History
           </h3>
           
           {entries.length === 0 ? (
             <p style={{ color: '#666', textAlign: 'center', padding: '2rem 0' }}>
-              No entries yet. Join this week's pool to get started!
+              No entries yet.
             </p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                    <th style={{ padding: '0.75rem', textAlign: 'left', color: '#666' }}>Week</th>
+                    <th style={{ padding: '0.75rem', textAlign: 'left', color: '#666' }}>Date</th>
                     <th style={{ padding: '0.75rem', textAlign: 'left', color: '#666' }}>Paid</th>
                     <th style={{ padding: '0.75rem', textAlign: 'left', color: '#666' }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {entries.map((entry, i) => (
+                  {entries.map((entry) => (
                     <tr key={entry.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                       <td style={{ padding: '0.75rem' }}>
                         {formatDate(entry.created_at)}

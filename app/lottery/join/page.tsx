@@ -183,6 +183,11 @@ export default function LotteryJoinPage() {
         referralCode: data.user?.referralCode || '',
         poolWeekEnd: data.entry?.poolWeekEnd || '',
       });
+      
+      // Save email to localStorage for dashboard access
+      localStorage.setItem('lottery_email', formData.email.toLowerCase());
+      localStorage.setItem('lottery_paid_week', data.entry?.poolWeekEnd || '');
+      
       setSuccess(true);
 
     } catch (err: any) {
