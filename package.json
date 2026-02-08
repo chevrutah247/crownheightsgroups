@@ -9,13 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.78.0",
     "@upstash/redis": "^1.36.1",
     "next": "14.2.0",
     "nodemailer": "^6.10.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "resend": "^6.4.2",
-    "rss-parser": "^3.13.0"
+    "rss-parser": "^3.13.0",
+    "square": "^44.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
