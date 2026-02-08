@@ -1,18 +1,44 @@
 // app/api/lottery/payment/route.ts
 import { NextResponse } from 'next/server';
-import { Client, Environment } from 'square';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
-
-const squareClient = new Client({
-  accessToken: process.env.SQUARE_ACCESS_TOKEN,
-  environment: Environment.Production,
-});
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+// Square API via fetch (no SDK needed)
+async function createSquarePayment(sourceId: string, amountCents: number, email: string, note: string) {
+  const response = await fetch('https://connect.squareup.com/v2/payments', {
+    method: 'POST',
+    headers: {
+      'Square-Version': '2024-01-18',
+      'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      source_id: sourceId,
+      idempotency_key: randomUUID(),
+      location_id: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID,
+      amount_money: {
+        amount: amountCents,
+        currency: 'USD',
+      },
+      note: note,
+      buyer_email_address: email,
+    }),
+  });
+
+  const data = await response.json();
+  
+  if (!response.ok) {
+    const errorMessage = data.errors?.[0]?.detail || 'Payment failed';
+    throw new Error(errorMessage);
+  }
+
+  return data.payment;
+}
 
 export async function POST(request: Request) {
   try {
@@ -190,32 +216,20 @@ export async function POST(request: Request) {
       try {
         console.log('Processing Square payment:', amountToPay, 'cents');
         
-        const { result } = await squareClient.paymentsApi.createPayment({
+        const payment = await createSquarePayment(
           sourceId,
-          idempotencyKey: randomUUID(),
-          locationId: process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID!, // REQUIRED!
-          amountMoney: {
-            amount: BigInt(amountToPay),
-            currency: 'USD',
-          },
-          note: `Lottery Pool Entry - Week ${poolWeek.id}`,
-          buyerEmailAddress: email,
-        });
+          amountToPay,
+          email,
+          `Lottery Pool Entry - Week ${poolWeek.id}`
+        );
 
-        paymentId = result.payment?.id;
+        paymentId = payment.id;
         console.log('Square payment successful:', paymentId);
 
-        if (!paymentId) {
-          return NextResponse.json(
-            { error: 'Payment was not completed' },
-            { status: 400 }
-          );
-        }
       } catch (paymentError: any) {
         console.error('Square payment error:', paymentError);
-        const errorMessage = paymentError?.errors?.[0]?.detail || paymentError.message || 'Payment processing failed';
         return NextResponse.json(
-          { error: errorMessage },
+          { error: paymentError.message || 'Payment processing failed' },
           { status: 400 }
         );
       }

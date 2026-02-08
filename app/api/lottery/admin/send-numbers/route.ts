@@ -15,10 +15,7 @@ export async function POST(request: Request) {
     const { poolWeekId } = await request.json();
 
     if (!poolWeekId) {
-      return NextResponse.json(
-        { error: 'Pool week ID required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Pool week ID required' }, { status: 400 });
     }
 
     // Get pool week with numbers
@@ -29,58 +26,52 @@ export async function POST(request: Request) {
       .single();
 
     if (poolError || !poolWeek) {
-      return NextResponse.json(
-        { error: 'Pool week not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Pool week not found' }, { status: 404 });
     }
 
     if (!poolWeek.admin_numbers) {
-      return NextResponse.json(
-        { error: 'No numbers entered yet' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No numbers entered yet' }, { status: 400 });
     }
 
     // Get all participants
     const { data: entries, error: entriesError } = await supabase
       .from('pool_entries')
       .select(`
+        *,
         lottery_users (
-          first_name,
-          email
+          email,
+          first_name
         )
       `)
       .eq('pool_week_id', poolWeekId)
       .eq('status', 'paid');
 
     if (entriesError) {
-      console.error('Entries error:', entriesError);
-      return NextResponse.json(
-        { error: 'Failed to get participants' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: entriesError.message }, { status: 500 });
+    }
+
+    if (!entries || entries.length === 0) {
+      return NextResponse.json({ error: 'No participants to email' }, { status: 400 });
     }
 
     // Format numbers for email
     const numbersHtml = poolWeek.admin_numbers
       .split('\n')
-      .map((line: string) => `<p style="margin: 4px 0; font-family: monospace; font-size: 16px;">${line}</p>`)
+      .filter((line: string) => line.trim())
+      .map((line: string) => `<div style="font-family: monospace; padding: 8px; background: #fff; border-radius: 4px; margin-bottom: 4px;">${line}</div>`)
       .join('');
 
     // Send emails to all participants
     let sent = 0;
-    const errors: string[] = [];
-
-    for (const entry of entries || []) {
-      const user = (entry as any).lottery_users;
+    for (const entry of entries) {
+      const user = entry.lottery_users;
       if (!user?.email) continue;
 
       try {
         await resend.emails.send({
           from: 'Lottery Pool <lottery@crownheightsgroups.com>',
           to: user.email,
-          subject: '🎟️ Your Lottery Numbers for This Week!',
+          subject: '🎰 Your Lottery Numbers This Week!',
           html: `
             <!DOCTYPE html>
             <html>
@@ -108,8 +99,8 @@ export async function POST(request: Request) {
 
                 <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 15px; margin: 20px 0;">
                   <p style="color: #166534; margin: 0; font-size: 14px;">
-                    ✅ <strong>${poolWeek.total_participants}</strong> participants in this week's pool<br>
-                    💰 Total pool: <strong>$${poolWeek.total_amount?.toFixed(2)}</strong>
+                    ✅ <strong>${poolWeek.total_participants || entries.length}</strong> participants in this week's pool<br>
+                    💰 Total pool: <strong>$${(poolWeek.total_amount || entries.length * 3).toFixed(2)}</strong>
                   </p>
                 </div>
 
@@ -132,35 +123,24 @@ export async function POST(request: Request) {
               </div>
             </body>
             </html>
-          `
+          `,
         });
         sent++;
       } catch (emailError) {
-        console.error(`Failed to send to ${user.email}:`, emailError);
-        errors.push(user.email);
+        console.error('Failed to send to:', user.email, emailError);
       }
     }
 
     // Update pool status
     await supabase
       .from('pool_weeks')
-      .update({ 
-        status: 'numbers_sent',
-        updated_at: new Date().toISOString()
-      })
+      .update({ status: 'numbers_sent' })
       .eq('id', poolWeekId);
 
-    return NextResponse.json({
-      success: true,
-      sent,
-      errors: errors.length > 0 ? errors : undefined
-    });
+    return NextResponse.json({ success: true, sent });
 
-  } catch (error) {
-    console.error('Send numbers error:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    console.error('Error sending numbers:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
