@@ -249,7 +249,19 @@ export default function HomePage() {
               transition: 'transform 0.2s, box-shadow 0.2s',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ fontSize: '2.5rem' }}>🎰</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <img 
+                    src="https://upload.wikimedia.org/wikipedia/en/thumb/6/6a/Mega_Millions_Lottery_logo.svg/200px-Mega_Millions_Lottery_logo.svg.png" 
+                    alt="Mega Millions" 
+                    style={{ height: '35px', objectFit: 'contain' }}
+                  />
+                  <span style={{ color: '#ffd700', fontSize: '1.2rem', fontWeight: 'bold' }}>+</span>
+                  <img 
+                    src="https://upload.wikimedia.org/wikipedia/en/thumb/e/e6/Powerball_logo.svg/200px-Powerball_logo.svg.png" 
+                    alt="Powerball" 
+                    style={{ height: '35px', objectFit: 'contain' }}
+                  />
+                </div>
                 <div>
                   <h3 style={{ 
                     color: '#ffd700', 

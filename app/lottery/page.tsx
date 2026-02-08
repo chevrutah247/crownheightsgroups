@@ -83,22 +83,20 @@ export default function LotteryPage() {
             display: 'flex', 
             justifyContent: 'center', 
             alignItems: 'center', 
-            gap: '2rem', 
+            gap: '1.5rem', 
             marginBottom: '1.5rem',
             flexWrap: 'wrap'
           }}>
             <img 
-              src="https://www.megamillions.com/assets/img/logo-megamillions-white.png" 
+              src="https://upload.wikimedia.org/wikipedia/en/thumb/6/6a/Mega_Millions_Lottery_logo.svg/200px-Mega_Millions_Lottery_logo.svg.png" 
               alt="Mega Millions" 
               style={{ height: '50px', objectFit: 'contain' }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
-            <span style={{ color: '#ffd700', fontSize: '2rem' }}>+</span>
+            <span style={{ color: '#ffd700', fontSize: '2rem', fontWeight: 'bold' }}>+</span>
             <img 
-              src="https://www.powerball.com/assets/img/pb-logo--white.png" 
+              src="https://upload.wikimedia.org/wikipedia/en/thumb/e/e6/Powerball_logo.svg/200px-Powerball_logo.svg.png" 
               alt="Powerball" 
               style={{ height: '50px', objectFit: 'contain' }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
           </div>
 
@@ -195,7 +193,7 @@ export default function LotteryPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
             {[
               { step: '1', icon: '📝', title: 'Register & Pay $3', desc: 'Sign up and make your weekly contribution via secure payment' },
-              { step: '2', icon: '🎫', title: 'We Buy Tickets', desc: 'Every Friday we purchase Mega Millions & Powerball tickets for the pool' },
+              { step: '2', icon: '🎫', title: 'We Buy Numbers', desc: 'Every Friday we purchase Mega Millions & Powerball entries for the pool' },
               { step: '3', icon: '💰', title: 'Share Winnings', desc: 'Any winnings are split equally among all participants' }
             ].map(item => (
               <div key={item.step} style={{
@@ -239,7 +237,7 @@ export default function LotteryPage() {
               { icon: '📈', title: 'Better Odds', desc: 'More tickets = more chances to win' },
               { icon: '💵', title: 'Affordable', desc: 'Just $3 per week' },
               { icon: '👥', title: 'Community', desc: 'Win together with neighbors' },
-              { icon: '📸', title: 'Transparent', desc: 'Photos of all tickets sent to you' },
+              { icon: '📸', title: 'Transparent', desc: 'All numbers emailed to you' },
               { icon: '🔒', title: 'Secure', desc: 'Payments via Square' },
               { icon: '📜', title: 'Legal', desc: 'Official LLC, clear terms' }
             ].map(item => (
@@ -296,7 +294,7 @@ export default function LotteryPage() {
             { q: 'What lotteries do we play?', a: 'We play both Mega Millions (Tuesday & Friday drawings) and Powerball (Monday, Wednesday & Saturday drawings).' },
             { q: 'How are winnings distributed?', a: 'All winnings are split equally among participants. Under $50 goes back into tickets. Larger amounts are distributed within 14-30 days.' },
             { q: 'When do I need to join by?', a: 'Registration closes every Thursday at 10:00 PM EST. Tickets are purchased Friday morning.' },
-            { q: 'How will I know the numbers?', a: "After tickets are purchased, you'll receive an email with photos of all tickets and the numbers played." },
+            { q: 'How will I know the numbers?', a: "After entries are purchased, you'll receive an email with all the numbers we're playing that week." },
             { q: 'Is this legal?', a: 'Yes! Lottery pools are legal. We operate as Medinat Hesed LLC with clear terms and conditions.' },
             { q: 'What payment methods are accepted?', a: 'We accept all major credit/debit cards through Square secure payment.' }
           ].map((item, i) => (

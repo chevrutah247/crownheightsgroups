@@ -344,7 +344,7 @@ export default function AdminPage() {
 
             {/* Enter Numbers */}
             <div className="admin-card" style={{ marginBottom: '1rem' }}>
-              <h3 style={{ margin: '0 0 1rem 0' }}>🎱 Enter Ticket Numbers</h3>
+              <h3 style={{ margin: '0 0 1rem 0' }}>🎱 Enter Lottery Numbers</h3>
               <p style={{ color: '#666', marginBottom: '1rem', fontSize: '0.9rem' }}>Enter all lottery numbers you purchased. These will be emailed to all participants.</p>
               <textarea
                 value={adminNumbers}
