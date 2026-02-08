@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-type Tab = 'suggestions' | 'groups' | 'services' | 'businesses' | 'events' | 'campaigns' | 'group-categories' | 'service-categories' | 'locations' | 'users' | 'reports';
+type Tab = 'suggestions' | 'groups' | 'services' | 'businesses' | 'events' | 'campaigns' | 'lottery' | 'group-categories' | 'service-categories' | 'locations' | 'users' | 'reports';
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>('suggestions');
@@ -18,6 +18,13 @@ export default function AdminPage() {
   const [locations, setLocations] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
   const [imagePreview, setImagePreview] = useState<string>('');
+  
+  // Lottery state
+  const [lotteryParticipants, setLotteryParticipants] = useState<any[]>([]);
+  const [lotteryPoolWeek, setLotteryPoolWeek] = useState<any>(null);
+  const [adminNumbers, setAdminNumbers] = useState('');
+  const [sendingEmails, setSendingEmails] = useState(false);
+  const [lotteryMessage, setLotteryMessage] = useState('');
   
   const [groupSuggestions, setGroupSuggestions] = useState<any[]>([]);
   const [serviceSuggestions, setServiceSuggestions] = useState<any[]>([]);
@@ -53,8 +60,58 @@ export default function AdminPage() {
       fetch('/api/suggest-event').then(r => r.json()).then(d => setEventSuggestions(Array.isArray(d) ? d : [])).catch(() => {}),
       fetch('/api/suggest-campaign').then(r => r.json()).then(d => setCampaignSuggestions(Array.isArray(d) ? d : [])).catch(() => {}),
       fetch('/api/location-suggestions').then(r => r.json()).then(d => setLocationSuggestions(Array.isArray(d) ? d : [])).catch(() => {}),
+      fetch('/api/business').then(r => r.json()).then(d => setBusinesses(Array.isArray(d) ? d : [])).catch(() => {}),
+      // Fetch lottery data
+      fetch('/api/lottery/admin/current-pool').then(r => r.json()).then(d => {
+        if (d.poolWeek) {
+          setLotteryPoolWeek(d.poolWeek);
+          setAdminNumbers(d.poolWeek.admin_numbers || '');
+        }
+        if (d.participants) setLotteryParticipants(d.participants);
+      }).catch(() => {}),
     ]);
     setLoading(false);
+  };
+
+  // Lottery functions
+  const saveLotteryNumbers = async () => {
+    try {
+      const res = await fetch('/api/lottery/admin/save-numbers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ poolWeekId: lotteryPoolWeek?.id, adminNumbers }),
+      });
+      if (res.ok) {
+        setLotteryMessage('✅ Numbers saved!');
+        setTimeout(() => setLotteryMessage(''), 3000);
+      }
+    } catch (error) {
+      setLotteryMessage('❌ Error saving numbers');
+    }
+  };
+
+  const sendLotteryNumbersEmail = async () => {
+    if (!confirm('Send numbers to all participants?')) return;
+    setSendingEmails(true);
+    setLotteryMessage('');
+    try {
+      const res = await fetch('/api/lottery/admin/send-numbers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ poolWeekId: lotteryPoolWeek?.id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setLotteryMessage(`✅ Numbers sent to ${data.sent} participants!`);
+        fetchAll();
+      } else {
+        setLotteryMessage(`❌ Error: ${data.error}`);
+      }
+    } catch (error) {
+      setLotteryMessage('❌ Error sending emails');
+    } finally {
+      setSendingEmails(false);
+    }
   };
 
   // Open modal for editing/creating
@@ -63,14 +120,11 @@ export default function AdminPage() {
     setIsNew(!item);
     if (item) {
       setEditingItem({ ...item });
-      // Set image preview if exists
       if (item.imageUrl || item.logoUrl) {
         setImagePreview(item.imageUrl || item.logoUrl);
       }
     } else {
-      // Default values for new items
       if (type === 'group') setEditingItem({ title: '', description: '', whatsappLinks: [''], categoryId: groupCategories[0]?.id || '1', locationId: locations[0]?.id || '1', language: 'English', isPinned: false });
-      // UPDATED: Added address, website, email fields for services
       if (type === 'service') setEditingItem({ name: '', phone: '', description: '', categoryId: serviceCategories[0]?.id || '1', languages: ['English'], isPinned: false, address: '', website: '', email: '', imageUrl: '' });
       if (type === 'event') setEditingItem({ title: '', description: '', date: '', time: '', location: '', organizer: '', contactPhone: '', link: '' });
       if (type === 'campaign') setEditingItem({ title: '', description: '', goal: 0, raised: 0, donationLink: '', organizer: '', status: 'active' });
@@ -83,21 +137,14 @@ export default function AdminPage() {
 
   const closeModal = () => { setShowModal(false); setEditingItem(null); setImagePreview(''); };
 
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert('Image must be less than 2MB');
-        return;
-      }
+      if (file.size > 2 * 1024 * 1024) { alert('Image must be less than 2MB'); return; }
       const reader = new FileReader();
       reader.onload = (ev) => {
         const base64 = ev.target?.result as string;
@@ -111,10 +158,7 @@ export default function AdminPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert('Image must be less than 2MB');
-        return;
-      }
+      if (file.size > 2 * 1024 * 1024) { alert('Image must be less than 2MB'); return; }
       const reader = new FileReader();
       reader.onload = (ev) => {
         const base64 = ev.target?.result as string;
@@ -125,8 +169,6 @@ export default function AdminPage() {
     }
   };
 
-
-  // Save item
   const handleSave = async () => {
     setSaving(true);
     let endpoint = '';
@@ -147,7 +189,6 @@ export default function AdminPage() {
     setSaving(false);
   };
 
-  // Delete item
   const handleDelete = async (type: string, id: string) => {
     if (!confirm('Delete this item?')) return;
     let endpoint = '';
@@ -164,7 +205,6 @@ export default function AdminPage() {
     fetchAll();
   };
 
-  // Approve/Reject suggestions
   const handleApprove = async (type: string, item: any) => {
     await fetch(`/api/suggest-${type}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id, action: 'approve' }) });
     fetchAll();
@@ -175,24 +215,17 @@ export default function AdminPage() {
     fetchAll();
   };
 
-  // Restore broken group
   const handleRestoreGroup = async (group: any) => {
-    await fetch('/api/admin/groups', { 
-      method: 'PUT', 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify({ ...group, status: 'approved', brokenAt: null, brokenLink: null }) 
-    });
+    await fetch('/api/admin/groups', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...group, status: 'approved', brokenAt: null, brokenLink: null }) });
     fetchAll();
   };
 
-  // Toggle user admin
   const handleToggleAdmin = async (user: any) => {
     if (!confirm(`${user.role === 'admin' ? 'Remove' : 'Make'} admin?`)) return;
     await fetch('/api/admin/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email, role: user.role === 'admin' ? 'user' : 'admin' }) });
     fetchAll();
   };
 
-  // Counts
   const pendingGroups = groupSuggestions.filter(s => s.status === 'pending');
   const pendingServices = serviceSuggestions.filter(s => s.status === 'pending');
   const pendingEvents = eventSuggestions.filter(s => s.status === 'pending');
@@ -214,6 +247,7 @@ export default function AdminPage() {
     { id: 'businesses' as Tab, label: 'Businesses', icon: '🏪' },
     { id: 'events' as Tab, label: 'Events', icon: '📅' },
     { id: 'campaigns' as Tab, label: 'Campaigns', icon: '💝' },
+    { id: 'lottery' as Tab, label: 'Lottery Pool', icon: '🎰', badge: lotteryParticipants.length > 0 ? lotteryParticipants.length : undefined },
     { id: 'group-categories' as Tab, label: 'Group Categories', icon: '📁' },
     { id: 'service-categories' as Tab, label: 'Service Types', icon: '🏷️' },
     { id: 'locations' as Tab, label: 'Locations', icon: '📍' },
@@ -221,9 +255,15 @@ export default function AdminPage() {
     { id: 'reports' as Tab, label: 'Reports', icon: '⚠️', badge: reports.length },
   ];
 
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleString('en-US', {
+      weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true
+    });
+  };
+
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
 
-return (
+  return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
         <div className="admin-sidebar-header"><h2 className="admin-sidebar-title">Admin Panel</h2></div>
@@ -232,7 +272,7 @@ return (
             {navItems.map(item => (
               <li key={item.id} className={'admin-nav-item ' + (activeTab === item.id ? 'active' : '')} onClick={() => setActiveTab(item.id)}>
                 <span>{item.icon}</span><span>{item.label}</span>
-                {item.badge ? <span style={{ marginLeft: 'auto', background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem' }}>{item.badge}</span> : null}
+                {item.badge ? <span style={{ marginLeft: 'auto', background: item.id === 'lottery' ? '#ffd700' : '#ef4444', color: item.id === 'lottery' ? '#1e3a5f' : 'white', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 'bold' }}>{item.badge}</span> : null}
               </li>
             ))}
             <li className="admin-nav-item" style={{ marginTop: '2rem' }}>
@@ -259,12 +299,118 @@ return (
           </>
         )}
 
+        {/* LOTTERY POOL */}
+        {activeTab === 'lottery' && (
+          <>
+            <div className="admin-header">
+              <h1 className="admin-title">🎰 Lottery Pool</h1>
+              <Link href="/lottery" target="_blank" style={{ padding: '0.5rem 1rem', background: '#e5e7eb', borderRadius: '8px', textDecoration: 'none', color: '#333' }}>
+                View Public Page →
+              </Link>
+            </div>
+
+            {lotteryMessage && (
+              <div style={{ background: lotteryMessage.includes('✅') ? '#dcfce7' : '#fef2f2', border: `1px solid ${lotteryMessage.includes('✅') ? '#86efac' : '#fecaca'}`, borderRadius: '8px', padding: '1rem', marginBottom: '1rem', color: lotteryMessage.includes('✅') ? '#166534' : '#dc2626' }}>
+                {lotteryMessage}
+              </div>
+            )}
+
+            {/* Pool Week Stats */}
+            <div className="admin-card" style={{ marginBottom: '1rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0' }}>Current Pool Week</h3>
+              {lotteryPoolWeek ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+                  <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#666' }}>Status</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: lotteryPoolWeek.status === 'open' ? '#22c55e' : '#f59e0b' }}>{lotteryPoolWeek.status?.toUpperCase()}</div>
+                  </div>
+                  <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#666' }}>Participants</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#92400e' }}>{lotteryPoolWeek.total_participants || 0}</div>
+                  </div>
+                  <div style={{ background: '#dcfce7', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#666' }}>Pool Total</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#166534' }}>${(lotteryPoolWeek.total_amount || 0).toFixed(2)}</div>
+                  </div>
+                  <div style={{ background: '#f3f4f6', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#666' }}>Closes</div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 'bold' }}>{lotteryPoolWeek.week_end ? formatDate(lotteryPoolWeek.week_end) : '-'}</div>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ color: '#666' }}>No active pool week</p>
+              )}
+            </div>
+
+            {/* Enter Numbers */}
+            <div className="admin-card" style={{ marginBottom: '1rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0' }}>🎱 Enter Ticket Numbers</h3>
+              <p style={{ color: '#666', marginBottom: '1rem', fontSize: '0.9rem' }}>Enter all lottery numbers you purchased. These will be emailed to all participants.</p>
+              <textarea
+                value={adminNumbers}
+                onChange={(e) => setAdminNumbers(e.target.value)}
+                placeholder={`Mega Millions:\n02 - 15 - 34 - 48 - 67 (Mega: 12)\n05 - 22 - 33 - 45 - 70 (Mega: 08)\n\nPowerball:\n10 - 24 - 35 - 52 - 61 (PB: 05)`}
+                style={{ width: '100%', minHeight: '150px', padding: '1rem', fontFamily: 'monospace', fontSize: '0.95rem', border: '1px solid #ddd', borderRadius: '8px', marginBottom: '1rem' }}
+              />
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button onClick={saveLotteryNumbers} style={{ ...btnPrimary, background: '#3b82f6' }}>💾 Save Numbers</button>
+                <button onClick={sendLotteryNumbersEmail} disabled={sendingEmails || !adminNumbers} style={{ ...btnPrimary, background: sendingEmails ? '#9ca3af' : '#22c55e', cursor: sendingEmails ? 'wait' : 'pointer' }}>
+                  {sendingEmails ? '⏳ Sending...' : '📧 Send to All Participants'}
+                </button>
+              </div>
+            </div>
+
+            {/* Participants List */}
+            <div className="admin-card">
+              <h3 style={{ margin: '0 0 1rem 0' }}>👥 Participants ({lotteryParticipants.length})</h3>
+              {lotteryParticipants.length === 0 ? (
+                <p style={{ color: '#666' }}>No participants yet this week.</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Their Numbers</th>
+                        <th>Paid</th>
+                        <th>Joined</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lotteryParticipants.map((p, i) => (
+                        <tr key={p.id}>
+                          <td>{i + 1}</td>
+                          <td><strong>{p.first_name} {p.last_name}</strong></td>
+                          <td>{p.email}</td>
+                          <td>{p.phone || '-'}</td>
+                          <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{p.user_numbers ? JSON.parse(p.user_numbers) : '-'}</td>
+                          <td style={{ color: '#22c55e', fontWeight: 'bold' }}>${(p.amount_paid || 0).toFixed(2)}</td>
+                          <td style={{ fontSize: '0.85rem' }}>{formatDate(p.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ background: '#f3f4f6', fontWeight: 'bold' }}>
+                        <td colSpan={5}>Total</td>
+                        <td style={{ color: '#22c55e' }}>${lotteryParticipants.reduce((sum, p) => sum + (p.amount_paid || 0), 0).toFixed(2)}</td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
         {/* GROUPS */}
         {activeTab === 'groups' && (
           <>
             <div className="admin-header"><h1 className="admin-title">Groups ({groups.length})</h1><button style={btnPrimary} onClick={() => openModal('group')}>+ Add Group</button></div>
             
-            {/* Broken Links Alert */}
             {brokenGroups.length > 0 && (
               <div className="admin-card" style={{ marginBottom: '1rem', background: '#fef2f2', border: '1px solid #fecaca' }}>
                 <h3 style={{ color: '#dc2626', margin: '0 0 1rem 0' }}>⚠️ Broken Links ({brokenGroups.length})</h3>
@@ -300,7 +446,7 @@ return (
           </>
         )}
 
-        {/* SERVICES - UPDATED with image column */}
+        {/* SERVICES */}
         {activeTab === 'services' && (
           <>
             <div className="admin-header"><h1 className="admin-title">Services ({services.length})</h1><button style={btnPrimary} onClick={() => openModal('service')}>+ Add Service</button></div>
@@ -478,39 +624,27 @@ return (
             <h2>{isNew ? 'Add' : 'Edit'} {modalType.replace('-', ' ')}</h2>
             <div style={{display:'flex',flexDirection:'column',gap:'1rem',marginTop:'1rem'}}>
               
-              {/* Group fields */}
               {modalType === 'group' && (<>
                 <div><label style={labelStyle}>Title *</label><input style={inputStyle} value={editingItem.title||''} onChange={e=>setEditingItem({...editingItem,title:e.target.value})} /></div>
                 <div><label style={labelStyle}>Description</label><textarea style={inputStyle} rows={3} value={editingItem.description||''} onChange={e=>setEditingItem({...editingItem,description:e.target.value})} /></div>
                 <div><label style={labelStyle}>WhatsApp Links</label>{(editingItem.whatsappLinks||['']).map((link:string,i:number)=>(<div key={i} style={{display:'flex',gap:'0.5rem',marginBottom:'0.5rem'}}><input style={{...inputStyle,flex:1}} value={link} onChange={e=>{const links=[...(editingItem.whatsappLinks||[''])];links[i]=e.target.value;setEditingItem({...editingItem,whatsappLinks:links});}} placeholder="https://chat.whatsapp.com/..." />{(editingItem.whatsappLinks||[]).length>1&&<button onClick={()=>{const links=(editingItem.whatsappLinks||[]).filter((_:any,idx:number)=>idx!==i);setEditingItem({...editingItem,whatsappLinks:links});}} style={{padding:'0.5rem',border:'1px solid #ddd',borderRadius:'4px',cursor:'pointer'}}>✕</button>}</div>))}<button onClick={()=>setEditingItem({...editingItem,whatsappLinks:[...(editingItem.whatsappLinks||['']),'']})}>+ Add Link</button></div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}><div><label style={labelStyle}>Category</label><select style={inputStyle} value={editingItem.categoryId} onChange={e=>setEditingItem({...editingItem,categoryId:e.target.value})}>{groupCategories.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div><div><label style={labelStyle}>Location</label><select style={inputStyle} value={editingItem.locationId} onChange={e=>setEditingItem({...editingItem,locationId:e.target.value})}>{locations.map(l=><option key={l.id} value={l.id}>{l.neighborhood}</option>)}</select></div></div>
-                <div><label style={labelStyle}>📷 Group Image</label><div onDragOver={handleDragOver} onDrop={handleDrop} style={{border:'2px dashed #ddd',borderRadius:'8px',padding:'1rem',textAlign:'center',background:'#fafafa',transition:'border-color 0.2s'}}>{(imagePreview || editingItem.imageUrl) ? (<div><img src={imagePreview || editingItem.imageUrl} alt='Preview' style={{maxWidth:'100%',maxHeight:'150px',borderRadius:'8px'}} /><br/><button type='button' onClick={()=>{setImagePreview('');setEditingItem({...editingItem,imageUrl:''});}} style={{marginTop:'0.5rem',padding:'0.25rem 0.75rem',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'4px',cursor:'pointer'}}>✕ Remove</button></div>) : (<label style={{cursor:'pointer',display:'block'}}><input type='file' accept='image/*' onChange={handleImageUpload} style={{display:'none'}} /><span style={{color:'#666'}}>📎 Click or drag image here</span><br/><span style={{fontSize:'0.8rem',color:'#999'}}>PNG, JPG up to 2MB</span></label>)}</div></div>
+                <div><label style={labelStyle}>📷 Group Image</label><div onDragOver={handleDragOver} onDrop={handleDrop} style={{border:'2px dashed #ddd',borderRadius:'8px',padding:'1rem',textAlign:'center',background:'#fafafa'}}>{(imagePreview || editingItem.imageUrl) ? (<div><img src={imagePreview || editingItem.imageUrl} alt='Preview' style={{maxWidth:'100%',maxHeight:'150px',borderRadius:'8px'}} /><br/><button type='button' onClick={()=>{setImagePreview('');setEditingItem({...editingItem,imageUrl:''});}} style={{marginTop:'0.5rem',padding:'0.25rem 0.75rem',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'4px',cursor:'pointer'}}>✕ Remove</button></div>) : (<label style={{cursor:'pointer',display:'block'}}><input type='file' accept='image/*' onChange={handleImageUpload} style={{display:'none'}} /><span style={{color:'#666'}}>📎 Click or drag image here</span></label>)}</div></div>
                 <div><label><input type="checkbox" checked={editingItem.isPinned||false} onChange={e=>setEditingItem({...editingItem,isPinned:e.target.checked})} /> ⭐ Pin to top</label></div>
               </>)}
 
-              {/* Service fields - UPDATED with address, website, email */}
               {modalType === 'service' && (<>
-                <div><label style={labelStyle}>Name *</label><input style={inputStyle} value={editingItem.name||''} onChange={e=>setEditingItem({...editingItem,name:e.target.value})} placeholder="Business or person name" /></div>
-                <div><label style={labelStyle}>Phone *</label><input style={inputStyle} value={editingItem.phone||''} onChange={e=>setEditingItem({...editingItem,phone:e.target.value})} placeholder="718-555-0100" /></div>
-                <div><label style={labelStyle}>Description</label><textarea style={inputStyle} rows={3} value={editingItem.description||''} onChange={e=>setEditingItem({...editingItem,description:e.target.value})} placeholder="Services offered, specialties, etc." /></div>
+                <div><label style={labelStyle}>Name *</label><input style={inputStyle} value={editingItem.name||''} onChange={e=>setEditingItem({...editingItem,name:e.target.value})} /></div>
+                <div><label style={labelStyle}>Phone *</label><input style={inputStyle} value={editingItem.phone||''} onChange={e=>setEditingItem({...editingItem,phone:e.target.value})} /></div>
+                <div><label style={labelStyle}>Description</label><textarea style={inputStyle} rows={3} value={editingItem.description||''} onChange={e=>setEditingItem({...editingItem,description:e.target.value})} /></div>
                 <div><label style={labelStyle}>Category</label><select style={inputStyle} value={editingItem.categoryId} onChange={e=>setEditingItem({...editingItem,categoryId:e.target.value})}>{serviceCategories.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
-                
-                {/* NEW: Address field */}
-                <div><label style={labelStyle}>📍 Address</label><input style={inputStyle} value={editingItem.address||''} onChange={e=>setEditingItem({...editingItem,address:e.target.value})} placeholder="123 Kingston Ave, Brooklyn, NY" /></div>
-                
-                {/* NEW: Email field */}
-                <div><label style={labelStyle}>✉️ Email</label><input style={inputStyle} type="email" value={editingItem.email||''} onChange={e=>setEditingItem({...editingItem,email:e.target.value})} placeholder="contact@example.com" /></div>
-                
-                {/* NEW: Website field */}
-                <div><label style={labelStyle}>🌐 Website</label><input style={inputStyle} value={editingItem.website||''} onChange={e=>setEditingItem({...editingItem,website:e.target.value})} placeholder="https://example.com" /></div>
-                
-                {/* Image upload */}
-                <div><label style={labelStyle}>📷 Logo / Business Card</label><div onDragOver={handleDragOver} onDrop={handleDrop} style={{border:'2px dashed #ddd',borderRadius:'8px',padding:'1rem',textAlign:'center',background:'#fafafa'}}>{(imagePreview || editingItem.imageUrl || editingItem.logoUrl) ? (<div><img src={imagePreview || editingItem.imageUrl || editingItem.logoUrl} alt='Preview' style={{maxWidth:'100%',maxHeight:'150px',borderRadius:'8px'}} /><br/><button type='button' onClick={()=>{setImagePreview('');setEditingItem({...editingItem,imageUrl:'',logoUrl:''});}} style={{marginTop:'0.5rem',padding:'0.25rem 0.75rem',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'4px',cursor:'pointer'}}>✕ Remove</button></div>) : (<label style={{cursor:'pointer',display:'block'}}><input type='file' accept='image/*' onChange={handleImageUpload} style={{display:'none'}} /><span style={{color:'#666'}}>📎 Click or drag image here</span><br/><span style={{fontSize:'0.8rem',color:'#999'}}>Logo, business card, photo (PNG, JPG up to 2MB)</span></label>)}</div></div>
-                
-                <div><label><input type="checkbox" checked={editingItem.isPinned||false} onChange={e=>setEditingItem({...editingItem,isPinned:e.target.checked})} /> ⭐ Pin to top (Featured)</label></div>
+                <div><label style={labelStyle}>📍 Address</label><input style={inputStyle} value={editingItem.address||''} onChange={e=>setEditingItem({...editingItem,address:e.target.value})} /></div>
+                <div><label style={labelStyle}>✉️ Email</label><input style={inputStyle} type="email" value={editingItem.email||''} onChange={e=>setEditingItem({...editingItem,email:e.target.value})} /></div>
+                <div><label style={labelStyle}>🌐 Website</label><input style={inputStyle} value={editingItem.website||''} onChange={e=>setEditingItem({...editingItem,website:e.target.value})} /></div>
+                <div><label style={labelStyle}>📷 Logo</label><div onDragOver={handleDragOver} onDrop={handleDrop} style={{border:'2px dashed #ddd',borderRadius:'8px',padding:'1rem',textAlign:'center',background:'#fafafa'}}>{(imagePreview || editingItem.imageUrl || editingItem.logoUrl) ? (<div><img src={imagePreview || editingItem.imageUrl || editingItem.logoUrl} alt='Preview' style={{maxWidth:'100%',maxHeight:'150px',borderRadius:'8px'}} /><br/><button type='button' onClick={()=>{setImagePreview('');setEditingItem({...editingItem,imageUrl:'',logoUrl:''});}} style={{marginTop:'0.5rem',padding:'0.25rem 0.75rem',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'4px',cursor:'pointer'}}>✕ Remove</button></div>) : (<label style={{cursor:'pointer',display:'block'}}><input type='file' accept='image/*' onChange={handleImageUpload} style={{display:'none'}} /><span style={{color:'#666'}}>📎 Click or drag image</span></label>)}</div></div>
+                <div><label><input type="checkbox" checked={editingItem.isPinned||false} onChange={e=>setEditingItem({...editingItem,isPinned:e.target.checked})} /> ⭐ Pin to top</label></div>
               </>)}
 
-              {/* Business fields */}
               {modalType === 'business' && (<>
                 <div><label style={labelStyle}>Business Name *</label><input style={inputStyle} value={editingItem.businessName||''} onChange={e=>setEditingItem({...editingItem,businessName:e.target.value})} /></div>
                 <div><label style={labelStyle}>Phone *</label><input style={inputStyle} value={editingItem.phone||''} onChange={e=>setEditingItem({...editingItem,phone:e.target.value})} /></div>
@@ -518,11 +652,10 @@ return (
                 <div><label style={labelStyle}>Description</label><textarea style={inputStyle} rows={3} value={editingItem.description||''} onChange={e=>setEditingItem({...editingItem,description:e.target.value})} /></div>
                 <div><label style={labelStyle}>Category</label><input style={inputStyle} value={editingItem.category||''} onChange={e=>setEditingItem({...editingItem,category:e.target.value})} /></div>
                 <div><label style={labelStyle}>Website</label><input style={inputStyle} value={editingItem.website||''} onChange={e=>setEditingItem({...editingItem,website:e.target.value})} /></div>
-                <div><label style={labelStyle}>📷 Logo/Image</label><div onDragOver={handleDragOver} onDrop={handleDrop} style={{border:'2px dashed #ddd',borderRadius:'8px',padding:'1rem',textAlign:'center',background:'#fafafa'}}>{(imagePreview || editingItem.logoUrl) ? (<div><img src={imagePreview || editingItem.logoUrl} alt='Preview' style={{maxWidth:'100%',maxHeight:'150px',borderRadius:'8px'}} /><br/><button type='button' onClick={()=>{setImagePreview('');setEditingItem({...editingItem,logoUrl:''});}} style={{marginTop:'0.5rem',padding:'0.25rem 0.75rem',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'4px',cursor:'pointer'}}>✕ Remove</button></div>) : (<label style={{cursor:'pointer',display:'block'}}><input type='file' accept='image/*' onChange={handleImageUpload} style={{display:'none'}} /><span style={{color:'#666'}}>📎 Click or drag image</span></label>)}</div></div>
+                <div><label style={labelStyle}>📷 Logo</label><div onDragOver={handleDragOver} onDrop={handleDrop} style={{border:'2px dashed #ddd',borderRadius:'8px',padding:'1rem',textAlign:'center',background:'#fafafa'}}>{(imagePreview || editingItem.logoUrl) ? (<div><img src={imagePreview || editingItem.logoUrl} alt='Preview' style={{maxWidth:'100%',maxHeight:'150px',borderRadius:'8px'}} /><br/><button type='button' onClick={()=>{setImagePreview('');setEditingItem({...editingItem,logoUrl:''});}} style={{marginTop:'0.5rem',padding:'0.25rem 0.75rem',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'4px',cursor:'pointer'}}>✕ Remove</button></div>) : (<label style={{cursor:'pointer',display:'block'}}><input type='file' accept='image/*' onChange={handleImageUpload} style={{display:'none'}} /><span style={{color:'#666'}}>📎 Click or drag image</span></label>)}</div></div>
                 <div><label style={labelStyle}>Status</label><select style={inputStyle} value={editingItem.status||'pending'} onChange={e=>setEditingItem({...editingItem,status:e.target.value})}><option value="pending">Pending</option><option value="approved">Approved</option></select></div>
               </>)}
 
-              {/* Event fields */}
               {modalType === 'event' && (<>
                 <div><label style={labelStyle}>Title *</label><input style={inputStyle} value={editingItem.title||''} onChange={e=>setEditingItem({...editingItem,title:e.target.value})} /></div>
                 <div><label style={labelStyle}>Description</label><textarea style={inputStyle} rows={3} value={editingItem.description||''} onChange={e=>setEditingItem({...editingItem,description:e.target.value})} /></div>
@@ -531,7 +664,6 @@ return (
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}><div><label style={labelStyle}>Organizer</label><input style={inputStyle} value={editingItem.organizer||''} onChange={e=>setEditingItem({...editingItem,organizer:e.target.value})} /></div><div><label style={labelStyle}>Contact Phone</label><input style={inputStyle} value={editingItem.contactPhone||''} onChange={e=>setEditingItem({...editingItem,contactPhone:e.target.value})} /></div></div>
               </>)}
 
-              {/* Campaign fields */}
               {modalType === 'campaign' && (<>
                 <div><label style={labelStyle}>Title *</label><input style={inputStyle} value={editingItem.title||''} onChange={e=>setEditingItem({...editingItem,title:e.target.value})} /></div>
                 <div><label style={labelStyle}>Description</label><textarea style={inputStyle} rows={3} value={editingItem.description||''} onChange={e=>setEditingItem({...editingItem,description:e.target.value})} /></div>
@@ -540,14 +672,12 @@ return (
                 <div><label style={labelStyle}>Status</label><select style={inputStyle} value={editingItem.status||'active'} onChange={e=>setEditingItem({...editingItem,status:e.target.value})}><option value="active">Active</option><option value="completed">Completed</option><option value="paused">Paused</option></select></div>
               </>)}
 
-              {/* Category fields */}
               {(modalType === 'group-category' || modalType === 'service-category') && (<>
                 <div><label style={labelStyle}>Icon</label><input style={inputStyle} value={editingItem.icon||''} onChange={e=>setEditingItem({...editingItem,icon:e.target.value})} /></div>
                 <div><label style={labelStyle}>Name *</label><input style={inputStyle} value={editingItem.name||''} onChange={e=>setEditingItem({...editingItem,name:e.target.value})} /></div>
                 <div><label style={labelStyle}>Russian Name</label><input style={inputStyle} value={editingItem.nameRu||''} onChange={e=>setEditingItem({...editingItem,nameRu:e.target.value})} /></div>
               </>)}
 
-              {/* Location fields */}
               {modalType === 'location' && (<>
                 <div><label style={labelStyle}>Neighborhood *</label><input style={inputStyle} value={editingItem.neighborhood||''} onChange={e=>setEditingItem({...editingItem,neighborhood:e.target.value})} /></div>
                 <div><label style={labelStyle}>City</label><input style={inputStyle} value={editingItem.city||''} onChange={e=>setEditingItem({...editingItem,city:e.target.value})} /></div>

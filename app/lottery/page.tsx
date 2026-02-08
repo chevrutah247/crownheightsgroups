@@ -1,24 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EmergencyBar from '@/components/EmergencyBar';
-import Link from 'next/link';
 
 export default function LotteryPage() {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [participantsCount, setParticipantsCount] = useState(0);
 
-  // Calculate time until Thursday 10:00 PM EST
+  // Countdown to Thursday 10 PM EST
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date();
-      const estOffset = -5 * 60; // EST offset in minutes
+      const estOffset = -5 * 60; // EST is UTC-5
       const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
       const estTime = new Date(utc + (estOffset * 60000));
       
-      // Find next Thursday 10:00 PM EST
+      // Find next Thursday 10 PM
       let nextThursday = new Date(estTime);
       nextThursday.setHours(22, 0, 0, 0);
       
@@ -46,427 +45,298 @@ export default function LotteryPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch participants count
-  useEffect(() => {
-    const fetchParticipants = async () => {
-      try {
-        const res = await fetch('/api/lottery/current-pool');
-        const data = await res.json();
-        if (data.count) setParticipantsCount(data.count);
-      } catch (error) {
-        console.error('Failed to fetch participants:', error);
-      }
-    };
-    fetchParticipants();
-    const interval = setInterval(fetchParticipants, 30000); // Update every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
+  const timerBoxStyle = {
+    background: 'rgba(255, 215, 0, 0.1)',
+    border: '2px solid rgba(255, 215, 0, 0.3)',
+    borderRadius: '12px',
+    padding: '1rem 1.5rem',
+    textAlign: 'center' as const,
+    minWidth: '80px'
+  };
 
-  const TimeBlock = ({ value, label }: { value: number; label: string }) => (
-    <div style={{
-      background: 'linear-gradient(135deg, #1e3a5f, #2d4a6f)',
-      borderRadius: '16px',
-      padding: '1.5rem 2rem',
-      textAlign: 'center',
-      minWidth: '100px',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
-    }}>
-      <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#ffd700' }}>
-        {value.toString().padStart(2, '0')}
-      </div>
-      <div style={{ fontSize: '1rem', color: '#94a3b8', textTransform: 'uppercase' }}>
-        {label}
-      </div>
-    </div>
-  );
+  const timerNumberStyle = {
+    fontSize: '2.5rem',
+    fontWeight: 'bold' as const,
+    color: '#ffd700',
+    lineHeight: 1
+  };
+
+  const timerLabelStyle = {
+    fontSize: '0.75rem',
+    color: '#94a3b8',
+    textTransform: 'uppercase' as const,
+    marginTop: '0.25rem'
+  };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)' }}>
       <EmergencyBar />
       <Header user={null} onLogout={() => {}} />
       
-      <main>
+      <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem' }}>
+        
         {/* Hero Section */}
-        <div style={{
-          background: 'linear-gradient(135deg, #1e3a5f 0%, #0f172a 50%, #1e1b4b 100%)',
-          padding: '4rem 1rem',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Background decorations */}
-          <div style={{
-            position: 'absolute',
-            top: '10%',
-            left: '5%',
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
+        <section style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          
+          {/* Lottery Logos */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            gap: '2rem', 
+            marginBottom: '1.5rem',
+            flexWrap: 'wrap'
+          }}>
+            <img 
+              src="https://www.megamillions.com/assets/img/logo-megamillions-white.png" 
+              alt="Mega Millions" 
+              style={{ height: '50px', objectFit: 'contain' }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+            <span style={{ color: '#ffd700', fontSize: '2rem' }}>+</span>
+            <img 
+              src="https://www.powerball.com/assets/img/pb-logo--white.png" 
+              alt="Powerball" 
+              style={{ height: '50px', objectFit: 'contain' }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          </div>
+
+          <h1 style={{ 
+            fontSize: '3rem', 
+            fontWeight: 'bold',
             background: 'linear-gradient(135deg, #ffd700, #f59e0b)',
-            opacity: 0.3,
-            filter: 'blur(20px)'
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: '20%',
-            right: '10%',
-            width: '120px',
-            height: '120px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-            opacity: 0.2,
-            filter: 'blur(30px)'
-          }} />
-
-          <div style={{ maxWidth: '900px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-            {/* Main Headline */}
-            <div style={{ marginBottom: '1rem' }}>
-              <span style={{ fontSize: '4rem' }}>🎰</span>
-            </div>
-            <h1 style={{
-              fontSize: '3.5rem',
-              fontWeight: 'bold',
-              color: '#ffd700',
-              marginBottom: '1rem',
-              textShadow: '0 4px 20px rgba(255, 215, 0, 0.3)'
-            }}>
-              WIN TOGETHER
-            </h1>
-            <p style={{
-              fontSize: '1.5rem',
-              color: '#e2e8f0',
-              marginBottom: '2rem',
-              maxWidth: '600px',
-              margin: '0 auto 2rem auto'
-            }}>
-              Join our community lottery pool. More tickets, better odds, shared winnings!
-            </p>
-
-            {/* Price Badge */}
-            <div style={{
-              display: 'inline-block',
-              background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-              padding: '1rem 2rem',
-              borderRadius: '50px',
-              marginBottom: '3rem'
-            }}>
-              <span style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white' }}>
-                Only $3 / week
-              </span>
-            </div>
-
-            {/* Countdown Timer */}
-            <div style={{ marginBottom: '2rem' }}>
-              <p style={{ color: '#94a3b8', fontSize: '1.2rem', marginBottom: '1rem' }}>
-                ⏰ Registration closes in:
-              </p>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '1rem',
-                flexWrap: 'wrap'
-              }}>
-                <TimeBlock value={timeLeft.days} label="Days" />
-                <TimeBlock value={timeLeft.hours} label="Hours" />
-                <TimeBlock value={timeLeft.minutes} label="Minutes" />
-                <TimeBlock value={timeLeft.seconds} label="Seconds" />
-              </div>
-            </div>
-
-            {/* Participants Counter */}
-            <div style={{
-              background: 'rgba(255, 215, 0, 0.1)',
-              border: '2px solid rgba(255, 215, 0, 0.3)',
-              borderRadius: '16px',
-              padding: '1.5rem',
-              marginBottom: '2rem',
-              maxWidth: '400px',
-              margin: '0 auto 2rem auto'
-            }}>
-              <p style={{ color: '#ffd700', fontSize: '1.2rem', margin: 0 }}>
-                👥 <strong>{participantsCount}</strong> participants this week
-              </p>
-              <p style={{ color: '#94a3b8', fontSize: '1rem', margin: '0.5rem 0 0 0' }}>
-                Pool Total: <strong style={{ color: '#22c55e' }}>${participantsCount * 3}</strong>
-              </p>
-            </div>
-
-            {/* CTA Button */}
-            <Link href="/lottery/join" style={{
-              display: 'inline-block',
-              background: 'linear-gradient(135deg, #ffd700, #f59e0b)',
-              color: '#1e3a5f',
-              padding: '1.5rem 3rem',
-              borderRadius: '16px',
-              fontSize: '1.5rem',
-              fontWeight: 'bold',
-              textDecoration: 'none',
-              boxShadow: '0 8px 30px rgba(255, 215, 0, 0.4)',
-              transition: 'transform 0.2s, box-shadow 0.2s'
-            }}>
-              🎟️ JOIN THIS WEEK'S POOL →
-            </Link>
-          </div>
-        </div>
-
-        {/* How It Works Section */}
-        <div style={{
-          background: '#1e293b',
-          padding: '4rem 1rem'
-        }}>
-          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-            <h2 style={{
-              textAlign: 'center',
-              fontSize: '2.5rem',
-              color: 'white',
-              marginBottom: '3rem'
-            }}>
-              How It Works
-            </h2>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '2rem'
-            }}>
-              {/* Step 1 */}
-              <div style={{
-                background: '#0f172a',
-                borderRadius: '20px',
-                padding: '2rem',
-                textAlign: 'center',
-                border: '2px solid #334155'
-              }}>
-                <div style={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 1.5rem auto',
-                  fontSize: '2.5rem'
-                }}>
-                  1️⃣
-                </div>
-                <h3 style={{ color: '#ffd700', fontSize: '1.5rem', marginBottom: '1rem' }}>
-                  Register & Pay $3
-                </h3>
-                <p style={{ color: '#94a3b8', fontSize: '1.1rem', lineHeight: '1.6' }}>
-                  Sign up with your name and email. Pay securely via PayPal or Square.
-                </p>
-              </div>
-
-              {/* Step 2 */}
-              <div style={{
-                background: '#0f172a',
-                borderRadius: '20px',
-                padding: '2rem',
-                textAlign: 'center',
-                border: '2px solid #334155'
-              }}>
-                <div style={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 1.5rem auto',
-                  fontSize: '2.5rem'
-                }}>
-                  2️⃣
-                </div>
-                <h3 style={{ color: '#ffd700', fontSize: '1.5rem', marginBottom: '1rem' }}>
-                  We Buy Tickets
-                </h3>
-                <p style={{ color: '#94a3b8', fontSize: '1.1rem', lineHeight: '1.6' }}>
-                  Every Friday, we purchase Mega Millions & Powerball tickets. You get the numbers via email.
-                </p>
-              </div>
-
-              {/* Step 3 */}
-              <div style={{
-                background: '#0f172a',
-                borderRadius: '20px',
-                padding: '2rem',
-                textAlign: 'center',
-                border: '2px solid #334155'
-              }}>
-                <div style={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 1.5rem auto',
-                  fontSize: '2.5rem'
-                }}>
-                  3️⃣
-                </div>
-                <h3 style={{ color: '#ffd700', fontSize: '1.5rem', marginBottom: '1rem' }}>
-                  Share Winnings
-                </h3>
-                <p style={{ color: '#94a3b8', fontSize: '1.1rem', lineHeight: '1.6' }}>
-                  Any prize is split equally among all pool members. Fair & transparent!
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Benefits Section */}
-        <div style={{
-          background: '#0f172a',
-          padding: '4rem 1rem'
-        }}>
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <h2 style={{
-              textAlign: 'center',
-              fontSize: '2.5rem',
-              color: 'white',
-              marginBottom: '3rem'
-            }}>
-              Why Join Our Pool?
-            </h2>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {[
-                { icon: '🎯', title: 'Better Odds', desc: 'More tickets = more chances to win' },
-                { icon: '💰', title: 'Affordable', desc: 'Only $3 per week - skip one coffee!' },
-                { icon: '🤝', title: 'Community', desc: 'Win together with your neighbors' },
-                { icon: '📧', title: 'Transparent', desc: 'Receive all ticket numbers by email' },
-                { icon: '🔒', title: 'Secure', desc: 'Safe payments via PayPal & Square' },
-                { icon: '📜', title: 'Legal Agreement', desc: 'Clear terms protect all members' }
-              ].map((item, i) => (
-                <div key={i} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1.5rem',
-                  background: '#1e293b',
-                  padding: '1.5rem 2rem',
-                  borderRadius: '16px',
-                  border: '1px solid #334155'
-                }}>
-                  <span style={{ fontSize: '2.5rem' }}>{item.icon}</span>
-                  <div>
-                    <h3 style={{ color: '#ffd700', fontSize: '1.3rem', margin: '0 0 0.25rem 0' }}>
-                      {item.title}
-                    </h3>
-                    <p style={{ color: '#94a3b8', fontSize: '1.1rem', margin: 0 }}>
-                      {item.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Referral Section */}
-        <div style={{
-          background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-          padding: '3rem 1rem',
-          textAlign: 'center'
-        }}>
-          <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-            <h2 style={{ fontSize: '2rem', color: 'white', marginBottom: '1rem' }}>
-              🎁 Invite Friends, Get $1 Credit!
-            </h2>
-            <p style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.9)', marginBottom: '1.5rem' }}>
-              Share your referral link. When a friend joins and pays, you get $1 off your next entry!
-            </p>
-            <Link href="/lottery/join" style={{
-              display: 'inline-block',
-              background: 'white',
-              color: '#16a34a',
-              padding: '1rem 2rem',
-              borderRadius: '12px',
-              fontSize: '1.2rem',
-              fontWeight: 'bold',
-              textDecoration: 'none'
-            }}>
-              Join & Get Your Referral Link →
-            </Link>
-          </div>
-        </div>
-
-        {/* FAQ Section */}
-        <div style={{
-          background: '#1e293b',
-          padding: '4rem 1rem'
-        }}>
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <h2 style={{
-              textAlign: 'center',
-              fontSize: '2.5rem',
-              color: 'white',
-              marginBottom: '3rem'
-            }}>
-              Frequently Asked Questions
-            </h2>
-
-            {[
-              { q: 'What lotteries do you play?', a: 'We participate in Mega Millions and Powerball - the biggest jackpots in America!' },
-              { q: 'When do you buy tickets?', a: 'Tickets are purchased every Friday after the pool closes Thursday at 10:00 PM EST.' },
-              { q: 'How do I know you bought the tickets?', a: 'All participants receive an email with photos of the purchased tickets and all numbers.' },
-              { q: 'What happens if we win?', a: 'Winnings are split equally among all pool members for that week, after applicable taxes.' },
-              { q: 'What if we win a small amount?', a: 'Winnings under $50 are reinvested to buy more tickets for the next drawing.' },
-              { q: 'Is this legal?', a: 'Yes! Lottery pools are legal in the United States. All participants sign a clear agreement.' }
-            ].map((item, i) => (
-              <div key={i} style={{
-                background: '#0f172a',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                marginBottom: '1rem',
-                border: '1px solid #334155'
-              }}>
-                <h3 style={{ color: '#ffd700', fontSize: '1.2rem', margin: '0 0 0.75rem 0' }}>
-                  {item.q}
-                </h3>
-                <p style={{ color: '#94a3b8', fontSize: '1.1rem', margin: 0, lineHeight: '1.6' }}>
-                  {item.a}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Final CTA */}
-        <div style={{
-          background: 'linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)',
-          padding: '4rem 1rem',
-          textAlign: 'center'
-        }}>
-          <h2 style={{ fontSize: '2.5rem', color: '#ffd700', marginBottom: '1rem' }}>
-            Ready to Win Together?
-          </h2>
-          <p style={{ fontSize: '1.3rem', color: '#e2e8f0', marginBottom: '2rem' }}>
-            Join this week's pool before Thursday 10:00 PM EST!
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            marginBottom: '1rem'
+          }}>
+            WIN TOGETHER
+          </h1>
+          
+          <p style={{ color: '#94a3b8', fontSize: '1.25rem', marginBottom: '2rem', maxWidth: '600px', margin: '0 auto 2rem auto' }}>
+            Join our community lottery pool. More tickets, better odds, shared winnings!
           </p>
+
+          {/* Price Badge */}
+          <div style={{
+            display: 'inline-block',
+            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+            borderRadius: '50px',
+            padding: '1rem 2.5rem',
+            marginBottom: '2rem'
+          }}>
+            <span style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>Only $3 / week</span>
+          </div>
+
+          {/* Countdown Timer */}
+          <div style={{ marginBottom: '2rem' }}>
+            <p style={{ color: '#94a3b8', marginBottom: '1rem' }}>⏰ Registration closes in:</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <div style={timerBoxStyle}>
+                <div style={timerNumberStyle}>{String(timeLeft.days).padStart(2, '0')}</div>
+                <div style={timerLabelStyle}>Days</div>
+              </div>
+              <div style={timerBoxStyle}>
+                <div style={timerNumberStyle}>{String(timeLeft.hours).padStart(2, '0')}</div>
+                <div style={timerLabelStyle}>Hours</div>
+              </div>
+              <div style={timerBoxStyle}>
+                <div style={timerNumberStyle}>{String(timeLeft.minutes).padStart(2, '0')}</div>
+                <div style={timerLabelStyle}>Minutes</div>
+              </div>
+              <div style={timerBoxStyle}>
+                <div style={timerNumberStyle}>{String(timeLeft.seconds).padStart(2, '0')}</div>
+                <div style={timerLabelStyle}>Seconds</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Hidden participants - only visible after joining */}
+          <div style={{
+            background: 'rgba(255, 215, 0, 0.1)',
+            border: '2px solid rgba(255, 215, 0, 0.3)',
+            borderRadius: '16px',
+            padding: '1.5rem',
+            marginBottom: '2rem',
+            maxWidth: '400px',
+            margin: '0 auto 2rem auto'
+          }}>
+            <p style={{ color: '#ffd700', fontSize: '1.2rem', margin: 0 }}>
+              🔒 <strong>Join to see</strong> current participants
+            </p>
+            <p style={{ color: '#94a3b8', fontSize: '1rem', margin: '0.5rem 0 0 0' }}>
+              Pool info visible after payment
+            </p>
+          </div>
+
+          {/* CTA Button */}
           <Link href="/lottery/join" style={{
             display: 'inline-block',
             background: 'linear-gradient(135deg, #ffd700, #f59e0b)',
             color: '#1e3a5f',
-            padding: '1.5rem 3rem',
-            borderRadius: '16px',
-            fontSize: '1.5rem',
+            padding: '1.25rem 3rem',
+            borderRadius: '50px',
+            fontSize: '1.3rem',
             fontWeight: 'bold',
             textDecoration: 'none',
-            boxShadow: '0 8px 30px rgba(255, 215, 0, 0.4)'
+            boxShadow: '0 4px 20px rgba(255, 215, 0, 0.3)',
+            transition: 'transform 0.2s, box-shadow 0.2s'
           }}>
-            🎟️ JOIN NOW - $3 →
+            🎟️ JOIN THIS WEEK'S POOL
           </Link>
-          <p style={{ marginTop: '1.5rem' }}>
-            <Link href="/lottery/terms" style={{ color: '#94a3b8', fontSize: '0.95rem' }}>
-              📜 Read Terms & Conditions
-            </Link>
+        </section>
+
+        {/* How It Works */}
+        <section style={{ marginBottom: '3rem' }}>
+          <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '2rem', fontSize: '1.75rem' }}>
+            How It Works
+          </h2>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+            {[
+              { step: '1', icon: '📝', title: 'Register & Pay $3', desc: 'Sign up and make your weekly contribution via secure payment' },
+              { step: '2', icon: '🎫', title: 'We Buy Tickets', desc: 'Every Friday we purchase Mega Millions & Powerball tickets for the pool' },
+              { step: '3', icon: '💰', title: 'Share Winnings', desc: 'Any winnings are split equally among all participants' }
+            ].map(item => (
+              <div key={item.step} style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '16px',
+                padding: '2rem',
+                textAlign: 'center',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #ffd700, #f59e0b)',
+                  width: '50px',
+                  height: '50px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 1rem auto',
+                  fontSize: '1.5rem',
+                  fontWeight: 'bold',
+                  color: '#1e3a5f'
+                }}>
+                  {item.step}
+                </div>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{item.icon}</div>
+                <h3 style={{ color: 'white', marginBottom: '0.5rem' }}>{item.title}</h3>
+                <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.95rem' }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Benefits */}
+        <section style={{ marginBottom: '3rem' }}>
+          <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '2rem', fontSize: '1.75rem' }}>
+            Why Join Our Pool?
+          </h2>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            {[
+              { icon: '📈', title: 'Better Odds', desc: 'More tickets = more chances to win' },
+              { icon: '💵', title: 'Affordable', desc: 'Just $3 per week' },
+              { icon: '👥', title: 'Community', desc: 'Win together with neighbors' },
+              { icon: '📸', title: 'Transparent', desc: 'Photos of all tickets sent to you' },
+              { icon: '🔒', title: 'Secure', desc: 'Payments via Square' },
+              { icon: '📜', title: 'Legal', desc: 'Official LLC, clear terms' }
+            ].map(item => (
+              <div key={item.title} style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                padding: '1.25rem',
+                textAlign: 'center',
+                border: '1px solid rgba(255, 255, 255, 0.05)'
+              }}>
+                <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>{item.icon}</div>
+                <h4 style={{ color: '#ffd700', margin: '0 0 0.25rem 0', fontSize: '1rem' }}>{item.title}</h4>
+                <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.85rem' }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Referral Section */}
+        <section style={{
+          background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.2))',
+          borderRadius: '20px',
+          padding: '2rem',
+          textAlign: 'center',
+          marginBottom: '3rem',
+          border: '2px solid rgba(34, 197, 94, 0.3)'
+        }}>
+          <h3 style={{ color: '#22c55e', marginBottom: '1rem', fontSize: '1.5rem' }}>
+            🎁 Invite Friends, Get $1 Off!
+          </h3>
+          <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>
+            Share your referral link after joining. For each friend who joins, you get $1 credit toward next week's entry!
           </p>
+          <Link href="/lottery/join" style={{
+            display: 'inline-block',
+            background: '#22c55e',
+            color: 'white',
+            padding: '0.75rem 2rem',
+            borderRadius: '25px',
+            textDecoration: 'none',
+            fontWeight: 'bold'
+          }}>
+            Join to Get Your Referral Link
+          </Link>
+        </section>
+
+        {/* FAQ */}
+        <section style={{ marginBottom: '3rem' }}>
+          <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '2rem', fontSize: '1.75rem' }}>
+            Frequently Asked Questions
+          </h2>
+          
+          {[
+            { q: 'What lotteries do we play?', a: 'We play both Mega Millions (Tuesday & Friday drawings) and Powerball (Monday, Wednesday & Saturday drawings).' },
+            { q: 'How are winnings distributed?', a: 'All winnings are split equally among participants. Under $50 goes back into tickets. Larger amounts are distributed within 14-30 days.' },
+            { q: 'When do I need to join by?', a: 'Registration closes every Thursday at 10:00 PM EST. Tickets are purchased Friday morning.' },
+            { q: 'How will I know the numbers?', a: "After tickets are purchased, you'll receive an email with photos of all tickets and the numbers played." },
+            { q: 'Is this legal?', a: 'Yes! Lottery pools are legal. We operate as Medinat Hesed LLC with clear terms and conditions.' },
+            { q: 'What payment methods are accepted?', a: 'We accept all major credit/debit cards through Square secure payment.' }
+          ].map((item, i) => (
+            <div key={i} style={{
+              background: 'rgba(255, 255, 255, 0.03)',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              marginBottom: '0.75rem',
+              border: '1px solid rgba(255, 255, 255, 0.05)'
+            }}>
+              <h4 style={{ color: '#ffd700', margin: '0 0 0.5rem 0' }}>{item.q}</h4>
+              <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.95rem' }}>{item.a}</p>
+            </div>
+          ))}
+        </section>
+
+        {/* Terms Link */}
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <Link href="/lottery/terms" style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+            📜 Read Full Terms & Conditions
+          </Link>
         </div>
+
+        {/* Final CTA */}
+        <section style={{ textAlign: 'center', paddingBottom: '2rem' }}>
+          <Link href="/lottery/join" style={{
+            display: 'inline-block',
+            background: 'linear-gradient(135deg, #ffd700, #f59e0b)',
+            color: '#1e3a5f',
+            padding: '1.25rem 3rem',
+            borderRadius: '50px',
+            fontSize: '1.3rem',
+            fontWeight: 'bold',
+            textDecoration: 'none',
+            boxShadow: '0 4px 20px rgba(255, 215, 0, 0.3)'
+          }}>
+            🎟️ JOIN NOW - Only $3
+          </Link>
+        </section>
+
       </main>
       
       <Footer />

@@ -36,58 +36,17 @@ const addItems = [
   { title: 'Post News', icon: '📰', color: '#dc2626', href: '/add/news', desc: 'Community announcement' },
 ];
 
-// Group categories into sections for the dropdown
 const categoryGroups = [
-  { 
-    label: '🏘️ Community & Living', 
-    color: '#1e3a5f',
-    keywords: ['jewish community', 'torah', 'chesed', 'volunteering', 'singles', 'shidduch', 'women', 'men', 'minyan', 'shuls', 'mitzvah']
-  },
-  { 
-    label: '💰 Business & Jobs', 
-    color: '#16a34a',
-    keywords: ['jobs', 'business', 'service']
-  },
-  { 
-    label: '🏠 Housing & Real Estate', 
-    color: '#ea580c',
-    keywords: ['real estate', 'long-term', 'short-term', 'parking']
-  },
-  { 
-    label: '🛒 Buy, Sell & Free', 
-    color: '#7c3aed',
-    keywords: ['buy', 'sell', 'free', 'giveaway', 'shmira', 'free food']
-  },
-  { 
-    label: '🎉 Events & Entertainment', 
-    color: '#dc2626',
-    keywords: ['events', 'humor', 'fun', 'music', 'entertainment', 'sports']
-  },
-  { 
-    label: '📚 Education & Family', 
-    color: '#0891b2',
-    keywords: ['kids', 'education', 'babysitting']
-  },
-  { 
-    label: '🚗 Transport & Travel', 
-    color: '#4f46e5',
-    keywords: ['car', 'rides', 'carpool', 'travel']
-  },
-  { 
-    label: '📰 News & Tech', 
-    color: '#b91c1c',
-    keywords: ['news', 'tech', 'gadgets']
-  },
-  { 
-    label: '🏡 Lifestyle', 
-    color: '#059669',
-    keywords: ['health', 'wellness', 'food', 'recipes', 'home', 'garden', 'fashion', 'beauty', 'pets']
-  },
-  { 
-    label: '📋 Other', 
-    color: '#6b7280',
-    keywords: ['other']
-  },
+  { label: '🏘️ Community & Living', color: '#1e3a5f', keywords: ['jewish community', 'torah', 'chesed', 'volunteering', 'singles', 'shidduch', 'women', 'men', 'minyan', 'shuls', 'mitzvah'] },
+  { label: '💰 Business & Jobs', color: '#16a34a', keywords: ['jobs', 'business', 'service'] },
+  { label: '🏠 Housing & Real Estate', color: '#ea580c', keywords: ['real estate', 'long-term', 'short-term', 'parking'] },
+  { label: '🛒 Buy, Sell & Free', color: '#7c3aed', keywords: ['buy', 'sell', 'free', 'giveaway', 'shmira', 'free food'] },
+  { label: '🎉 Events & Entertainment', color: '#dc2626', keywords: ['events', 'humor', 'fun', 'music', 'entertainment', 'sports'] },
+  { label: '📚 Education & Family', color: '#0891b2', keywords: ['kids', 'education', 'babysitting'] },
+  { label: '🚗 Transport & Travel', color: '#4f46e5', keywords: ['car', 'rides', 'carpool', 'travel'] },
+  { label: '📰 News & Tech', color: '#b91c1c', keywords: ['news', 'tech', 'gadgets'] },
+  { label: '🏡 Lifestyle', color: '#059669', keywords: ['health', 'wellness', 'food', 'recipes', 'home', 'garden', 'fashion', 'beauty', 'pets'] },
+  { label: '📋 Other', color: '#6b7280', keywords: ['other'] },
 ];
 
 const SUPERADMIN_EMAIL = 'chevrutah24x7@gmail.com';
@@ -110,7 +69,6 @@ export default function HomePage() {
     );
   };
 
-  // Group categories into sections
   const getCategoriesForSection = (section: typeof categoryGroups[0]) => {
     return categories.filter(cat => {
       const catName = cat.name.toLowerCase();
@@ -121,7 +79,6 @@ export default function HomePage() {
     }).sort((a, b) => (a.order || 0) - (b.order || 0));
   };
 
-  // Find uncategorized
   const getUncategorized = () => {
     const allGrouped = new Set<string>();
     categoryGroups.forEach(section => {
@@ -274,6 +231,53 @@ export default function HomePage() {
       </section>
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+
+        {/* 🎰 LOTTERY POOL BANNER */}
+        <section style={{ marginBottom: '2.5rem' }}>
+          <Link href="/lottery" style={{ textDecoration: 'none', display: 'block' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)',
+              borderRadius: '20px',
+              padding: '1.5rem 2rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              border: '2px solid rgba(255, 215, 0, 0.3)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ fontSize: '2.5rem' }}>🎰</div>
+                <div>
+                  <h3 style={{ 
+                    color: '#ffd700', 
+                    margin: '0 0 0.25rem 0', 
+                    fontSize: '1.25rem',
+                    fontWeight: 'bold'
+                  }}>
+                    Community Lottery Pool
+                  </h3>
+                  <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.95rem' }}>
+                    Mega Millions + Powerball • Only $3/week • Win Together!
+                  </p>
+                </div>
+              </div>
+              <div style={{
+                background: 'linear-gradient(135deg, #ffd700, #f59e0b)',
+                color: '#1e3a5f',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '25px',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                whiteSpace: 'nowrap'
+              }}>
+                Join Now →
+              </div>
+            </div>
+          </Link>
+        </section>
         
         {/* ADD SECTION */}
         <section style={{ marginBottom: '2.5rem' }}>
