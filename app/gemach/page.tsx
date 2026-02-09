@@ -18,7 +18,7 @@ const gemachResources = [
     address: '275 Madison Avenue Suite 1905, New York, NY 10016',
     website: 'https://hfls.org/',
     websiteRu: 'https://hfls.org/russian-2/',
-    logo: 'https://hfls.org/wp-content/uploads/2020/01/hfls-logo.png',
+    logo: '/images/hfls-logo.png',
     category: 'loans',
     featured: true,
   },
@@ -140,11 +140,13 @@ export default function GemachPage() {
           alignItems: 'center',
           gap: '1.5rem'
         }}>
-          <img 
-            src="https://hfls.org/wp-content/uploads/2020/01/hfls-logo.png" 
-            alt="Hebrew Free Loan Society" 
-            style={{ height: '80px', background: 'white', padding: '10px', borderRadius: '10px' }}
-          />
+          <div style={{ background: 'white', padding: '15px 20px', borderRadius: '12px', textAlign: 'center' }}>
+            <div style={{ color: '#1e3a5f', fontWeight: 'bold', fontSize: '1.1rem', lineHeight: 1.2 }}>
+              <span style={{ fontSize: '1.4rem' }}>Hebrew Free</span><br/>
+              <span style={{ fontSize: '1.4rem' }}>Loan Society</span><br/>
+              <span style={{ fontSize: '0.75rem', color: '#666' }}>SINCE 1892</span>
+            </div>
+          </div>
           <div style={{ flex: 1, minWidth: '250px' }}>
             <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>
               {showRussian ? 'Беспроцентные Займы' : 'Interest-Free Loans'}
