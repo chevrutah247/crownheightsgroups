@@ -89,6 +89,20 @@ export default function ServicesPage() {
         <div className="page-header">
           <h1 className="page-title">🔧 Local Services</h1>
           <p className="page-subtitle">Find trusted professionals in our community</p>
+          <div style={{ marginTop: '1rem' }}>
+            <a href="/suggest-service" style={{ 
+              display: 'inline-block',
+              background: '#22c55e', 
+              color: 'white', 
+              padding: '0.75rem 1.5rem', 
+              borderRadius: '25px', 
+              textDecoration: 'none',
+              fontWeight: 'bold',
+              fontSize: '0.95rem'
+            }}>
+              ➕ Suggest a Service
+            </a>
+          </div>
         </div>
 
         {/* Torah Learning Banner */}

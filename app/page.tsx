@@ -22,7 +22,8 @@ const quickAccessItems = [
   { title: 'Housing', icon: '🏠', color: '#ea580c', keywords: ['real estate', 'housing', 'apartment', 'rent'], desc: 'Apartments & rooms' },
   { title: 'Buy & Sell', icon: '🛒', color: '#16a34a', keywords: ['buy', 'sell', 'marketplace', 'sale'], desc: 'Marketplace' },
   { title: 'Events', icon: '📅', color: '#dc2626', href: '/events', desc: 'Community events', isStatic: true },
-  { title: 'Free / Gemach', icon: '🆓', color: '#0891b2', href: '/gemach', desc: 'Free stuff & gemach', isStatic: true },
+  { title: 'Torah Learning', icon: '📚', color: '#7c3aed', href: '/torah-groups', desc: 'Torah study groups', isStatic: true },
+  { title: 'Free / Gemach', icon: '🆓', color: '#0891b2', href: '/gemach', desc: 'Free loans & resources', isStatic: true },
   { title: 'Rides', icon: '🚗', color: '#4f46e5', keywords: ['ride', 'carpool', 'travel'], desc: 'Carpool & rides' },
   { title: 'News', icon: '📰', color: '#b91c1c', href: '/news', desc: 'Community news', isStatic: true },
 ];

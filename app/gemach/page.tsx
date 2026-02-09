@@ -22,37 +22,16 @@ const gemachResources = [
     category: 'loans',
     featured: true,
   },
-  {
-    id: 2,
-    name: 'TorahMates',
-    description: 'Free one-on-one Torah learning with a personal study partner. Any level, any topic. Over the phone or video.',
-    phone: '1-877-TORAH-123',
-    email: 'info@torahmates.org',
-    website: 'https://www.torahmates.org/',
-    logo: 'https://www.oorah.org/img/logos/TMLogo.png',
-    category: 'education',
-    featured: true,
-  },
-  {
-    id: 3,
-    name: 'Oorah Free Events',
-    description: 'Free trips to Upstate NY, retreats, family events, and more. Register at TorahMates to qualify.',
-    website: 'https://www.oorah.org/events/',
-    logo: 'https://www.oorah.org/img/logos/OorahWhiteLogo.png',
-    logoBg: '#166534',
-    category: 'events',
-    featured: true,
-  },
 ];
 
 const categories = [
   { id: 'all', name: 'All', icon: '📋' },
   { id: 'loans', name: 'Free Loans', icon: '🏦' },
-  { id: 'education', name: 'Education', icon: '📚' },
-  { id: 'events', name: 'Events & Trips', icon: '🎉' },
   { id: 'food', name: 'Food', icon: '🍞' },
   { id: 'clothing', name: 'Clothing', icon: '👔' },
-  { id: 'medical', name: 'Medical', icon: '🏥' },
+  { id: 'medical', name: 'Medical Equipment', icon: '🏥' },
+  { id: 'baby', name: 'Baby Items', icon: '👶' },
+  { id: 'simcha', name: 'Simcha', icon: '🎉' },
   { id: 'other', name: 'Other', icon: '📦' },
 ];
 
@@ -77,7 +56,7 @@ export default function GemachPage() {
             🆓 Free Resources & Gemach
           </h1>
           <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '1rem' }}>
-            Community resources available for free or interest-free
+            Free loans, equipment, and community resources
           </p>
           
           {/* Language Toggle */}
@@ -94,7 +73,7 @@ export default function GemachPage() {
               fontSize: '0.9rem'
             }}
           >
-            🇷🇺 {showRussian ? 'Показать English' : 'По-русски'}
+            🇷🇺 {showRussian ? 'Show English' : 'По-русски'}
           </button>
         </div>
 
@@ -140,13 +119,11 @@ export default function GemachPage() {
           alignItems: 'center',
           gap: '1.5rem'
         }}>
-          <div style={{ background: 'white', padding: '15px 20px', borderRadius: '12px', textAlign: 'center' }}>
-            <div style={{ color: '#1e3a5f', fontWeight: 'bold', fontSize: '1.1rem', lineHeight: 1.2 }}>
-              <span style={{ fontSize: '1.4rem' }}>Hebrew Free</span><br/>
-              <span style={{ fontSize: '1.4rem' }}>Loan Society</span><br/>
-              <span style={{ fontSize: '0.75rem', color: '#666' }}>SINCE 1892</span>
-            </div>
-          </div>
+          <img 
+            src="/images/hfls-logo.png" 
+            alt="Hebrew Free Loan Society" 
+            style={{ height: '80px', background: 'white', padding: '10px', borderRadius: '10px' }}
+          />
           <div style={{ flex: 1, minWidth: '250px' }}>
             <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>
               {showRussian ? 'Беспроцентные Займы' : 'Interest-Free Loans'}
@@ -157,7 +134,7 @@ export default function GemachPage() {
                 : 'Hebrew Free Loan Society — interest-free loans for Jews since 1892. For business, education, medical, housing, and emergencies.'
               }
             </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.9rem', opacity: 0.85, marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', fontSize: '0.9rem', opacity: 0.85, marginBottom: '1rem' }}>
               <span>📞 (212) 687-0188</span>
               <span>✉️ info@hfls.org</span>
             </div>
@@ -196,88 +173,119 @@ export default function GemachPage() {
           </div>
         </div>
 
-        {/* Resources Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-          {filteredResources.filter(r => r.id !== 1).map(resource => (
-            <div 
-              key={resource.id}
-              style={{
-                background: 'white',
-                borderRadius: '16px',
-                padding: '1.5rem',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-                border: '1px solid #e5e7eb'
-              }}
-            >
-              {/* Logo */}
-              {resource.logo && (
-                <div style={{ 
-                  marginBottom: '1rem',
-                  background: resource.logoBg || '#f8fafc',
-                  padding: '0.75rem',
-                  borderRadius: '10px',
-                  display: 'inline-block'
-                }}>
-                  <img 
-                    src={resource.logo} 
-                    alt={resource.name} 
-                    style={{ height: '40px', objectFit: 'contain' }}
-                  />
+        {/* Other Resources Grid */}
+        {filteredResources.filter(r => !r.featured).length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            {filteredResources.filter(r => !r.featured).map(resource => (
+              <div 
+                key={resource.id}
+                style={{
+                  background: 'white',
+                  borderRadius: '16px',
+                  padding: '1.5rem',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+                  border: '1px solid #e5e7eb'
+                }}
+              >
+                <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e3a5f', fontSize: '1.2rem' }}>
+                  {showRussian && resource.nameRu ? resource.nameRu : resource.name}
+                </h3>
+                <p style={{ color: '#666', fontSize: '0.95rem', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  {showRussian && resource.descriptionRu ? resource.descriptionRu : resource.description}
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
+                  {resource.phone && <span>📞 {resource.phone}</span>}
+                  {resource.email && <span>✉️ {resource.email}</span>}
+                  {resource.address && <span>📍 {resource.address}</span>}
                 </div>
-              )}
-              
-              {/* Name */}
-              <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e3a5f', fontSize: '1.2rem' }}>
-                {resource.name}
-              </h3>
-              
-              {/* Description */}
-              <p style={{ color: '#666', fontSize: '0.95rem', marginBottom: '1rem', lineHeight: 1.5 }}>
-                {showRussian && resource.descriptionRu ? resource.descriptionRu : resource.description}
-              </p>
-              
-              {/* Contact Info */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem', color: '#666', marginBottom: '1rem' }}>
-                {resource.phone && <span>📞 {resource.phone}</span>}
-                {resource.email && <span>✉️ {resource.email}</span>}
-                {resource.address && <span>📍 {resource.address}</span>}
+                {resource.website && (
+                  <a 
+                    href={showRussian && resource.websiteRu ? resource.websiteRu : resource.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-block',
+                      background: '#1e3a5f',
+                      color: 'white',
+                      padding: '0.6rem 1.25rem',
+                      borderRadius: '20px',
+                      textDecoration: 'none',
+                      fontWeight: 'bold',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    Learn More →
+                  </a>
+                )}
               </div>
-              
-              {/* Website Button */}
-              {resource.website && (
-                <a 
-                  href={showRussian && resource.websiteRu ? resource.websiteRu : resource.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'inline-block',
-                    background: '#1e3a5f',
-                    color: 'white',
-                    padding: '0.6rem 1.25rem',
-                    borderRadius: '20px',
-                    textDecoration: 'none',
-                    fontWeight: 'bold',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  Learn More →
-                </a>
-              )}
+            ))}
+          </div>
+        )}
+
+        {/* Empty state for categories */}
+        {selectedCategory !== 'all' && selectedCategory !== 'loans' && (
+          <div style={{
+            textAlign: 'center',
+            padding: '3rem',
+            background: 'white',
+            borderRadius: '16px',
+            marginBottom: '2rem'
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
+              {categories.find(c => c.id === selectedCategory)?.icon}
             </div>
-          ))}
+            <h3 style={{ color: '#1e3a5f', marginBottom: '0.5rem' }}>Coming Soon!</h3>
+            <p style={{ color: '#666' }}>Know a gemach in this category? Add it below!</p>
+          </div>
+        )}
+
+        {/* Looking for Torah Learning? */}
+        <div style={{
+          background: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+          borderRadius: '16px',
+          padding: '1.5rem',
+          marginBottom: '2rem',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem'
+        }}>
+          <div>
+            <h3 style={{ margin: '0 0 0.25rem 0', color: '#1e40af' }}>📚 Looking for Torah Learning?</h3>
+            <p style={{ margin: 0, color: '#3b82f6', fontSize: '0.95rem' }}>
+              Free study partners, groups, and educational programs
+            </p>
+          </div>
+          <Link 
+            href="/torah-groups"
+            style={{
+              background: '#3b82f6',
+              color: 'white',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '25px',
+              textDecoration: 'none',
+              fontWeight: 'bold'
+            }}
+          >
+            Torah Learning →
+          </Link>
         </div>
 
         {/* Add Resource CTA */}
         <div style={{
-          marginTop: '3rem',
           textAlign: 'center',
           padding: '2rem',
           background: '#f0fdf4',
           borderRadius: '16px',
           border: '2px dashed #86efac'
         }}>
-          <h3 style={{ color: '#166534', marginBottom: '0.5rem' }}>Know a Gemach or Free Resource?</h3>
-          <p style={{ color: '#666', marginBottom: '1rem' }}>Help the community by sharing it!</p>
+          <h3 style={{ color: '#166534', marginBottom: '0.5rem' }}>
+            {showRussian ? 'Знаете гмах?' : 'Know a Gemach?'}
+          </h3>
+          <p style={{ color: '#666', marginBottom: '1rem' }}>
+            {showRussian ? 'Помогите общине — добавьте его!' : 'Help the community by sharing it!'}
+          </p>
           <Link 
             href="/contact"
             style={{
@@ -290,7 +298,7 @@ export default function GemachPage() {
               fontWeight: 'bold'
             }}
           >
-            ➕ Suggest a Resource
+            ➕ {showRussian ? 'Добавить ресурс' : 'Suggest a Resource'}
           </Link>
         </div>
 
