@@ -63,3 +63,71 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    const { id, action } = await request.json();
+
+    if (!id || !action) {
+      return NextResponse.json({ error: 'ID and action required' }, { status: 400 });
+    }
+
+    if (action === 'approve') {
+      // Get the suggestion
+      const { data: suggestion, error: fetchError } = await supabase
+        .from('service_suggestions')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError || !suggestion) {
+        return NextResponse.json({ error: 'Suggestion not found' }, { status: 404 });
+      }
+
+      // Create the service
+      const { error: createError } = await supabase
+        .from('services')
+        .insert({
+          name: suggestion.name,
+          phone: suggestion.phone,
+          email: suggestion.email,
+          website: suggestion.website,
+          address: suggestion.address,
+          description: suggestion.description,
+          status: 'approved',
+        });
+
+      if (createError) {
+        console.error('Error creating service:', createError);
+        return NextResponse.json({ error: createError.message }, { status: 500 });
+      }
+
+      // Delete the suggestion
+      await supabase
+        .from('service_suggestions')
+        .delete()
+        .eq('id', id);
+
+      return NextResponse.json({ success: true, action: 'approved' });
+
+    } else if (action === 'reject') {
+      // Delete the suggestion
+      const { error } = await supabase
+        .from('service_suggestions')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, action: 'rejected' });
+    }
+
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+
+  } catch (error: any) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
