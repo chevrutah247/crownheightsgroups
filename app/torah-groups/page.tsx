@@ -143,18 +143,8 @@ export default function TorahGroupsPage() {
           </div>
         </div>
 
-        {torahGroups.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', background: 'white', borderRadius: '16px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📚</div>
-            <h3 style={{ color: '#1e3a5f', marginBottom: '0.5rem' }}>
-              {showRussian ? 'Группы скоро появятся!' : 'Groups Coming Soon!'}
-            </h3>
-            <p style={{ color: '#666' }}>
-              {showRussian ? 'Мы собираем группы по изучению Торы. Знаете хорошую? Добавьте ниже!' : "We're collecting Torah study groups. Know a good one? Add it below!"}
-            </p>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+        {torahGroups.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
             {torahGroups.map(group => (
               <div key={group.id} style={{ background: 'white', borderRadius: '12px', padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
                 <h3 style={{ margin: 0, color: '#1e3a5f', fontSize: '1.1rem' }}>{group.name}</h3>
@@ -163,7 +153,7 @@ export default function TorahGroupsPage() {
           </div>
         )}
 
-        <div style={{ marginTop: '2rem', textAlign: 'center', padding: '2rem', background: '#eff6ff', borderRadius: '16px', border: '2px dashed #93c5fd' }}>
+        <div style={{ textAlign: 'center', padding: '2rem', background: '#eff6ff', borderRadius: '16px', border: '2px dashed #93c5fd' }}>
           <h3 style={{ color: '#1e40af', marginBottom: '0.5rem' }}>
             {showRussian ? 'Знаете группу по изучению Торы?' : 'Know a Torah Study Group?'}
           </h3>
