@@ -63,6 +63,7 @@ export default function TorahGroupsPage() {
           </button>
         </div>
 
+        {/* TorahMates Banner */}
         <div style={{
           background: 'linear-gradient(135deg, #1e3a5f, #3b82f6)',
           borderRadius: '20px',
@@ -82,7 +83,7 @@ export default function TorahGroupsPage() {
             <p style={{ margin: '0 0 1rem 0', opacity: 0.9, fontSize: '0.95rem' }}>
               {showRussian ? 'Бесплатное изучение один на один с партнёром. Любой уровень, любая тема.' : 'Free one-on-one learning with a personal study partner. Any level, any topic.'}
             </p>
-            <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.85rem', opacity: 0.8, marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', opacity: 0.8, marginBottom: '1rem', flexWrap: 'wrap' }}>
               <span>📞 1-877-TORAH-123</span>
               <span>✉️ info@torahmates.org</span>
             </div>
@@ -92,11 +93,12 @@ export default function TorahGroupsPage() {
           </div>
         </div>
 
+        {/* Oorah Events Banner */}
         <div style={{
           background: 'linear-gradient(135deg, #166534, #22c55e)',
           borderRadius: '20px',
           padding: '1.5rem 2rem',
-          marginBottom: '2rem',
+          marginBottom: '1.5rem',
           color: 'white',
           display: 'flex',
           flexWrap: 'wrap',
@@ -117,6 +119,39 @@ export default function TorahGroupsPage() {
           </a>
         </div>
 
+        {/* Chitas for Kids Banner */}
+        <div style={{
+          background: 'linear-gradient(135deg, #ec4899, #f472b6)',
+          borderRadius: '20px',
+          padding: '2rem',
+          marginBottom: '2rem',
+          color: 'white',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '1.5rem'
+        }}>
+          <img src="https://www.kidschitas.org/wp-content/uploads/2023/08/chitas-for-kids-logo.png" alt="Chitas for Kids" style={{ height: '70px', background: 'white', borderRadius: '10px', padding: '5px' }} />
+          <div style={{ flex: 1, minWidth: '250px' }}>
+            <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem' }}>
+              {showRussian ? '📚 Хитас для детей' : '📚 Chitas for Kids'}
+            </h2>
+            <p style={{ margin: '0 0 1rem 0', opacity: 0.95, fontSize: '0.95rem' }}>
+              {showRussian 
+                ? 'Ежедневные уроки Торы для детей и взрослых! Понятные краткие изложения, аудио и раскраски - по email и WhatsApp.' 
+                : 'Daily Torah learning for kids (and adults too)! Easy-to-understand summaries in written & audio format, plus coloring books - via email & WhatsApp.'}
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', opacity: 0.9, marginBottom: '1rem', flexWrap: 'wrap' }}>
+              <span>📞 413-376-8770</span>
+              <span>✉️ info@kidschitas.org</span>
+            </div>
+            <a href="https://www.kidschitas.org/" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', background: 'white', color: '#ec4899', padding: '0.75rem 1.5rem', borderRadius: '25px', fontWeight: 'bold', textDecoration: 'none' }}>
+              Subscribe Free →
+            </a>
+          </div>
+        </div>
+
+        {/* Filters */}
         <div style={{ background: 'white', borderRadius: '16px', padding: '1.5rem', marginBottom: '2rem', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
           <h3 style={{ margin: '0 0 1rem 0', color: '#1e3a5f' }}>🔍 Find Torah Groups</h3>
           
