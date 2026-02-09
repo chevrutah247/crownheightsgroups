@@ -131,7 +131,7 @@ export default function TorahGroupsPage() {
           alignItems: 'center',
           gap: '1.5rem'
         }}>
-          <img src="https://www.kidschitas.org/wp-content/uploads/2023/08/chitas-for-kids-logo.png" alt="Chitas for Kids" style={{ height: '70px', background: 'white', borderRadius: '10px', padding: '5px' }} />
+          <div style={{ fontSize: "3rem" }}>📚</div>
           <div style={{ flex: 1, minWidth: '250px' }}>
             <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem' }}>
               {showRussian ? '📚 Хитас для детей' : '📚 Chitas for Kids'}
