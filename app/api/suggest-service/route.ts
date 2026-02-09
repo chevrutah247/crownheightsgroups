@@ -1,27 +1,32 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { Redis } from '@upstash/redis';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+function getRedis() {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (url && token) return new Redis({ url, token });
+  return null;
+}
+
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    
     const { name, phone, email, website, address, description, category, submitterEmail } = data;
 
     if (!name || !phone || !category) {
       return NextResponse.json({ error: 'Name, phone, and category are required' }, { status: 400 });
     }
 
-    // Save to service_suggestions table
     const { data: suggestion, error } = await supabase
       .from('service_suggestions')
       .insert({
-        name,
-        phone,
+        name, phone,
         email: email || null,
         website: website || null,
         address: address || null,
@@ -35,14 +40,11 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error('Error saving suggestion:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, suggestion });
-
   } catch (error: any) {
-    console.error('Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -52,6 +54,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('service_suggestions')
       .select('*')
+      .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -73,7 +76,7 @@ export async function PUT(request: Request) {
     }
 
     if (action === 'approve') {
-      // Get the suggestion
+      // Get the suggestion from Supabase
       const { data: suggestion, error: fetchError } = await supabase
         .from('service_suggestions')
         .select('*')
@@ -84,50 +87,49 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: 'Suggestion not found' }, { status: 404 });
       }
 
-      // Create the service
-      const { error: createError } = await supabase
-        .from('services')
-        .insert({
-          name: suggestion.name,
-          phone: suggestion.phone,
-          email: suggestion.email,
-          website: suggestion.website,
-          address: suggestion.address,
-          description: suggestion.description,
-          status: 'approved',
-        });
-
-      if (createError) {
-        console.error('Error creating service:', createError);
-        return NextResponse.json({ error: createError.message }, { status: 500 });
+      // Add to Redis (where services are stored)
+      const redis = getRedis();
+      if (!redis) {
+        return NextResponse.json({ error: 'Redis not available' }, { status: 500 });
       }
 
-      // Delete the suggestion
-      await supabase
-        .from('service_suggestions')
-        .delete()
-        .eq('id', id);
+      let services: any[] = [];
+      const stored = await redis.get('services');
+      if (stored) {
+        services = typeof stored === 'string' ? JSON.parse(stored) : stored;
+        if (!Array.isArray(services)) services = [];
+      }
+
+      const newService = {
+        id: String(Date.now()),
+        name: suggestion.name,
+        phone: suggestion.phone,
+        categoryId: '1',
+        description: suggestion.description || '',
+        address: suggestion.address || '',
+        website: suggestion.website || '',
+        email: suggestion.email || '',
+        languages: ['English'],
+        isPinned: false,
+        status: 'approved',
+        createdAt: new Date().toISOString()
+      };
+
+      services.push(newService);
+      await redis.set('services', JSON.stringify(services));
+
+      // Delete suggestion from Supabase
+      await supabase.from('service_suggestions').delete().eq('id', id);
 
       return NextResponse.json({ success: true, action: 'approved' });
 
     } else if (action === 'reject') {
-      // Delete the suggestion
-      const { error } = await supabase
-        .from('service_suggestions')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-
+      await supabase.from('service_suggestions').delete().eq('id', id);
       return NextResponse.json({ success: true, action: 'rejected' });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
-
   } catch (error: any) {
-    console.error('Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
