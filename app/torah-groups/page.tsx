@@ -63,6 +63,73 @@ export default function TorahGroupsPage() {
           </button>
         </div>
 
+        {/* CHEVRUTAH 24x7 - TOP FEATURED BANNER */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1e1b4b, #4c1d95, #6d28d9)',
+          borderRadius: '24px',
+          padding: '2.5rem',
+          marginBottom: '2rem',
+          color: 'white',
+          boxShadow: '0 10px 40px rgba(109, 40, 217, 0.4)'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem', fontWeight: 'bold' }}>
+              📰 Chevrutah 24x7
+            </h2>
+            <p style={{ margin: 0, opacity: 0.9, fontSize: '1.1rem' }}>
+              {showRussian ? 'Еженедельная газета для всей семьи!' : 'Weekly newspaper for the whole family!'}
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+            <div style={{ textAlign: 'center' }}>
+              <img src="/images/chevrutah-russian.png" alt="Chevrutah Russian" style={{ height: '180px', borderRadius: '12px', boxShadow: '0 8px 25px rgba(0,0,0,0.4)' }} />
+              <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', opacity: 0.9 }}>🇷🇺 На русском</p>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <img src="/images/chevrutah-kids.png" alt="Chevrutah Kids" style={{ height: '180px', borderRadius: '12px', boxShadow: '0 8px 25px rgba(0,0,0,0.4)' }} />
+              <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', opacity: 0.9 }}>🇺🇸 Kids Edition</p>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <p style={{ margin: '0 auto', maxWidth: '700px', fontSize: '1rem', opacity: 0.95, lineHeight: '1.6' }}>
+              {showRussian
+                ? '✨ Двар Тора • Мидраш • Хасидские рассказы • Комиксы • Вопросы от детей • Интересные факты о медицине и полиции'
+                : '✨ Dvar Torah • Midrash • Hasidic Stories • Comics • Kids Q&A • Fun facts about medicine & police'}
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href="https://edonthego.org" target="_blank" rel="noopener noreferrer" style={{ 
+              display: 'inline-block', 
+              background: 'linear-gradient(135deg, #ffd700, #f59e0b)', 
+              color: '#1e1b4b', 
+              padding: '1rem 2rem', 
+              borderRadius: '30px', 
+              fontWeight: 'bold', 
+              textDecoration: 'none',
+              fontSize: '1.1rem',
+              boxShadow: '0 4px 15px rgba(255, 215, 0, 0.4)'
+            }}>
+              {showRussian ? '📬 Подписаться бесплатно!' : '📬 Subscribe Free!'}
+            </a>
+            <a href="https://edonthego.org" target="_blank" rel="noopener noreferrer" style={{ 
+              display: 'inline-block', 
+              background: 'rgba(255,255,255,0.15)', 
+              color: 'white', 
+              padding: '1rem 2rem', 
+              borderRadius: '30px', 
+              fontWeight: 'bold', 
+              textDecoration: 'none',
+              border: '2px solid rgba(255,255,255,0.5)',
+              fontSize: '1rem'
+            }}>
+              {showRussian ? '💝 Поддержать проект' : '💝 Support Project'}
+            </a>
+          </div>
+        </div>
+
         {/* TorahMates Banner */}
         <div style={{
           background: 'linear-gradient(135deg, #1e3a5f, #3b82f6)',
@@ -131,7 +198,7 @@ export default function TorahGroupsPage() {
           alignItems: 'center',
           gap: '1.5rem'
         }}>
-          <img src="/images/chitas-for-kids-logo.png" alt="Chitas for Kids" style={{ height: "70px", background: "white", borderRadius: "10px", padding: "5px" }} />
+          <img src="/images/chitas-for-kids-logo.png" alt="Chitas for Kids" style={{ height: '70px', background: 'white', borderRadius: '10px', padding: '5px' }} />
           <div style={{ flex: 1, minWidth: '250px' }}>
             <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem' }}>
               {showRussian ? '📚 Хитас для детей' : '📚 Chitas for Kids'}
