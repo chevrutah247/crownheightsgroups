@@ -11,10 +11,91 @@ function getRedis() {
   return null;
 }
 
+// Check if link is valid
+async function checkLink(url: string): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10 sec timeout
+    
+    const response = await fetch(url, {
+      method: 'HEAD',
+      signal: controller.signal,
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; LinkChecker/1.0)'
+      }
+    });
+    
+    clearTimeout(timeout);
+    
+    // Check for WhatsApp specific errors
+    if (url.includes('chat.whatsapp.com')) {
+      // WhatsApp returns 200 even for invalid links, need to check with GET
+      const getResponse = await fetch(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(10000),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; LinkChecker/1.0)'
+        }
+      });
+      const text = await getResponse.text();
+      if (text.includes('invite link is invalid') || text.includes('This invite link has been revoked')) {
+        return { valid: false, error: 'WhatsApp link is invalid or expired' };
+      }
+    }
+    
+    // Check for Telegram specific errors  
+    if (url.includes('t.me/')) {
+      const getResponse = await fetch(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(10000),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; LinkChecker/1.0)'
+        }
+      });
+      const text = await getResponse.text();
+      if (text.includes('tgme_page_description') && text.includes('not exist')) {
+        return { valid: false, error: 'Telegram link is invalid' };
+      }
+    }
+    
+    if (response.ok || response.status === 302 || response.status === 301) {
+      return { valid: true };
+    }
+    
+    if (response.status === 404) {
+      return { valid: false, error: 'Link not found (404)' };
+    }
+    
+    return { valid: true }; // Allow other status codes
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      return { valid: false, error: 'Link timed out - may be invalid' };
+    }
+    // Network errors might be due to CORS, allow these
+    return { valid: true };
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { name, platform, link, description, language, submitterEmail } = await request.json();
     if (!name || !platform || !link) return NextResponse.json({ error: 'Required fields missing' }, { status: 400 });
+
+    // Validate URL format
+    try {
+      new URL(link);
+    } catch {
+      return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
+    }
+
+    // Check if link is valid
+    const linkCheck = await checkLink(link);
+    if (!linkCheck.valid) {
+      return NextResponse.json({ 
+        error: `Link appears to be broken: ${linkCheck.error}. Please check and try again.` 
+      }, { status: 400 });
+    }
 
     const { error } = await supabase.from('torah_group_suggestions').insert({
       name, platform, link, description: description || null, language: language || 'english',
@@ -39,7 +120,6 @@ export async function PUT(request: Request) {
     const { id, action } = await request.json();
     
     if (action === 'approve') {
-      // Get the suggestion
       const { data: suggestion, error: fetchError } = await supabase
         .from('torah_group_suggestions')
         .select('*')
@@ -50,7 +130,14 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: 'Suggestion not found' }, { status: 404 });
       }
       
-      // Add to Redis torah_groups
+      // Check link again before approving
+      const linkCheck = await checkLink(suggestion.link);
+      if (!linkCheck.valid) {
+        return NextResponse.json({ 
+          error: `Cannot approve - link is broken: ${linkCheck.error}` 
+        }, { status: 400 });
+      }
+      
       const redis = getRedis();
       if (redis) {
         let groups: any[] = [];
@@ -75,9 +162,7 @@ export async function PUT(request: Request) {
         await redis.set('torah_groups', JSON.stringify(groups));
       }
       
-      // Delete from suggestions
       await supabase.from('torah_group_suggestions').delete().eq('id', id);
-      
       return NextResponse.json({ success: true });
     }
     

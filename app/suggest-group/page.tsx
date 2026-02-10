@@ -9,15 +9,25 @@ export default function SuggestGroupPage() {
   const [formData, setFormData] = useState({ name: '', platform: 'whatsapp', link: '', description: '', language: 'english', submitterEmail: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
+    
     try {
       const res = await fetch('/api/suggest-group', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
-      if (res.ok) setSubmitted(true);
-      else alert('Error submitting. Please try again.');
-    } catch { alert('Error submitting. Please try again.'); }
+      const data = await res.json();
+      
+      if (res.ok) {
+        setSubmitted(true);
+      } else {
+        setError(data.error || 'Error submitting. Please try again.');
+      }
+    } catch { 
+      setError('Error submitting. Please try again.'); 
+    }
     setLoading(false);
   };
 
@@ -46,6 +56,21 @@ export default function SuggestGroupPage() {
         </div>
 
         <form onSubmit={handleSubmit} style={{ background: 'white', borderRadius: '16px', padding: '2rem', boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
+          
+          {error && (
+            <div style={{ 
+              background: '#fef2f2', 
+              border: '1px solid #fecaca', 
+              color: '#dc2626', 
+              padding: '1rem', 
+              borderRadius: '8px', 
+              marginBottom: '1.5rem',
+              fontSize: '0.95rem'
+            }}>
+              ⚠️ {error}
+            </div>
+          )}
+
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#374151' }}>Group Name *</label>
             <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g., Daily Tanya WhatsApp" style={{ width: '100%', padding: '0.75rem', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} />
@@ -64,7 +89,10 @@ export default function SuggestGroupPage() {
 
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#374151' }}>Group Link *</label>
-            <input type="url" required value={formData.link} onChange={e => setFormData({...formData, link: e.target.value})} placeholder="https://chat.whatsapp.com/..." style={{ width: '100%', padding: '0.75rem', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} />
+            <input type="url" required value={formData.link} onChange={e => { setFormData({...formData, link: e.target.value}); setError(''); }} placeholder="https://chat.whatsapp.com/..." style={{ width: '100%', padding: '0.75rem', border: error && error.includes('link') ? '2px solid #dc2626' : '2px solid #e5e7eb', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }} />
+            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#666' }}>
+              ℹ️ Link will be verified before submission
+            </p>
           </div>
 
           <div style={{ marginBottom: '1.5rem' }}>
@@ -90,7 +118,7 @@ export default function SuggestGroupPage() {
           </div>
 
           <button type="submit" disabled={loading} style={{ width: '100%', padding: '1rem', background: loading ? '#9ca3af' : '#22c55e', color: 'white', border: 'none', borderRadius: '10px', fontSize: '1.1rem', fontWeight: 'bold', cursor: loading ? 'not-allowed' : 'pointer' }}>
-            {loading ? 'Submitting...' : '📚 Submit Group'}
+            {loading ? '🔍 Checking link & submitting...' : '📚 Submit Group'}
           </button>
         </form>
 
