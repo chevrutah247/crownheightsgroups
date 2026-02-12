@@ -1,12 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cyber-reminder/send",
-      "schedule": "0 14 * * *"
-    },
-    {
-      "path": "/api/cron/check-links",
-      "schedule": "0 6 * * *"
+      "path": "/api/cron/weekly-newsletter",
+      "schedule": "0 16 * * 0"
     }
   ]
 }
