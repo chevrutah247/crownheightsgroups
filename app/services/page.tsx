@@ -76,6 +76,45 @@ const featuredServices = [
     ctaRu: 'Смотреть книги',
     languages: ['ru'],
   },
+  {
+    id: 'featured-showerdoor',
+    name: 'Crown Heights Shower Door',
+    description: 'Custom glass shower doors, mirrors, window repair. Quality craftsmanship.',
+    descriptionRu: 'Стеклянные душевые двери на заказ, зеркала, ремонт окон.',
+    website: 'https://nyglassdoors.com',
+    logoUrl: '/images/showerdoor-logo.png',
+    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    cta: 'Get a Quote',
+    ctaRu: 'Получить расчёт',
+    languages: ['en', 'ru', 'he'],
+    phone: 'contact@nyglassdoors.com',
+  },
+  {
+    id: 'featured-hfls',
+    name: 'Hebrew Free Loan Society',
+    description: 'Interest-free loans since 1892. Improving lives through lending.',
+    descriptionRu: 'Беспроцентные займы с 1892 года. Улучшаем жизни через кредитование.',
+    website: 'https://hfls.org',
+    logoUrl: '/images/hfls-logo.png',
+    gradient: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
+    cta: 'Apply Now',
+    ctaRu: 'Подать заявку',
+    languages: ['en'],
+    phone: '(212) 687-0188',
+  },
+  {
+    id: 'featured-taxi',
+    name: 'Crown Heights Taxi',
+    description: 'Airport transfers, local rides, long distance. Available 24/7.',
+    descriptionRu: 'Трансферы в аэропорт, местные поездки, дальние расстояния. 24/7.',
+    website: '',
+    logoUrl: '/images/taxi-logo.png',
+    gradient: 'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)',
+    cta: 'Call Now',
+    ctaRu: 'Позвонить',
+    languages: ['en', 'ru', 'he'],
+    phone: '718-663-4444',
+  },
 ];
 
 const languageFlags: Record<string, string> = {
@@ -243,11 +282,11 @@ export default function ServicesPage() {
             ⭐ {showRussian ? 'Рекомендуемые сервисы' : 'Featured Services'}
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
-            {featuredServices.map((service) => (
+            {featuredServices.map((service: any) => (
               <a
                 key={service.id}
-                href={service.website}
-                target="_blank"
+                href={service.website || (service.phone ? `tel:${service.phone.replace(/[^0-9+]/g, '')}` : '#')}
+                target={service.website ? "_blank" : "_self"}
                 rel="noopener noreferrer"
                 style={{
                   display: 'flex',
@@ -329,7 +368,11 @@ export default function ServicesPage() {
                   alignSelf: 'flex-start',
                   backdropFilter: 'blur(10px)'
                 }}>
-                  {showRussian && service.ctaRu ? service.ctaRu : service.cta} →
+                  {service.phone && !service.website ? (
+                    <>📞 {service.phone}</>
+                  ) : (
+                    <>{showRussian && service.ctaRu ? service.ctaRu : service.cta} →</>
+                  )}
                 </span>
               </a>
             ))}
