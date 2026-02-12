@@ -324,7 +324,7 @@ export default function ServicesPage() {
                 
                 {/* Language badges */}
                 <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.75rem' }}>
-                  {service.languages.map(lang => (
+                  {service.languages.map((lang: string) => (
                     <span key={lang} style={{ 
                       fontSize: '0.85rem',
                       background: 'rgba(255,255,255,0.2)',
