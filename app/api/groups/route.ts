@@ -1,72 +1,99 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { groups, getApprovedGroups, getCategoryById, getLocationById } from '@/lib/data';
+import { Redis } from '@upstash/redis';
 
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const locationId = searchParams.get('location');
-  const categoryId = searchParams.get('category');
-  const search = searchParams.get('search');
-  const sort = searchParams.get('sort') || 'popular';
-  
-  let result = getApprovedGroups();
-  
-  // Filter by location
-  if (locationId) {
-    result = result.filter(g => g.locationId === locationId);
-  }
-  
-  // Filter by category
-  if (categoryId) {
-    result = result.filter(g => g.categoryId === categoryId);
-  }
-  
-  // Search filter
-  if (search) {
-    const query = search.toLowerCase();
-    result = result.filter(g => 
-      g.title.toLowerCase().includes(query) ||
-      g.description.toLowerCase().includes(query) ||
-      g.tags?.some(t => t.toLowerCase().includes(query))
-    );
-  }
-  
-  // Sort
-  switch (sort) {
-    case 'popular':
-      result.sort((a, b) => b.clicksCount - a.clicksCount);
-      break;
-    case 'date':
-      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      break;
-    case 'alpha':
-      result.sort((a, b) => a.title.localeCompare(b.title));
-      break;
-  }
-  
-  // Enrich with category and location data
-  const enrichedResult = result.map(group => ({
-    ...group,
-    category: getCategoryById(group.categoryId),
-    location: getLocationById(group.locationId),
-  }));
-  
-  return NextResponse.json({
-    groups: enrichedResult,
-    total: enrichedResult.length,
-  });
+function getRedis() {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (url && token) return new Redis({ url, token });
+  return null;
 }
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json();
-    
-    // In production, this would validate and save to database
-    // For now, return success
-    return NextResponse.json({ success: true, id: 'new-id' });
+    const redis = getRedis();
+    if (!redis) return NextResponse.json({ groups: [], total: 0 });
+
+    const searchParams = request.nextUrl.searchParams;
+    const locationId = searchParams.get('location');
+    const categoryId = searchParams.get('category');
+    const search = searchParams.get('search');
+    const sort = searchParams.get('sort') || 'popular';
+
+    // Get groups from Redis
+    const stored = await redis.get('groups');
+    let groups: any[] = [];
+    if (stored) {
+      groups = typeof stored === 'string' ? JSON.parse(stored) : stored;
+      if (!Array.isArray(groups)) groups = [];
+    }
+
+    // Only show approved groups
+    let result = groups.filter((g: any) => g.status === 'approved');
+
+    // Filter by location
+    if (locationId) {
+      result = result.filter((g: any) => g.locationId === locationId);
+    }
+
+    // Filter by category
+    if (categoryId) {
+      result = result.filter((g: any) => g.categoryId === categoryId);
+    }
+
+    // Search filter
+    if (search) {
+      const query = search.toLowerCase();
+      result = result.filter((g: any) =>
+        g.title?.toLowerCase().includes(query) ||
+        g.description?.toLowerCase().includes(query) ||
+        g.tags?.some((t: string) => t.toLowerCase().includes(query))
+      );
+    }
+
+    // Pinned groups first, then sort
+    const pinned = result.filter((g: any) => g.isPinned);
+    const unpinned = result.filter((g: any) => !g.isPinned);
+
+    pinned.sort((a: any, b: any) => (a.pinnedOrder || 999) - (b.pinnedOrder || 999));
+
+    switch (sort) {
+      case 'popular':
+        unpinned.sort((a: any, b: any) => (b.clicksCount || 0) - (a.clicksCount || 0));
+        break;
+      case 'date':
+        unpinned.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+      case 'alpha':
+        unpinned.sort((a: any, b: any) => (a.title || '').localeCompare(b.title || ''));
+        break;
+    }
+
+    const sorted = [...pinned, ...unpinned];
+
+    // Get categories and locations for enrichment
+    let categories: any[] = [];
+    let locations: any[] = [];
+    try {
+      const [catData, locData] = await Promise.all([
+        redis.get('group_categories'),
+        redis.get('locations'),
+      ]);
+      if (catData) categories = typeof catData === 'string' ? JSON.parse(catData) : catData;
+      if (locData) locations = typeof locData === 'string' ? JSON.parse(locData) : locData;
+    } catch {}
+
+    const enriched = sorted.map((group: any) => ({
+      ...group,
+      category: Array.isArray(categories) ? categories.find((c: any) => c.id === group.categoryId) : undefined,
+      location: Array.isArray(locations) ? locations.find((l: any) => l.id === group.locationId) : undefined,
+    }));
+
+    return NextResponse.json({
+      groups: enriched,
+      total: enriched.length,
+    });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to create group' },
-      { status: 500 }
-    );
+    console.error('GET groups error:', error);
+    return NextResponse.json({ groups: [], total: 0 });
   }
 }

@@ -22,21 +22,21 @@ export default function LotteryPage() {
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date();
-      const estOffset = -5 * 60; // EST is UTC-5
-      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-      const estTime = new Date(utc + (estOffset * 60000));
-      
+      // Use America/New_York to handle EST/EDT automatically
+      const estStr = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+      const estTime = new Date(estStr);
+
       // Find next Thursday 10 PM
-      let nextThursday = new Date(estTime);
+      let nextThursday = new Date(estStr);
       nextThursday.setHours(22, 0, 0, 0);
-      
+
       const daysUntilThursday = (4 - estTime.getDay() + 7) % 7;
       if (daysUntilThursday === 0 && estTime.getHours() >= 22) {
         nextThursday.setDate(nextThursday.getDate() + 7);
       } else {
         nextThursday.setDate(nextThursday.getDate() + daysUntilThursday);
       }
-      
+
       const diff = nextThursday.getTime() - estTime.getTime();
       
       if (diff > 0) {

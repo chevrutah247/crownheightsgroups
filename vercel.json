@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/weekly-newsletter",
       "schedule": "0 16 * * 0"
+    },
+    {
+      "path": "/api/cron/close-lottery-pool",
+      "schedule": "5 3 * * 5"
     }
   ]
 }

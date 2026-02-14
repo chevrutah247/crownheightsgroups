@@ -116,12 +116,26 @@ export async function POST(request: Request) {
       user = newUser;
       console.log('Created new user:', user.id);
 
-      // Create referral record if applicable
+      // Create referral record and credit $1 to referrer
       if (newUserData.referred_by) {
         await supabase.from('referrals').insert({
           referrer_id: newUserData.referred_by,
           referred_id: user.id,
         });
+
+        // Credit $1 to referrer
+        const { data: referrer } = await supabase
+          .from('lottery_users')
+          .select('credits')
+          .eq('id', newUserData.referred_by)
+          .single();
+
+        if (referrer) {
+          await supabase
+            .from('lottery_users')
+            .update({ credits: (referrer.credits || 0) + 1 })
+            .eq('id', newUserData.referred_by);
+        }
       }
     } else {
       console.log('Found existing user:', user.id);

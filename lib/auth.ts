@@ -197,5 +197,30 @@ export async function deleteSession(token: string): Promise<void> {
 }
 
 export async function getAllUsers(): Promise<User[]> {
-  return [];
+  const redis = getRedis();
+  if (!redis) return [];
+
+  try {
+    // Scan for all user keys
+    let cursor = 0;
+    const users: User[] = [];
+
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, { match: 'user:*', count: 100 });
+      cursor = typeof nextCursor === 'string' ? parseInt(nextCursor) : nextCursor;
+
+      for (const key of keys) {
+        const data = await redis.get(key);
+        if (data) {
+          const user = typeof data === 'string' ? JSON.parse(data) : data;
+          users.push(user as User);
+        }
+      }
+    } while (cursor !== 0);
+
+    return users;
+  } catch (error) {
+    console.error('getAllUsers error:', error);
+    return [];
+  }
 }
