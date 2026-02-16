@@ -292,6 +292,29 @@ export async function POST(request: Request) {
         .eq('id', user.id);
     }
 
+    // 7b. Update pool stats
+    const { count: totalParticipants } = await supabase
+      .from('pool_entries')
+      .select('*', { count: 'exact', head: true })
+      .eq('pool_week_id', poolWeek.id)
+      .eq('status', 'paid');
+
+    const { data: allEntries } = await supabase
+      .from('pool_entries')
+      .select('amount_paid')
+      .eq('pool_week_id', poolWeek.id)
+      .eq('status', 'paid');
+
+    const totalAmount = (allEntries || []).reduce((sum, e) => sum + (e.amount_paid || 0), 0);
+
+    await supabase
+      .from('pool_weeks')
+      .update({
+        total_participants: totalParticipants || 0,
+        total_amount: totalAmount,
+      })
+      .eq('id', poolWeek.id);
+
     // 8. Send confirmation email (non-blocking)
     fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/lottery/send-confirmation`, {
       method: 'POST',

@@ -131,10 +131,14 @@ export async function POST(request: Request) {
       }
     }
 
-    // Update pool status
+    // Update pool status and stats
     await supabase
       .from('pool_weeks')
-      .update({ status: 'numbers_sent' })
+      .update({
+        status: 'numbers_sent',
+        total_participants: entries.length,
+        total_amount: entries.reduce((sum, e) => sum + (e.amount_paid || 0), 0),
+      })
       .eq('id', poolWeekId);
 
     return NextResponse.json({ success: true, sent });

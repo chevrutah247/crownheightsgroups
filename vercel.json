@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/close-lottery-pool",
-      "schedule": "5 3 * * 5"
+      "schedule": "5 3 * * *"
     }
   ]
 }

@@ -14,13 +14,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Find open pools that have passed their end date
     const now = new Date().toISOString();
 
+    // Find expired pools (both 'open' and 'numbers_sent')
     const { data: expiredPools, error } = await supabase
       .from('pool_weeks')
-      .select('id, week_end')
-      .eq('status', 'open')
+      .select('id, week_end, status')
+      .in('status', ['open', 'numbers_sent'])
       .lt('week_end', now);
 
     if (error) {
@@ -28,30 +28,64 @@ export async function GET(request: NextRequest) {
     }
 
     if (!expiredPools || expiredPools.length === 0) {
+      // Check if there's an open pool at all, if not — create one
+      const { data: activePools } = await supabase
+        .from('pool_weeks')
+        .select('id')
+        .in('status', ['open', 'numbers_sent'])
+        .limit(1);
+
+      if (!activePools || activePools.length === 0) {
+        // No active pool exists — create one
+        const { weekStart, weekEnd } = getNextPoolDates();
+        await supabase.from('pool_weeks').insert({
+          week_start: weekStart,
+          week_end: weekEnd,
+          status: 'open',
+        });
+        return NextResponse.json({ message: 'No expired pools, created new open pool', closed: 0 });
+      }
+
       return NextResponse.json({ message: 'No pools to close', closed: 0 });
     }
 
-    // Close expired pools
-    const { error: updateError } = await supabase
-      .from('pool_weeks')
-      .update({ status: 'closed' })
-      .in('id', expiredPools.map(p => p.id));
+    // Update stats before closing
+    for (const pool of expiredPools) {
+      const { count, data: entries } = await supabase
+        .from('pool_entries')
+        .select('amount_paid', { count: 'exact' })
+        .eq('pool_week_id', pool.id)
+        .eq('status', 'paid');
 
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+      const totalAmount = (entries || []).reduce((sum, e) => sum + (e.amount_paid || 0), 0);
+
+      await supabase
+        .from('pool_weeks')
+        .update({
+          status: 'closed',
+          total_participants: count || 0,
+          total_amount: totalAmount,
+        })
+        .eq('id', pool.id);
     }
 
-    // Create next week's pool automatically
-    const nextThursday = getNextThursday10pmEST();
-    const weekStart = new Date(nextThursday);
-    weekStart.setDate(weekStart.getDate() - 7);
-    weekStart.setHours(22, 1, 0, 0);
+    // Create next week's pool
+    const { weekStart, weekEnd } = getNextPoolDates();
 
-    await supabase.from('pool_weeks').insert({
-      week_start: weekStart.toISOString(),
-      week_end: nextThursday.toISOString(),
-      status: 'open',
-    });
+    // Check no duplicate open pool
+    const { data: existing } = await supabase
+      .from('pool_weeks')
+      .select('id')
+      .eq('status', 'open')
+      .limit(1);
+
+    if (!existing || existing.length === 0) {
+      await supabase.from('pool_weeks').insert({
+        week_start: weekStart,
+        week_end: weekEnd,
+        status: 'open',
+      });
+    }
 
     return NextResponse.json({
       message: `Closed ${expiredPools.length} pool(s), created new pool`,
@@ -62,34 +96,33 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function getNextThursday10pmEST(): Date {
-  // Use America/New_York to handle DST automatically
+function getNextPoolDates(): { weekStart: string; weekEnd: string } {
+  // Thursday 10:00 PM EST = Friday 3:00 AM UTC (EST) or Friday 2:00 AM UTC (EDT)
+  // We calculate the next Thursday 10 PM in America/New_York timezone
   const now = new Date();
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hour12: false,
-  });
-  const parts = formatter.formatToParts(now);
-  const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value || '0');
 
-  const estDay = now.getDay(); // 0=Sun, 4=Thu
-  let daysUntil = (4 - estDay + 7) % 7;
-  if (daysUntil === 0 && get('hour') >= 22) {
-    daysUntil = 7;
+  // Get current day in EST/EDT
+  const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const estDay = estNow.getDay(); // 0=Sun, 4=Thu
+  const estHour = estNow.getHours();
+
+  let daysUntilThursday = (4 - estDay + 7) % 7;
+  if (daysUntilThursday === 0 && estHour >= 22) {
+    daysUntilThursday = 7;
   }
 
-  const target = new Date(now);
-  target.setDate(target.getDate() + daysUntil);
+  // Build target date in EST
+  const targetEST = new Date(estNow);
+  targetEST.setDate(targetEST.getDate() + daysUntilThursday);
+  targetEST.setHours(22, 0, 0, 0);
 
-  // Set to 22:00 EST/EDT (convert to UTC)
-  const estDate = new Date(target.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-  estDate.setHours(22, 0, 0, 0);
-  const offset = target.getTime() - estDate.getTime();
+  // Convert back to UTC by finding the offset
+  const utcTarget = new Date(now.getTime() + (targetEST.getTime() - estNow.getTime()));
 
-  const result = new Date(target);
-  result.setHours(22, 0, 0, 0);
-  result.setTime(result.getTime() + offset);
+  const weekEnd = utcTarget.toISOString();
 
-  return result;
+  const weekStartDate = new Date(utcTarget.getTime() - 7 * 24 * 60 * 60 * 1000 + 60 * 1000); // -7 days + 1 minute
+  const weekStart = weekStartDate.toISOString();
+
+  return { weekStart, weekEnd };
 }

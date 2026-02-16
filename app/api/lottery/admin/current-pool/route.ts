@@ -9,11 +9,13 @@ const supabase = createClient(
 
 export async function GET() {
   try {
-    // Get current open pool week
+    // Get current active pool week (open or numbers_sent)
     const { data: poolWeek, error: poolError } = await supabase
       .from('pool_weeks')
       .select('*')
-      .eq('status', 'open')
+      .in('status', ['open', 'numbers_sent'])
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
     if (poolError && poolError.code !== 'PGRST116') {
