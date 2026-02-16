@@ -224,6 +224,31 @@ export default function LotteryPage() {
           }}>
             🎟️ JOIN THIS WEEK'S POOL
           </Link>
+
+          <button
+            onClick={() => {
+              const text = `Join our lottery pool! 🎰 Only $3/week for Mega Millions + Powerball. We buy the tickets, you share the winnings! Join here: https://crownheightsgroups.com/lottery/join`;
+              if (navigator.share) {
+                navigator.share({ title: 'Lottery Pool', text, url: 'https://crownheightsgroups.com/lottery/join' }).catch(() => {});
+              } else {
+                navigator.clipboard.writeText(text);
+                alert('Link copied!');
+              }
+            }}
+            style={{
+              display: 'block',
+              margin: '1rem auto 0',
+              padding: '0.75rem 2rem',
+              background: 'rgba(255, 255, 255, 0.1)',
+              color: '#94a3b8',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '10px',
+              fontSize: '1rem',
+              cursor: 'pointer',
+            }}
+          >
+            📤 Share Pool with Friends
+          </button>
         </section>
 
         {/* How It Works */}

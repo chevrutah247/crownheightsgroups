@@ -13,6 +13,8 @@ export default function LotteryJoinPage() {
   const [success, setSuccess] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   
+  const [numberChoice, setNumberChoice] = useState<'pick_for_me' | 'my_numbers'>('pick_for_me');
+
   // Form data
   const [formData, setFormData] = useState({
     firstName: '',
@@ -160,7 +162,7 @@ export default function LotteryJoinPage() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           phone: formData.phone,
-          userNumbers: formData.userNumbers,
+          userNumbers: numberChoice === 'pick_for_me' ? 'PICK_FOR_ME' : formData.userNumbers,
           referralCode: formData.referralCode,
         }),
       });
@@ -296,6 +298,29 @@ export default function LotteryJoinPage() {
                 }}
               >
                 📋 Copy Link
+              </button>
+            </div>
+
+            {/* Share buttons */}
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => {
+                  const text = `Join our lottery pool! 🎰 Only $3/week for Mega Millions + Powerball. Join here: https://crownheightsgroups.com/lottery/join${resultData.referralCode ? `?ref=${resultData.referralCode}` : ''}`;
+                  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                }}
+                style={{ padding: '0.75rem 1.5rem', background: '#25D366', color: 'white', border: 'none', borderRadius: '10px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                📱 Share on WhatsApp
+              </button>
+              <button
+                onClick={() => {
+                  const text = `Join our lottery pool! 🎰 Only $3/week for Mega Millions + Powerball.\nhttps://crownheightsgroups.com/lottery/join${resultData.referralCode ? `?ref=${resultData.referralCode}` : ''}`;
+                  navigator.clipboard.writeText(text);
+                  alert('Message copied! Paste it anywhere.');
+                }}
+                style={{ padding: '0.75rem 1.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                📋 Copy Share Message
               </button>
             </div>
 
@@ -440,17 +465,70 @@ export default function LotteryJoinPage() {
               </div>
 
               <div>
-                <label style={labelStyle}>Your Lucky Numbers (optional)</label>
-                <textarea
-                  name="userNumbers"
-                  value={formData.userNumbers}
-                  onChange={handleInputChange}
-                  style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
-                  placeholder="e.g., 7, 14, 21, 35, 42 (Mega: 10)"
-                />
-                <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '-0.5rem' }}>
-                  Format: 5 numbers (1-70) + Mega Ball (1-25)
-                </p>
+                <label style={labelStyle}>Lottery Numbers</label>
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setNumberChoice('pick_for_me'); setFormData(prev => ({ ...prev, userNumbers: '' })); }}
+                    style={{
+                      flex: 1,
+                      padding: '1rem',
+                      borderRadius: '12px',
+                      border: `2px solid ${numberChoice === 'pick_for_me' ? '#22c55e' : '#e5e7eb'}`,
+                      background: numberChoice === 'pick_for_me' ? '#f0fdf4' : 'white',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      fontSize: '1rem',
+                      fontWeight: numberChoice === 'pick_for_me' ? '700' : '500',
+                      color: numberChoice === 'pick_for_me' ? '#166534' : '#666',
+                    }}
+                  >
+                    🎯 Pick for me
+                    <div style={{ fontSize: '0.8rem', fontWeight: '400', marginTop: '4px', color: '#666' }}>
+                      We'll choose the best numbers
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNumberChoice('my_numbers')}
+                    style={{
+                      flex: 1,
+                      padding: '1rem',
+                      borderRadius: '12px',
+                      border: `2px solid ${numberChoice === 'my_numbers' ? '#3b82f6' : '#e5e7eb'}`,
+                      background: numberChoice === 'my_numbers' ? '#eff6ff' : 'white',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      fontSize: '1rem',
+                      fontWeight: numberChoice === 'my_numbers' ? '700' : '500',
+                      color: numberChoice === 'my_numbers' ? '#1d4ed8' : '#666',
+                    }}
+                  >
+                    ✏️ My numbers
+                    <div style={{ fontSize: '0.8rem', fontWeight: '400', marginTop: '4px', color: '#666' }}>
+                      Enter your lucky numbers
+                    </div>
+                  </button>
+                </div>
+                {numberChoice === 'my_numbers' && (
+                  <>
+                    <textarea
+                      name="userNumbers"
+                      value={formData.userNumbers}
+                      onChange={handleInputChange}
+                      style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
+                      placeholder="e.g., 7, 14, 21, 35, 42 (Mega: 10)"
+                    />
+                    <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '-0.5rem' }}>
+                      Format: 5 numbers (1-70) + Mega Ball (1-25)
+                    </p>
+                  </>
+                )}
+                {numberChoice === 'pick_for_me' && (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '0.75rem 1rem', color: '#166534', fontSize: '0.95rem' }}>
+                    ✅ Our team will select optimized numbers for your ticket. You'll receive all purchased numbers by email.
+                  </div>
+                )}
               </div>
 
               <div>
