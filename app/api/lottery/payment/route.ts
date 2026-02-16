@@ -52,8 +52,11 @@ export async function POST(request: Request) {
       phone,
       userNumbers,
       referralCode,
-      lotteryType
+      lotteryType,
+      ticketQty: rawTicketQty
     } = body;
+
+    const ticketQty = Math.min(Math.max(Math.floor(Number(rawTicketQty) || 1), 1), 10);
 
     console.log('Payment request received:', { email, firstName, lastName });
 
@@ -240,16 +243,17 @@ export async function POST(request: Request) {
       megamillions: 600,   // $6.00 ($5 ticket + $1 service)
       both: 900,           // $9.00 ($7 tickets + $2 service)
     };
-    const basePriceCents = priceMap[lotteryType] || 300;
-    const basePriceDollars = basePriceCents / 100;
+    const unitPriceCents = priceMap[lotteryType] || 300;
+    const totalPriceCents = unitPriceCents * ticketQty;
+    const totalPriceDollars = totalPriceCents / 100;
 
-    let amountToPay = basePriceCents;
+    let amountToPay = totalPriceCents;
     let creditsUsed = 0;
 
     if (user.credits && user.credits > 0) {
       const creditsInCents = Math.floor(user.credits * 100);
       if (creditsInCents >= amountToPay) {
-        creditsUsed = basePriceDollars;
+        creditsUsed = totalPriceDollars;
         amountToPay = 0;
       } else {
         creditsUsed = user.credits;
@@ -293,6 +297,7 @@ export async function POST(request: Request) {
       payment_id: paymentId,
       user_numbers: userNumbers ? JSON.stringify(userNumbers) : null,
       lottery_type: lotteryType || 'both',
+      ticket_qty: ticketQty,
       status: 'paid',
     };
 
@@ -373,7 +378,7 @@ export async function POST(request: Request) {
             <div style="background: white; border-radius: 16px; padding: 30px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
               <p style="font-size: 18px; color: #333;">Hello <strong>${user.first_name}</strong>! 👋</p>
               <p style="font-size: 16px; color: #666; line-height: 1.6;">
-                Thank you for joining this week's lottery pool! Your payment has been confirmed.
+                Thank you for joining this week's lottery pool${ticketQty > 1 ? ` with <strong>${ticketQty} shares</strong>` : ''}! Your payment of <strong>$${totalPriceDollars.toFixed(2)}</strong> has been confirmed.
               </p>
               <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 20px; margin: 20px 0;">
                 <h3 style="color: #166534; margin: 0 0 10px 0;">✅ What's Next?</h3>

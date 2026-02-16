@@ -427,6 +427,8 @@ export default function AdminPage() {
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
+                        <th>Type</th>
+                        <th>Shares</th>
                         <th>Choice</th>
                         <th>Assigned Numbers</th>
                         <th>Paid</th>
@@ -442,6 +444,18 @@ export default function AdminPage() {
                           <td><strong>{p.first_name} {p.last_name}</strong></td>
                           <td>{p.email}</td>
                           <td>{p.phone || '-'}</td>
+                          <td>
+                            <span style={{
+                              padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold',
+                              background: p.lottery_type === 'both' ? '#dcfce7' : p.lottery_type === 'megamillions' ? '#dbeafe' : '#fee2e2',
+                              color: p.lottery_type === 'both' ? '#166534' : p.lottery_type === 'megamillions' ? '#1d4ed8' : '#dc2626',
+                            }}>
+                              {p.lottery_type === 'both' ? 'PB+MM' : p.lottery_type === 'megamillions' ? 'MM' : 'PB'}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                            {(p.ticket_qty || 1) > 1 ? <span style={{ background: '#fef3c7', padding: '2px 8px', borderRadius: '4px', color: '#92400e' }}>{p.ticket_qty}x</span> : '1'}
+                          </td>
                           <td>
                             {isPickForMe ? (
                               <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>Pick for me</span>
@@ -475,7 +489,7 @@ export default function AdminPage() {
                     </tbody>
                     <tfoot>
                       <tr style={{ background: '#f3f4f6', fontWeight: 'bold' }}>
-                        <td colSpan={6}>Total</td>
+                        <td colSpan={8}>Total</td>
                         <td style={{ color: '#22c55e' }}>${lotteryParticipants.reduce((sum, p) => sum + (p.amount_paid || 0), 0).toFixed(2)}</td>
                         <td></td>
                       </tr>

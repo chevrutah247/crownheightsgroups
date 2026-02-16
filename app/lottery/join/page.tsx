@@ -15,6 +15,7 @@ export default function LotteryJoinPage() {
   
   const [numberChoice, setNumberChoice] = useState<'pick_for_me' | 'my_numbers'>('pick_for_me');
   const [lotteryType, setLotteryType] = useState<'powerball' | 'megamillions' | 'both'>('both');
+  const [ticketQty, setTicketQty] = useState(1);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -166,6 +167,7 @@ export default function LotteryJoinPage() {
           userNumbers: numberChoice === 'pick_for_me' ? 'PICK_FOR_ME' : formData.userNumbers,
           referralCode: formData.referralCode,
           lotteryType,
+          ticketQty,
         }),
       });
 
@@ -202,16 +204,18 @@ export default function LotteryJoinPage() {
     }
   };
 
-  const getPrice = () => {
+  const getBasePrice = () => {
     if (lotteryType === 'powerball') return 3;
     if (lotteryType === 'megamillions') return 6;
     return 9; // both
   };
 
+  const getPrice = () => getBasePrice() * ticketQty;
+
   const getPriceBreakdown = () => {
-    if (lotteryType === 'powerball') return { ticket: 2, service: 1, total: 3 };
-    if (lotteryType === 'megamillions') return { ticket: 5, service: 1, total: 6 };
-    return { ticket: 7, service: 2, total: 9 }; // both
+    if (lotteryType === 'powerball') return { ticket: 2 * ticketQty, service: 1 * ticketQty, total: 3 * ticketQty };
+    if (lotteryType === 'megamillions') return { ticket: 5 * ticketQty, service: 1 * ticketQty, total: 6 * ticketQty };
+    return { ticket: 7 * ticketQty, service: 2 * ticketQty, total: 9 * ticketQty }; // both
   };
 
   const inputStyle = {
@@ -548,9 +552,44 @@ export default function LotteryJoinPage() {
                     </div>
                   </button>
                 </div>
-                <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '0.5rem 0.75rem', marginBottom: '1rem', fontSize: '0.85rem', color: '#666' }}>
-                  💡 Price includes ${getPriceBreakdown().service} service fee • Ticket cost: ${getPriceBreakdown().ticket}
+              </div>
+
+              <div>
+                <label style={labelStyle}>Number of Shares</label>
+                <p style={{ color: '#666', fontSize: '0.9rem', margin: '0 0 0.75rem 0' }}>
+                  Buy multiple shares to increase your portion of any winnings
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setTicketQty(Math.max(1, ticketQty - 1))}
+                    style={{
+                      width: '44px', height: '44px', borderRadius: '10px', border: '2px solid #e5e7eb',
+                      background: 'white', fontSize: '1.5rem', cursor: 'pointer', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center', color: ticketQty <= 1 ? '#ccc' : '#333',
+                    }}
+                  >−</button>
+                  <div style={{
+                    flex: 1, textAlign: 'center', fontSize: '1.5rem', fontWeight: 'bold',
+                    color: '#1e3a5f', background: '#f8fafc', padding: '0.5rem', borderRadius: '10px',
+                  }}>
+                    {ticketQty} {ticketQty === 1 ? 'share' : 'shares'}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setTicketQty(Math.min(10, ticketQty + 1))}
+                    style={{
+                      width: '44px', height: '44px', borderRadius: '10px', border: '2px solid #e5e7eb',
+                      background: 'white', fontSize: '1.5rem', cursor: 'pointer', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center', color: ticketQty >= 10 ? '#ccc' : '#333',
+                    }}
+                  >+</button>
                 </div>
+                {ticketQty > 1 && (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '0.75rem 1rem', color: '#166534', fontSize: '0.9rem' }}>
+                    🏆 {ticketQty} shares = {ticketQty}x your portion of any winnings! (${getBasePrice()}/share × {ticketQty} = <strong>${getPrice()}</strong>)
+                  </div>
+                )}
               </div>
 
               <div>

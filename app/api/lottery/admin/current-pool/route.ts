@@ -61,6 +61,8 @@ export async function GET() {
       credits_used: entry.credits_used,
       user_numbers: entry.user_numbers,
       assigned_numbers: entry.assigned_numbers,
+      lottery_type: entry.lottery_type,
+      ticket_qty: entry.ticket_qty,
       created_at: entry.created_at,
     }));
 
