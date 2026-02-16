@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import FloatingContactSticker from "@/components/FloatingContactSticker";
 
 export const metadata: Metadata = {
   title: "Crown Heights Groups - Community Directory",
@@ -31,6 +32,7 @@ export default function RootLayout({
       </head>
       <body>
         <GoogleAnalytics />
+        <FloatingContactSticker />
         {children}
       </body>
     </html>
