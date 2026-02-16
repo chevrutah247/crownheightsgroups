@@ -10,6 +10,10 @@ const supabase = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function escapeHtml(str: string) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 export async function POST(request: Request) {
   try {
     const { poolWeekId } = await request.json();
@@ -54,18 +58,51 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No participants to email' }, { status: 400 });
     }
 
-    // Format numbers for email
-    const numbersHtml = poolWeek.admin_numbers
+    // Format all pool numbers for email
+    const allNumberLines = poolWeek.admin_numbers
       .split('\n')
-      .filter((line: string) => line.trim())
-      .map((line: string) => `<div style="font-family: monospace; padding: 8px; background: #fff; border-radius: 4px; margin-bottom: 4px;">${line}</div>`)
-      .join('');
+      .filter((line: string) => line.trim());
 
     // Send emails to all participants
     let sent = 0;
     for (const entry of entries) {
       const user = entry.lottery_users;
       if (!user?.email) continue;
+
+      // Build personalized numbers section
+      const assignedLines = entry.assigned_numbers
+        ? entry.assigned_numbers.split('\n').filter((l: string) => l.trim()).map((l: string) => l.trim().toLowerCase())
+        : [];
+
+      let numbersHtml = '';
+
+      // If user has assigned numbers, show them highlighted at the top
+      if (entry.assigned_numbers && entry.assigned_numbers.trim()) {
+        const personalLines = entry.assigned_numbers
+          .split('\n')
+          .filter((line: string) => line.trim());
+
+        numbersHtml += `
+          <div style="background: #dcfce7; border: 3px solid #22c55e; border-radius: 12px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #166534; margin: 0 0 12px 0; font-size: 18px;">⭐ Your Numbers:</h3>
+            ${personalLines.map((line: string) => `<div style="font-family: monospace; padding: 10px 12px; background: #fff; border-radius: 6px; margin-bottom: 4px; font-size: 15px; font-weight: bold; border-left: 4px solid #22c55e;">${escapeHtml(line)}</div>`).join('')}
+          </div>
+        `;
+      }
+
+      // Show all pool numbers
+      numbersHtml += `
+        <div style="background: #fef3c7; border: 2px solid #fcd34d; border-radius: 12px; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #92400e; margin: 0 0 12px 0;">🎱 All Pool Numbers:</h3>
+          ${allNumberLines.map((line: string) => {
+            const isPersonal = assignedLines.length > 0 && assignedLines.some((al: string) => line.trim().toLowerCase().includes(al) || al.includes(line.trim().toLowerCase()));
+            if (isPersonal) {
+              return `<div style="font-family: monospace; padding: 10px 12px; background: #dcfce7; border-radius: 6px; margin-bottom: 4px; font-weight: bold; border-left: 4px solid #22c55e;">⭐ ${escapeHtml(line)}</div>`;
+            }
+            return `<div style="font-family: monospace; padding: 8px 12px; background: #fff; border-radius: 4px; margin-bottom: 4px;">${escapeHtml(line)}</div>`;
+          }).join('')}
+        </div>
+      `;
 
       try {
         await resend.emails.send({
@@ -86,16 +123,13 @@ export async function POST(request: Request) {
 
               <div style="background: white; border-radius: 16px; padding: 30px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
                 <p style="font-size: 18px; color: #333;">
-                  Hello <strong>${user.first_name}</strong>! 👋
+                  Hello <strong>${escapeHtml(user.first_name)}</strong>! 👋
                 </p>
                 <p style="font-size: 16px; color: #666; line-height: 1.6;">
-                  Great news! Here are all the lottery numbers we're playing this week:
+                  Great news! Here are the lottery numbers for this week's pool:
                 </p>
 
-                <div style="background: #fef3c7; border: 2px solid #fcd34d; border-radius: 12px; padding: 20px; margin: 20px 0;">
-                  <h3 style="color: #92400e; margin: 0 0 15px 0;">🎱 Our Numbers:</h3>
-                  ${numbersHtml}
-                </div>
+                ${numbersHtml}
 
                 <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 15px; margin: 20px 0;">
                   <p style="color: #166534; margin: 0; font-size: 14px;">

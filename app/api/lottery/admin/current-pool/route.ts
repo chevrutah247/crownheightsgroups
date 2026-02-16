@@ -60,6 +60,7 @@ export async function GET() {
       amount_paid: entry.amount_paid,
       credits_used: entry.credits_used,
       user_numbers: entry.user_numbers,
+      assigned_numbers: entry.assigned_numbers,
       created_at: entry.created_at,
     }));
 

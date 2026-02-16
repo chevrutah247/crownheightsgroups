@@ -29,6 +29,8 @@ export default function AdminPage() {
   const [selectedHistoryWeek, setSelectedHistoryWeek] = useState<any>(null);
   const [historyParticipants, setHistoryParticipants] = useState<any[]>([]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [assignedNumbersMap, setAssignedNumbersMap] = useState<Record<string, string>>({});
+  const [savingAssignment, setSavingAssignment] = useState<string | null>(null);
   
   const [groupSuggestions, setGroupSuggestions] = useState<any[]>([]);
   const [serviceSuggestions, setServiceSuggestions] = useState<any[]>([]);
@@ -71,7 +73,14 @@ export default function AdminPage() {
           setLotteryPoolWeek(d.poolWeek);
           setAdminNumbers(d.poolWeek.admin_numbers || '');
         }
-        if (d.participants) setLotteryParticipants(d.participants);
+        if (d.participants) {
+          setLotteryParticipants(d.participants);
+          const map: Record<string, string> = {};
+          d.participants.forEach((p: any) => {
+            if (p.assigned_numbers) map[p.id] = p.assigned_numbers;
+          });
+          setAssignedNumbersMap(prev => ({ ...prev, ...map }));
+        }
       }).catch(() => {}),
       // Fetch lottery history
       fetch('/api/lottery/admin/history').then(r => r.json()).then(d => {
@@ -119,6 +128,27 @@ export default function AdminPage() {
       setLotteryMessage('❌ Error sending emails');
     } finally {
       setSendingEmails(false);
+    }
+  };
+
+  const saveAssignedNumbers = async (entryId: string) => {
+    setSavingAssignment(entryId);
+    try {
+      const res = await fetch('/api/lottery/admin/assign-numbers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entryId, assignedNumbers: assignedNumbersMap[entryId] || '' }),
+      });
+      if (res.ok) {
+        setLotteryMessage('✅ Numbers assigned!');
+        setTimeout(() => setLotteryMessage(''), 3000);
+      } else {
+        setLotteryMessage('❌ Error assigning numbers');
+      }
+    } catch {
+      setLotteryMessage('❌ Error assigning numbers');
+    } finally {
+      setSavingAssignment(null);
     }
   };
 
@@ -397,27 +427,55 @@ export default function AdminPage() {
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
-                        <th>Their Numbers</th>
+                        <th>Choice</th>
+                        <th>Assigned Numbers</th>
                         <th>Paid</th>
                         <th>Joined</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {lotteryParticipants.map((p, i) => (
-                        <tr key={p.id}>
+                      {lotteryParticipants.map((p, i) => {
+                        const isPickForMe = !p.user_numbers || p.user_numbers === '"PICK_FOR_ME"' || p.user_numbers === 'PICK_FOR_ME';
+                        return (
+                        <tr key={p.id} style={{ background: isPickForMe && !assignedNumbersMap[p.id] ? '#fef3c7' : 'transparent' }}>
                           <td>{i + 1}</td>
                           <td><strong>{p.first_name} {p.last_name}</strong></td>
                           <td>{p.email}</td>
                           <td>{p.phone || '-'}</td>
-                          <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{p.user_numbers ? JSON.parse(p.user_numbers) : '-'}</td>
+                          <td>
+                            {isPickForMe ? (
+                              <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>Pick for me</span>
+                            ) : (
+                              <span style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{(() => { try { return JSON.parse(p.user_numbers); } catch { return p.user_numbers; } })()}</span>
+                            )}
+                          </td>
+                          <td style={{ minWidth: '220px' }}>
+                            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                              <input
+                                type="text"
+                                value={assignedNumbersMap[p.id] || ''}
+                                onChange={(e) => setAssignedNumbersMap(prev => ({ ...prev, [p.id]: e.target.value }))}
+                                placeholder="e.g. 02-15-34-48-67 (M:12)"
+                                style={{ flex: 1, padding: '0.4rem 0.5rem', border: '1px solid #ddd', borderRadius: '6px', fontSize: '0.85rem', fontFamily: 'monospace' }}
+                              />
+                              <button
+                                onClick={() => saveAssignedNumbers(p.id)}
+                                disabled={savingAssignment === p.id}
+                                style={{ padding: '0.4rem 0.6rem', background: assignedNumbersMap[p.id] ? '#22c55e' : '#9ca3af', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                              >
+                                {savingAssignment === p.id ? '...' : '💾'}
+                              </button>
+                            </div>
+                          </td>
                           <td style={{ color: '#22c55e', fontWeight: 'bold' }}>${(p.amount_paid || 0).toFixed(2)}</td>
                           <td style={{ fontSize: '0.85rem' }}>{formatDate(p.created_at)}</td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                     <tfoot>
                       <tr style={{ background: '#f3f4f6', fontWeight: 'bold' }}>
-                        <td colSpan={5}>Total</td>
+                        <td colSpan={6}>Total</td>
                         <td style={{ color: '#22c55e' }}>${lotteryParticipants.reduce((sum, p) => sum + (p.amount_paid || 0), 0).toFixed(2)}</td>
                         <td></td>
                       </tr>
