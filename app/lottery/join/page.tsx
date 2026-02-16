@@ -14,6 +14,7 @@ export default function LotteryJoinPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   
   const [numberChoice, setNumberChoice] = useState<'pick_for_me' | 'my_numbers'>('pick_for_me');
+  const [lotteryType, setLotteryType] = useState<'powerball' | 'megamillions' | 'both'>('both');
 
   // Form data
   const [formData, setFormData] = useState({
@@ -164,6 +165,7 @@ export default function LotteryJoinPage() {
           phone: formData.phone,
           userNumbers: numberChoice === 'pick_for_me' ? 'PICK_FOR_ME' : formData.userNumbers,
           referralCode: formData.referralCode,
+          lotteryType,
         }),
       });
 
@@ -198,6 +200,18 @@ export default function LotteryJoinPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getPrice = () => {
+    if (lotteryType === 'powerball') return 3;
+    if (lotteryType === 'megamillions') return 6;
+    return 9; // both
+  };
+
+  const getPriceBreakdown = () => {
+    if (lotteryType === 'powerball') return { ticket: 2, service: 1, total: 3 };
+    if (lotteryType === 'megamillions') return { ticket: 5, service: 1, total: 6 };
+    return { ticket: 7, service: 2, total: 9 }; // both
   };
 
   const inputStyle = {
@@ -465,6 +479,81 @@ export default function LotteryJoinPage() {
               </div>
 
               <div>
+                <label style={labelStyle}>Choose Your Lottery</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setLotteryType('powerball')}
+                    style={{
+                      padding: '1rem',
+                      borderRadius: '12px',
+                      border: `2px solid ${lotteryType === 'powerball' ? '#E31837' : '#e5e7eb'}`,
+                      background: lotteryType === 'powerball' ? '#fef2f2' : 'white',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div>
+                      <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: lotteryType === 'powerball' ? '#E31837' : '#333' }}>🔴 Powerball</span>
+                      <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '2px' }}>Mon, Wed & Sat at 10:59 PM ET</div>
+                    </div>
+                    <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: lotteryType === 'powerball' ? '#E31837' : '#333' }}>$3</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLotteryType('megamillions')}
+                    style={{
+                      padding: '1rem',
+                      borderRadius: '12px',
+                      border: `2px solid ${lotteryType === 'megamillions' ? '#1d4ed8' : '#e5e7eb'}`,
+                      background: lotteryType === 'megamillions' ? '#eff6ff' : 'white',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div>
+                      <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: lotteryType === 'megamillions' ? '#1d4ed8' : '#333' }}>🔵 Mega Millions</span>
+                      <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '2px' }}>Tue & Fri at 11 PM ET</div>
+                    </div>
+                    <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: lotteryType === 'megamillions' ? '#1d4ed8' : '#333' }}>$6</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLotteryType('both')}
+                    style={{
+                      padding: '1rem',
+                      borderRadius: '12px',
+                      border: `2px solid ${lotteryType === 'both' ? '#22c55e' : '#e5e7eb'}`,
+                      background: lotteryType === 'both' ? '#f0fdf4' : 'white',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div>
+                      <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: lotteryType === 'both' ? '#166534' : '#333' }}>🔴🔵 Both Lotteries</span>
+                      <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '2px' }}>Best value — play all 5 weekly drawings!</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: lotteryType === 'both' ? '#166534' : '#333' }}>$9</span>
+                      {lotteryType !== 'both' && <div style={{ fontSize: '0.7rem', color: '#22c55e', fontWeight: 'bold' }}>BEST VALUE</div>}
+                    </div>
+                  </button>
+                </div>
+                <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '0.5rem 0.75rem', marginBottom: '1rem', fontSize: '0.85rem', color: '#666' }}>
+                  💡 Price includes ${getPriceBreakdown().service} service fee • Ticket cost: ${getPriceBreakdown().ticket}
+                </div>
+              </div>
+
+              <div>
                 <label style={labelStyle}>Lottery Numbers</label>
                 <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
                   <button
@@ -603,7 +692,7 @@ export default function LotteryJoinPage() {
           {step === 2 && (
             <div>
               <h2 style={{ color: '#1e3a5f', marginBottom: '1.5rem', textAlign: 'center' }}>
-                Step 2: Payment - $3.00
+                Step 2: Payment - ${getPrice().toFixed(2)}
               </h2>
 
               <div style={{
@@ -625,14 +714,19 @@ export default function LotteryJoinPage() {
                 padding: '1.5rem',
                 marginBottom: '1.5rem'
               }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '1.2rem'
-                }}>
-                  <span>Pool Entry Fee:</span>
-                  <strong>$3.00</strong>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', color: '#666' }}>
+                    <span>{lotteryType === 'both' ? 'Powerball + Mega Millions' : lotteryType === 'powerball' ? 'Powerball' : 'Mega Millions'} ticket:</span>
+                    <span>${getPriceBreakdown().ticket}.00</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', color: '#666' }}>
+                    <span>Service fee:</span>
+                    <span>${getPriceBreakdown().service}.00</span>
+                  </div>
+                  <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                    <span>Total:</span>
+                    <span>${getPrice().toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
 
@@ -678,7 +772,7 @@ export default function LotteryJoinPage() {
                   marginBottom: '1rem'
                 }}
               >
-                {loading ? '⏳ Processing...' : '🔒 Pay $3.00 Securely'}
+                {loading ? '⏳ Processing...' : `🔒 Pay $${getPrice().toFixed(2)} Securely`}
               </button>
 
               <button

@@ -165,7 +165,7 @@ export default function LotteryPage() {
             padding: '1rem 2.5rem',
             marginBottom: '2rem'
           }}>
-            <span style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>Only $3 / week</span>
+            <span style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>From $3 / week</span>
           </div>
 
           {/* Countdown Timer */}
@@ -302,7 +302,7 @@ export default function LotteryPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             {[
               { icon: '📈', title: 'Better Odds', desc: 'More tickets = more chances to win' },
-              { icon: '💵', title: 'Affordable', desc: 'Just $3 per week' },
+              { icon: '💵', title: 'Affordable', desc: 'From $3/week — choose your lottery' },
               { icon: '👥', title: 'Community', desc: 'Win together with neighbors' },
               { icon: '📸', title: 'Transparent', desc: 'All numbers emailed to you' },
               { icon: '🔒', title: 'Secure', desc: 'Payments via Square' },

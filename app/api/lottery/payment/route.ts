@@ -44,14 +44,15 @@ async function createSquarePayment(sourceId: string, amountCents: number, email:
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { 
+    const {
       sourceId,
-      email, 
-      firstName, 
-      lastName, 
+      email,
+      firstName,
+      lastName,
       phone,
       userNumbers,
-      referralCode
+      referralCode,
+      lotteryType
     } = body;
 
     console.log('Payment request received:', { email, firstName, lastName });
@@ -233,14 +234,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Calculate amount (check for credits)
-    let amountToPay = 300; // $3.00 in cents
+    // 4. Calculate amount based on lottery type
+    const priceMap: Record<string, number> = {
+      powerball: 300,      // $3.00 ($2 ticket + $1 service)
+      megamillions: 600,   // $6.00 ($5 ticket + $1 service)
+      both: 900,           // $9.00 ($7 tickets + $2 service)
+    };
+    const basePriceCents = priceMap[lotteryType] || 300;
+    const basePriceDollars = basePriceCents / 100;
+
+    let amountToPay = basePriceCents;
     let creditsUsed = 0;
 
     if (user.credits && user.credits > 0) {
       const creditsInCents = Math.floor(user.credits * 100);
       if (creditsInCents >= amountToPay) {
-        creditsUsed = 3.00;
+        creditsUsed = basePriceDollars;
         amountToPay = 0;
       } else {
         creditsUsed = user.credits;
@@ -283,6 +292,7 @@ export async function POST(request: Request) {
       payment_method: amountToPay > 0 ? 'square' : 'credits',
       payment_id: paymentId,
       user_numbers: userNumbers ? JSON.stringify(userNumbers) : null,
+      lottery_type: lotteryType || 'both',
       status: 'paid',
     };
 
