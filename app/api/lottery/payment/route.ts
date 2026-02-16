@@ -146,6 +146,8 @@ export async function POST(request: Request) {
       .from('pool_weeks')
       .select('*')
       .eq('status', 'open')
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
     if (poolError && poolError.code !== 'PGRST116') {
@@ -156,26 +158,48 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!poolWeek) {
-      // Create new pool week if none exists
-      const now = new Date();
-      const thursday = new Date(now);
-      thursday.setDate(thursday.getDate() + ((4 - thursday.getDay() + 7) % 7));
-      thursday.setHours(22, 0, 0, 0);
-      
-      if (now > thursday) {
-        thursday.setDate(thursday.getDate() + 7);
-      }
+    // Check if pool is expired (week_end has passed) — auto-close stale pools
+    const now = new Date();
+    if (poolWeek && new Date(poolWeek.week_end) < now) {
+      console.log('Found expired open pool, closing it:', poolWeek.id);
 
-      const weekStart = new Date(thursday);
-      weekStart.setDate(weekStart.getDate() - 7);
-      weekStart.setHours(22, 1, 0, 0);
+      // Update stats and close
+      const { count, data: oldEntries } = await supabase
+        .from('pool_entries')
+        .select('amount_paid', { count: 'exact' })
+        .eq('pool_week_id', poolWeek.id)
+        .eq('status', 'paid');
+
+      const oldTotal = (oldEntries || []).reduce((sum, e) => sum + (e.amount_paid || 0), 0);
+
+      await supabase
+        .from('pool_weeks')
+        .update({
+          status: 'closed',
+          total_participants: count || 0,
+          total_amount: oldTotal,
+        })
+        .eq('id', poolWeek.id);
+
+      // Also close any other stale open/numbers_sent pools
+      await supabase
+        .from('pool_weeks')
+        .update({ status: 'closed' })
+        .in('status', ['open', 'numbers_sent'])
+        .lt('week_end', now.toISOString());
+
+      poolWeek = null; // Force creation of new pool
+    }
+
+    if (!poolWeek) {
+      // Create new pool week
+      const { weekStart, weekEnd } = getNextPoolDates();
 
       const { data: newPool, error: newPoolError } = await supabase
         .from('pool_weeks')
         .insert({
-          week_start: weekStart.toISOString(),
-          week_end: thursday.toISOString(),
+          week_start: weekStart,
+          week_end: weekEnd,
           status: 'open'
         })
         .select()
@@ -347,4 +371,28 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+function getNextPoolDates(): { weekStart: string; weekEnd: string } {
+  const now = new Date();
+  const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const estDay = estNow.getDay();
+  const estHour = estNow.getHours();
+
+  let daysUntilThursday = (4 - estDay + 7) % 7;
+  if (daysUntilThursday === 0 && estHour >= 22) {
+    daysUntilThursday = 7;
+  }
+
+  const targetEST = new Date(estNow);
+  targetEST.setDate(targetEST.getDate() + daysUntilThursday);
+  targetEST.setHours(22, 0, 0, 0);
+
+  const utcTarget = new Date(now.getTime() + (targetEST.getTime() - estNow.getTime()));
+  const weekEnd = utcTarget.toISOString();
+
+  const weekStartDate = new Date(utcTarget.getTime() - 7 * 24 * 60 * 60 * 1000 + 60 * 1000);
+  const weekStart = weekStartDate.toISOString();
+
+  return { weekStart, weekEnd };
 }
