@@ -351,6 +351,54 @@ export default function LotteryPage() {
           </Link>
         </section>
 
+        {/* Torah & Lottery */}
+        <section style={{
+          background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(245, 158, 11, 0.08))',
+          borderRadius: '20px',
+          padding: '2rem',
+          marginBottom: '3rem',
+          border: '1px solid rgba(255, 215, 0, 0.2)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: '-20px',
+            right: '-10px',
+            fontSize: '6rem',
+            opacity: 0.05,
+            transform: 'rotate(15deg)',
+          }}>📜</div>
+          <h3 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.3rem', textAlign: 'center' }}>
+            ✡️ A Lottery Pool in the Spirit of Our Rebbes
+          </h3>
+          <blockquote style={{
+            color: '#cbd5e1',
+            fontSize: '0.95rem',
+            lineHeight: 1.8,
+            margin: '0 0 1rem 0',
+            paddingLeft: '1.25rem',
+            borderLeft: '3px solid rgba(255, 215, 0, 0.4)',
+            fontStyle: 'italic',
+          }}>
+            &ldquo;The Tzemach Tzedek [third Lubavitcher Rebbe] purchased lottery tickets many times, for himself, and for his son, the Rebbe Maharash. There was a manuscript found written in his holy handwriting: &lsquo;May it be the will [of G-d] that Rabbi Shmuel should win the lottery.&rsquo;&rdquo;
+          </blockquote>
+          <blockquote style={{
+            color: '#cbd5e1',
+            fontSize: '0.95rem',
+            lineHeight: 1.8,
+            margin: '0 0 1.25rem 0',
+            paddingLeft: '1.25rem',
+            borderLeft: '3px solid rgba(255, 215, 0, 0.4)',
+            fontStyle: 'italic',
+          }}>
+            &ldquo;The Rebbe adds that the Rebbe Maharash actually won the lottery a number of times, and it was quite a significant sum.&rdquo;
+          </blockquote>
+          <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0, textAlign: 'center' }}>
+            — Rabbi Yehuda Shurpin, <a href="https://www.chabad.org/library/article_cdo/aid/6110139/jewish/Is-It-Kosher-to-Play-Lotto.htm" target="_blank" rel="noopener noreferrer" style={{ color: '#ffd700', textDecoration: 'underline' }}>Chabad.org</a>
+          </p>
+        </section>
+
         {/* FAQ */}
         <section style={{ marginBottom: '3rem' }}>
           <h2 style={{ color: 'white', textAlign: 'center', marginBottom: '2rem', fontSize: '1.75rem' }}>
@@ -362,7 +410,7 @@ export default function LotteryPage() {
             { q: 'How are winnings distributed?', a: 'All winnings are split equally among participants. Under $50 goes back into tickets. Larger amounts are distributed within 14-30 days.' },
             { q: 'When do I need to join by?', a: 'Registration closes every Thursday at 10:00 PM EST. Tickets are purchased Friday morning.' },
             { q: 'How will I know the numbers?', a: "After entries are purchased, you'll receive an email with all the numbers we're playing that week." },
-            { q: 'Is this legal?', a: 'Yes! Lottery pools are legal. We operate as Medinat Hesed LLC with clear terms and conditions.' },
+            { q: 'Is this legal?', a: 'Yes! Lottery pools are legal. We operate as Medinat Hesed LLC with clear terms and conditions. Lottery playing also has deep roots in Jewish tradition — the Tzemach Tzedek himself bought lottery tickets regularly.' },
             { q: 'What payment methods are accepted?', a: 'We accept all major credit/debit cards through Square secure payment.' }
           ].map((item, i) => (
             <div key={i} style={{
