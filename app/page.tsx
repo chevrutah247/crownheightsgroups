@@ -91,13 +91,13 @@ export default function HomePage() {
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('session_token');
-      if (!token) { window.location.href = '/auth/login'; return; }
+      if (!token) { setIsAuthenticated(false); return; }
       try {
         const response = await fetch('/api/auth/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
         const data = await response.json();
         if (data.valid) { setIsAuthenticated(true); setUser({ name: data.user.name, email: data.user.email, role: data.user.role }); }
-        else { localStorage.clear(); window.location.href = '/auth/login'; }
-      } catch (error) { window.location.href = '/auth/login'; }
+        else { localStorage.clear(); setIsAuthenticated(false); }
+      } catch (error) { setIsAuthenticated(false); }
     };
     checkAuth();
   }, []);
@@ -165,7 +165,7 @@ export default function HomePage() {
     return '/groups';
   };
 
-  if (isAuthenticated === null || loading) return <div className="auth-container"><div className="loading"><div className="spinner"></div></div></div>;
+  if (loading) return <div className="auth-container"><div className="loading"><div className="spinner"></div></div></div>;
 
   const today = new Date();
   const gregorianDate = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });

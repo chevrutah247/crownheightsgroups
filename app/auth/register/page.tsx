@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
 
 export default function RegisterPage() {
@@ -11,17 +10,6 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [verified, setVerified] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    const isVerified = localStorage.getItem('community_verified');
-    if (!isVerified) {
-      router.push('/auth/login');
-    } else {
-      setVerified(true);
-    }
-  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,17 +49,15 @@ export default function RegisterPage() {
     }
   };
 
-  if (!verified) {
-    return <div className="auth-container"><div className="loading"><div className="spinner"></div></div></div>;
-  }
-
   return (
     <div className="auth-container">
       <div className="auth-card" style={{ maxWidth: '420px' }}>
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>✅</div>
-          <h1 style={{ color: '#1e3a5f', marginBottom: '0.25rem', fontSize: '1.5rem' }}>Welcome to the Community!</h1>
-          <p style={{ color: '#666', fontSize: '0.95rem' }}>Complete your registration</p>
+          <div style={{ width: '70px', height: '70px', background: 'linear-gradient(135deg, #d69e2e, #b7791f)', borderRadius: '50%', margin: '0 auto 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: 'white', fontSize: '24px', fontWeight: 'bold', fontFamily: 'Georgia, serif' }}>CH</span>
+          </div>
+          <h1 style={{ color: '#1e3a5f', marginBottom: '0.25rem', fontSize: '1.5rem' }}>Create Account</h1>
+          <p style={{ color: '#666', fontSize: '0.95rem' }}>Join Crown Heights Groups</p>
         </div>
 
         {error && (
@@ -103,7 +89,10 @@ export default function RegisterPage() {
         </form>
 
         <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-          <Link href="/auth/login" style={{ color: '#2563eb', textDecoration: 'none' }}>← Back to Login</Link>
+          <p style={{ color: '#666', fontSize: '0.95rem' }}>
+            Already have an account?{' '}
+            <Link href="/auth/login" style={{ color: '#2563eb', fontWeight: 'bold', textDecoration: 'none' }}>Sign In</Link>
+          </p>
         </div>
       </div>
     </div>

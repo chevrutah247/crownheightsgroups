@@ -32,16 +32,15 @@ export default function ShabbosPage() {
 
   useEffect(() => {
     const token = localStorage.getItem('session_token');
-    if (!token) { router.push('/auth/login'); return; }
-    
+    if (!token) return;
     fetch('/api/auth/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token })
     })
       .then(r => r.json())
-      .then(data => { if (data.valid) setUser(data.user); else router.push('/auth/login'); })
-      .catch(() => router.push('/auth/login'));
+      .then(data => { if (data.valid) setUser(data.user); else localStorage.clear(); })
+      .catch(() => {});
   }, [router]);
 
   useEffect(() => {

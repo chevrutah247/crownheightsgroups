@@ -7,8 +7,50 @@ const EMAIL_CONFIG = {
   pass: 'qvun irsl zsaf asux',
 };
 
+// Rate limiting: max 5 registrations per IP per 15 minutes
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
+
+// Clean up old entries every 30 minutes
+setInterval(() => {
+  const now = Date.now();
+  rateLimitMap.forEach((entry, ip) => {
+    if (now > entry.resetAt) rateLimitMap.delete(ip);
+  });
+}, 30 * 60 * 1000);
+
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit check
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || 'unknown';
+
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Too many registration attempts. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { name, email, password } = body;
 
@@ -20,10 +62,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Changed: accept password from 3 characters (for 770)
-    if (password.length < 3) {
+    if (password.length < 6) {
       return NextResponse.json(
-        { error: 'Password must be at least 3 characters' },
+        { error: 'Password must be at least 6 characters' },
         { status: 400 }
       );
     }
@@ -73,24 +114,24 @@ export async function POST(request: NextRequest) {
             </div>
             <h1 style="color: #1a365d; margin: 0; font-size: 24px;">Crown Heights Groups</h1>
           </div>
-          
+
           <div style="background: #f7f5f0; border-radius: 12px; padding: 30px; text-align: center;">
             <h2 style="color: #1a365d; margin: 0 0 10px;">Welcome, ${name}!</h2>
             <p style="color: #4a5568; margin: 0 0 25px; font-size: 15px;">
               Use the code below to verify your email address:
             </p>
-            
+
             <div style="background: white; border: 2px solid #d69e2e; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
               <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #1a365d;">
                 ${user.verificationCode}
               </span>
             </div>
-            
+
             <p style="color: #718096; font-size: 13px; margin: 0;">
               This code expires in 30 minutes.
             </p>
           </div>
-          
+
           <p style="color: #718096; font-size: 12px; text-align: center; margin-top: 30px;">
             If you didn't create an account with Crown Heights Groups, please ignore this email.
           </p>

@@ -139,11 +139,13 @@ export default function Header({ user, onLogout }: HeaderProps) {
             {user?.role === 'admin' && (
               <Link href="/admin" className="nav-link" style={{ color: '#dc2626' }}>Admin</Link>
             )}
-            {user && (
+            {user ? (
               <>
                 <Link href="/profile" className="nav-link" style={{ color: '#10b981' }}>{user.name}</Link>
                 <button onClick={onLogout} className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>Logout</button>
               </>
+            ) : (
+              <Link href="/auth/login" className="nav-link" style={{ color: '#2563eb', fontWeight: 600 }}>Login</Link>
             )}
           </nav>
         </div>

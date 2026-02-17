@@ -264,7 +264,7 @@ export default function GroupsClient() {
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('session_token');
-      if (!token) { window.location.href = '/auth/login'; return; }
+      if (!token) return;
       try {
         const response = await fetch('/api/auth/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
         const data = await response.json();
@@ -274,11 +274,10 @@ export default function GroupsClient() {
           const limitRes = await fetch(`/api/group-clicks?userId=${encodeURIComponent(data.user.email)}`);
           const limitData = await limitRes.json();
           setClickLimit({ remaining: limitData.remaining ?? 3, clickedToday: limitData.clickedToday || [] });
-        } else { 
-          localStorage.clear(); 
-          window.location.href = '/auth/login'; 
+        } else {
+          localStorage.clear();
         }
-      } catch (error) { window.location.href = '/auth/login'; }
+      } catch (error) { /* ignore */ }
     };
     checkAuth();
   }, []);

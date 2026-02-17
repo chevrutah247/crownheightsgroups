@@ -28,15 +28,15 @@ export default function ContactPage() {
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('session_token');
-      if (!token) { window.location.href = '/auth/login'; return; }
+      if (!token) return;
       try {
         const response = await fetch('/api/auth/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
         const data = await response.json();
         if (data.valid) {
           setUser({ name: data.user.name, email: data.user.email, role: data.user.role });
           setForm(f => ({ ...f, name: data.user.name, email: data.user.email }));
-        } else { localStorage.clear(); window.location.href = '/auth/login'; }
-      } catch { window.location.href = '/auth/login'; }
+        } else localStorage.clear();
+      } catch { /* ignore */ }
     };
     checkAuth();
   }, []);
