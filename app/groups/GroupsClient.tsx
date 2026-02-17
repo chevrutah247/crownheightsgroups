@@ -257,6 +257,7 @@ export default function GroupsClient() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [clickLimit, setClickLimit] = useState<ClickLimitState>({ remaining: 3, clickedToday: [] });
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const [subscribeEmail, setSubscribeEmail] = useState('');
   const [subscribeStatus, setSubscribeStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -360,30 +361,35 @@ export default function GroupsClient() {
 
   const handleGroupClick = async (e: React.MouseEvent, link: string, groupId: string, groupTitle: string) => {
     e.preventDefault();
-    
-    if (user?.role === 'admin') {
+
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    if (user.role === 'admin') {
       window.open(link, '_blank');
       return;
     }
-    
+
     if (clickLimit.clickedToday.includes(groupId)) {
       window.open(link, '_blank');
       return;
     }
-    
+
     if (clickLimit.remaining <= 0) {
       setShowLimitModal(true);
       return;
     }
-    
+
     try {
       const res = await fetch('/api/group-clicks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.email, groupId, groupTitle })
+        body: JSON.stringify({ userId: user.email, groupId, groupTitle })
       });
       const data = await res.json();
-      
+
       if (data.allowed) {
         setClickLimit(prev => ({
           remaining: data.remaining,
@@ -512,24 +518,56 @@ export default function GroupsClient() {
           </a>
         )}
 
-        {/* Click Limit Banner */}
-        {user?.role !== 'admin' && (
-          <div style={{ 
-            marginBottom: '1.5rem', 
-            padding: '1rem 1.25rem', 
-            background: clickLimit.remaining > 0 ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' : 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)', 
-            borderRadius: '12px', 
-            display: 'flex', 
-            alignItems: 'center', 
+        {/* Click Limit Banner - only for logged-in non-admin users */}
+        {user && user.role !== 'admin' && (
+          <div style={{
+            marginBottom: '1.5rem',
+            padding: '1rem 1.25rem',
+            background: clickLimit.remaining > 0 ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' : 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
             gap: '0.75rem',
             boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
           }}>
             <span style={{ fontSize: '1.5rem' }}>{clickLimit.remaining > 0 ? '✅' : '⏰'}</span>
             <span style={{ color: clickLimit.remaining > 0 ? '#166534' : '#991b1b', fontSize: '0.95rem', fontWeight: '500' }}>
-              {clickLimit.remaining > 0 
+              {clickLimit.remaining > 0
                 ? `You can join ${clickLimit.remaining} more group${clickLimit.remaining !== 1 ? 's' : ''} today`
                 : 'Daily limit reached. Come back tomorrow!'}
             </span>
+          </div>
+        )}
+        {/* Login prompt banner for unauthenticated users */}
+        {!user && (
+          <div style={{
+            marginBottom: '1.5rem',
+            padding: '1rem 1.25rem',
+            background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+            border: '1px solid #bfdbfe'
+          }}>
+            <span style={{ fontSize: '1.5rem' }}>🔒</span>
+            <span style={{ color: '#1e40af', fontSize: '0.95rem', fontWeight: '500', flex: 1 }}>
+              Log in to join WhatsApp groups
+            </span>
+            <Link href="/auth/login" style={{
+              padding: '0.5rem 1.25rem',
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              color: 'white',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontWeight: '700',
+              fontSize: '0.9rem',
+              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
+              whiteSpace: 'nowrap'
+            }}>
+              Log In
+            </Link>
           </div>
         )}
 
@@ -990,6 +1028,57 @@ export default function GroupsClient() {
         )}
       </main>
       
+      {/* Login Required Modal */}
+      {showLoginModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'white', borderRadius: '24px', padding: '2.5rem', maxWidth: '400px', margin: '1rem', textAlign: 'center', boxShadow: '0 25px 80px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔒</div>
+            <h3 style={{ marginBottom: '1rem', color: '#1e3a5f', fontSize: '1.5rem', fontWeight: '700' }}>Login Required</h3>
+            <p style={{ color: '#666', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+              You need to <strong>log in</strong> to join WhatsApp groups. It only takes a moment!
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => setShowLoginModal(false)}
+                style={{
+                  flex: 1,
+                  padding: '0.875rem',
+                  background: '#f3f4f6',
+                  color: '#666',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '1rem'
+                }}
+              >
+                Cancel
+              </button>
+              <Link
+                href="/auth/login"
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0.875rem',
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  textDecoration: 'none',
+                  fontWeight: '700',
+                  fontSize: '1rem',
+                  boxShadow: '0 4px 15px rgba(37, 99, 235, 0.3)'
+                }}
+              >
+                Log In
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Limit Modal */}
       {showLimitModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
@@ -1002,15 +1091,15 @@ export default function GroupsClient() {
             <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
               Come back tomorrow to join more groups!
             </p>
-            <button 
-              onClick={() => setShowLimitModal(false)} 
-              style={{ 
-                padding: '0.875rem 2.5rem', 
-                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '12px', 
-                cursor: 'pointer', 
+            <button
+              onClick={() => setShowLimitModal(false)}
+              style={{
+                padding: '0.875rem 2.5rem',
+                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                cursor: 'pointer',
                 fontWeight: '700',
                 fontSize: '1rem',
                 boxShadow: '0 4px 15px rgba(37, 99, 235, 0.3)'

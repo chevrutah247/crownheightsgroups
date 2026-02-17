@@ -16,6 +16,7 @@ const partners = [
 ];
 
 const quickAccessItems = [
+  { title: 'Classifieds', icon: '📋', color: '#16a34a', href: '/classifieds', desc: 'Buy, sell, housing, jobs', isStatic: true },
   { title: 'WhatsApp Groups', icon: '👥', color: '#25D366', href: '/groups', desc: 'All community groups', isStatic: true },
   { title: 'Services', icon: '🔧', color: '#2563eb', href: '/services', desc: 'Local professionals', isStatic: true },
   { title: 'Jobs', icon: '💼', color: '#7c3aed', keywords: ['job', 'business', 'career', 'work'], desc: 'Job listings & career' },
@@ -29,6 +30,7 @@ const quickAccessItems = [
 ];
 
 const addItems = [
+  { title: 'Post Ad', icon: '📋', color: '#16a34a', href: '/add/classified', desc: 'Sell, rent, hire, find' },
   { title: 'Add Group', icon: '👥', color: '#25D366', href: '/add/group', desc: 'WhatsApp, Telegram, FB' },
   { title: 'Add Charity', icon: '💝', color: '#e11d48', href: '/add/charity', desc: 'Fundraising campaign' },
   { title: 'Add Event', icon: '🎉', color: '#f59e0b', href: '/add/event', desc: 'Simcha, Shiur, Farbrengen' },
@@ -323,7 +325,7 @@ export default function HomePage() {
                     Community Lottery Pool
                   </h3>
                   <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.95rem' }}>
-                    Mega Millions + Powerball • Only $3/week • Win Together!
+                    Mega Millions + Powerball • From $2/week • Win Together!
                   </p>
                 </div>
               </div>

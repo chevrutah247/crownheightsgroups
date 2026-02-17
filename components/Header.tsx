@@ -104,6 +104,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
               )}
             </div>
 
+            <Link href="/classifieds" className="nav-link" style={{ color: '#16a34a' }}>📋 Classifieds</Link>
             <Link href="/business" className="nav-link" style={{ color: '#8b5cf6' }}>🏪 Business</Link>
             <Link href="/events" className="nav-link">Events</Link>
             <Link href="/news" className="nav-link">News</Link>
@@ -145,7 +146,24 @@ export default function Header({ user, onLogout }: HeaderProps) {
                 <button onClick={onLogout} className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>Logout</button>
               </>
             ) : (
-              <Link href="/auth/login" className="nav-link" style={{ color: '#2563eb', fontWeight: 600 }}>Login</Link>
+              <Link href="/auth/login" style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                padding: '0.55rem 1.25rem',
+                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                color: 'white',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                borderRadius: '9999px',
+                textDecoration: 'none',
+                boxShadow: '0 2px 8px rgba(37, 99, 235, 0.35)',
+                transition: 'all 0.2s ease',
+                border: '2px solid transparent',
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.background = 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(37, 99, 235, 0.5)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 99, 235, 0.35)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              >Log In</Link>
             )}
           </nav>
         </div>
