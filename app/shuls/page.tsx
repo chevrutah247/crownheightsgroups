@@ -5,9 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EmergencyBar from '@/components/EmergencyBar';
 import type { PlaceInfo, Shul, ShulReview } from '@/lib/shuls-data';
-import {
-  crownHeightsMikvahs,
-} from '@/lib/shuls-data';
+import { crownHeightsMikvahs } from '@/lib/shuls-data';
 
 interface UserInfo {
   name: string;
@@ -31,28 +29,55 @@ interface PlaceSuggestionForm {
   submitterEmail: string;
 }
 
-type TabId = 'ch-shuls' | 'mikvahs' | 'beit-midrash' | 'kollel' | 'ohel';
+interface PhotoSuggestionForm {
+  placeName: string;
+  photoUrl: string;
+  notes: string;
+  submitterEmail: string;
+}
+
+interface MinyanSuggestionForm {
+  placeName: string;
+  schedule: string;
+  notes: string;
+  submitterEmail: string;
+}
+
+type TabId = 'ch-shuls' | 'mikvahs' | 'beit-midrash' | 'kollel';
 
 const tabs: { id: TabId; label: string }[] = [
-  { id: 'ch-shuls', label: 'Crown Heights Shuls' },
-  { id: 'mikvahs', label: 'Crown Heights Mikvahs' },
-  { id: 'beit-midrash', label: 'Beit Midrash' },
-  { id: 'kollel', label: 'Kollel' },
-  { id: 'ohel', label: 'Ohel' },
+  { id: 'ch-shuls', label: 'Синагоги' },
+  { id: 'mikvahs', label: 'Миквы' },
+  { id: 'beit-midrash', label: 'Бейт Мидраш' },
+  { id: 'kollel', label: 'Коллели' },
 ];
 
-const blankForm: ReviewForm = {
+const blankReviewForm: ReviewForm = {
   authorName: '',
   authorEmail: '',
   rating: 5,
   comment: '',
 };
 
-const blankSuggestionForm: PlaceSuggestionForm = {
+const blankPlaceForm: PlaceSuggestionForm = {
   name: '',
   type: 'shul',
   address: '',
   phone: '',
+  notes: '',
+  submitterEmail: '',
+};
+
+const blankPhotoForm: PhotoSuggestionForm = {
+  placeName: '',
+  photoUrl: '',
+  notes: '',
+  submitterEmail: '',
+};
+
+const blankMinyanForm: MinyanSuggestionForm = {
+  placeName: '',
+  schedule: '',
   notes: '',
   submitterEmail: '',
 };
@@ -68,11 +93,16 @@ export default function ShulsPage() {
   const [submittingFor, setSubmittingFor] = useState<string | null>(null);
   const [messageByShul, setMessageByShul] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<TabId>('ch-shuls');
-  const [activeOhelIndex, setActiveOhelIndex] = useState<number | null>(null);
-  const [ohelPhotos, setOhelPhotos] = useState<{ id: string; src: string; title: string }[]>([]);
-  const [suggestionForm, setSuggestionForm] = useState<PlaceSuggestionForm>(blankSuggestionForm);
-  const [suggestionSubmitting, setSuggestionSubmitting] = useState(false);
-  const [suggestionMessage, setSuggestionMessage] = useState('');
+
+  const [placeForm, setPlaceForm] = useState<PlaceSuggestionForm>(blankPlaceForm);
+  const [photoForm, setPhotoForm] = useState<PhotoSuggestionForm>(blankPhotoForm);
+  const [minyanForm, setMinyanForm] = useState<MinyanSuggestionForm>(blankMinyanForm);
+  const [placeSubmitting, setPlaceSubmitting] = useState(false);
+  const [photoSubmitting, setPhotoSubmitting] = useState(false);
+  const [minyanSubmitting, setMinyanSubmitting] = useState(false);
+  const [placeMessage, setPlaceMessage] = useState('');
+  const [photoMessage, setPhotoMessage] = useState('');
+  const [minyanMessage, setMinyanMessage] = useState('');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -148,22 +178,6 @@ export default function ShulsPage() {
     });
   }, [shuls]);
 
-  useEffect(() => {
-    const loadOhelPhotos = async () => {
-      try {
-        const res = await fetch('/api/ohel-photos');
-        const data = await res.json();
-        if (Array.isArray(data?.photos)) {
-          setOhelPhotos(data.photos);
-        }
-      } catch (error) {
-        console.error('Failed to load Ohel photos', error);
-      }
-    };
-
-    loadOhelPhotos();
-  }, []);
-
   const reviewsByShul = useMemo(() => {
     const grouped: Record<string, ShulReview[]> = {};
     for (const review of reviews) {
@@ -176,7 +190,7 @@ export default function ShulsPage() {
   const getForm = (shulId: string): ReviewForm => {
     if (!formByShul[shulId]) {
       return {
-        ...blankForm,
+        ...blankReviewForm,
         authorName: user?.name || '',
         authorEmail: user?.email || '',
       };
@@ -224,7 +238,10 @@ export default function ShulsPage() {
         throw new Error(payload.error || 'Failed to submit review');
       }
 
-      setFormByShul((prev) => ({ ...prev, [shulId]: { ...blankForm, authorName: user?.name || '', authorEmail: user?.email || '' } }));
+      setFormByShul((prev) => ({
+        ...prev,
+        [shulId]: { ...blankReviewForm, authorName: user?.name || '', authorEmail: user?.email || '' },
+      }));
       setMessageByShul((prev) => ({
         ...prev,
         [shulId]: 'Thank you. Your review was submitted and is waiting for admin moderation.',
@@ -239,49 +256,84 @@ export default function ShulsPage() {
     }
   };
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const tab = new URLSearchParams(window.location.search).get('tab');
-    if (tab === 'ohel') setActiveTab('ohel');
-    if (tab === 'kollel') setActiveTab('kollel');
-  }, []);
+  const submitSuggestion = async (type: string, payload: Record<string, unknown>, email?: string) => {
+    const res = await fetch('/api/suggestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, payload, contactEmail: email || undefined }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || 'Failed to submit suggestion');
+  };
 
-  const submitPlaceSuggestion = async () => {
-    if (!suggestionForm.name.trim() || !suggestionForm.address.trim()) {
-      setSuggestionMessage('Name and address are required.');
+  const submitPlace = async () => {
+    if (!placeForm.name.trim() || !placeForm.address.trim()) {
+      setPlaceMessage('Name and address are required.');
       return;
     }
-
-    setSuggestionSubmitting(true);
-    setSuggestionMessage('');
+    setPlaceSubmitting(true);
+    setPlaceMessage('');
     try {
-      const payload = {
-        type: 'place',
-        contactEmail: suggestionForm.submitterEmail.trim() || undefined,
-        payload: {
-          name: suggestionForm.name.trim(),
-          placeType: suggestionForm.type,
-          address: suggestionForm.address.trim(),
-          phone: suggestionForm.phone.trim() || undefined,
-          notes: suggestionForm.notes.trim() || undefined,
-          source: 'shuls-page',
-        },
-      };
-
-      const res = await fetch('/api/suggestions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'Failed to submit suggestion');
-
-      setSuggestionForm(blankSuggestionForm);
-      setSuggestionMessage('Submitted. Admin will review and publish.');
+      await submitSuggestion('place', {
+        name: placeForm.name.trim(),
+        placeType: placeForm.type,
+        address: placeForm.address.trim(),
+        phone: placeForm.phone.trim() || undefined,
+        notes: placeForm.notes.trim() || undefined,
+        source: 'shuls-page',
+      }, placeForm.submitterEmail.trim());
+      setPlaceForm(blankPlaceForm);
+      setPlaceMessage('Submitted. Admin will review and publish.');
     } catch (error: any) {
-      setSuggestionMessage(error?.message || 'Failed to submit suggestion');
+      setPlaceMessage(error?.message || 'Failed to submit');
     } finally {
-      setSuggestionSubmitting(false);
+      setPlaceSubmitting(false);
+    }
+  };
+
+  const submitPhoto = async () => {
+    if (!photoForm.placeName.trim() || !photoForm.photoUrl.trim()) {
+      setPhotoMessage('Place name and photo URL are required.');
+      return;
+    }
+    setPhotoSubmitting(true);
+    setPhotoMessage('');
+    try {
+      await submitSuggestion('shul-photo', {
+        placeName: photoForm.placeName.trim(),
+        photoUrl: photoForm.photoUrl.trim(),
+        notes: photoForm.notes.trim() || undefined,
+        source: 'shuls-page',
+      }, photoForm.submitterEmail.trim());
+      setPhotoForm(blankPhotoForm);
+      setPhotoMessage('Photo suggestion submitted for moderation.');
+    } catch (error: any) {
+      setPhotoMessage(error?.message || 'Failed to submit');
+    } finally {
+      setPhotoSubmitting(false);
+    }
+  };
+
+  const submitMinyan = async () => {
+    if (!minyanForm.placeName.trim() || !minyanForm.schedule.trim()) {
+      setMinyanMessage('Place name and minyan schedule are required.');
+      return;
+    }
+    setMinyanSubmitting(true);
+    setMinyanMessage('');
+    try {
+      await submitSuggestion('minyan-schedule', {
+        placeName: minyanForm.placeName.trim(),
+        schedule: minyanForm.schedule.trim(),
+        notes: minyanForm.notes.trim() || undefined,
+        source: 'shuls-page',
+      }, minyanForm.submitterEmail.trim());
+      setMinyanForm(blankMinyanForm);
+      setMinyanMessage('Minyan schedule submitted for moderation.');
+    } catch (error: any) {
+      setMinyanMessage(error?.message || 'Failed to submit');
+    } finally {
+      setMinyanSubmitting(false);
     }
   };
 
@@ -289,32 +341,6 @@ export default function ShulsPage() {
     localStorage.clear();
     window.location.href = '/auth/login';
   };
-
-  const closeOhelLightbox = () => setActiveOhelIndex(null);
-  const openOhelLightbox = (idx: number) => setActiveOhelIndex(idx);
-  const showPrevOhelPhoto = () => {
-    setActiveOhelIndex((prev) => {
-      if (prev === null) return prev;
-      return prev === 0 ? ohelPhotos.length - 1 : prev - 1;
-    });
-  };
-  const showNextOhelPhoto = () => {
-    setActiveOhelIndex((prev) => {
-      if (prev === null) return prev;
-      return prev === ohelPhotos.length - 1 ? 0 : prev + 1;
-    });
-  };
-
-  useEffect(() => {
-    if (activeOhelIndex === null) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeOhelLightbox();
-      if (event.key === 'ArrowLeft') showPrevOhelPhoto();
-      if (event.key === 'ArrowRight') showNextOhelPhoto();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [activeOhelIndex, ohelPhotos.length]);
 
   if (loading) {
     return (
@@ -330,16 +356,16 @@ export default function ShulsPage() {
       <Header user={user} onLogout={handleLogout} />
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1rem' }}>
-        <section style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%)', borderRadius: '20px', padding: '2rem', color: 'white', marginBottom: '1.5rem' }}>
-          <h1 style={{ margin: 0, fontSize: '2rem' }}>Jewish Places of Crown Heights</h1>
+        <section style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%)', borderRadius: '20px', padding: '2rem', color: 'white', marginBottom: '1.25rem' }}>
+          <h1 style={{ margin: 0, fontSize: '2rem' }}>Синагоги Crown Heights</h1>
           <p style={{ marginTop: '0.75rem', marginBottom: 0, opacity: 0.9 }}>
-            Synagogues, Mikvahs, Beit Midrash, Kollel, and Ohel Archive.
+            Шулы, Миквы, Бейт Мидраш и Коллели.
           </p>
           <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <Badge text={`${shuls.length} Shuls`} />
             <Badge text={`${crownHeightsMikvahs.length} Mikvahs`} />
+            <Badge text={`${beitMidrashList.length} Beit Midrash`} />
             <Badge text={`${kollelList.length} Kollel`} />
-            <Badge text={`${ohelPhotos.length} Ohel Photos`} />
           </div>
         </section>
 
@@ -361,6 +387,51 @@ export default function ShulsPage() {
               {tab.label}
             </button>
           ))}
+        </section>
+
+        <section style={{ ...cardStyle, marginBottom: '1rem' }}>
+          <div style={{ padding: '1rem' }}>
+            <h2 style={{ marginTop: 0, marginBottom: '0.5rem', fontSize: '1.15rem' }}>Добавить в раздел</h2>
+            <p style={{ marginTop: 0, color: '#475569' }}>Опции доступны во всем разделе СИНАГОГИ.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.8rem' }}>
+              <div style={actionCardStyle}>
+                <h3 style={actionTitleStyle}>➕ Добавить свой шул</h3>
+                <input placeholder="Название *" value={placeForm.name} onChange={(e) => setPlaceForm((p) => ({ ...p, name: e.target.value }))} style={inputStyle} />
+                <select value={placeForm.type} onChange={(e) => setPlaceForm((p) => ({ ...p, type: e.target.value as PlaceSuggestionForm['type'] }))} style={inputStyle}>
+                  <option value="shul">Shul</option>
+                  <option value="synagogue">Synagogue</option>
+                  <option value="beit-midrash">Beit Midrash</option>
+                  <option value="kollel">Kollel</option>
+                </select>
+                <input placeholder="Адрес *" value={placeForm.address} onChange={(e) => setPlaceForm((p) => ({ ...p, address: e.target.value }))} style={inputStyle} />
+                <input placeholder="Телефон" value={placeForm.phone} onChange={(e) => setPlaceForm((p) => ({ ...p, phone: e.target.value }))} style={inputStyle} />
+                <input placeholder="Ваш email" value={placeForm.submitterEmail} onChange={(e) => setPlaceForm((p) => ({ ...p, submitterEmail: e.target.value }))} style={inputStyle} />
+                <textarea placeholder="Комментарий" rows={3} value={placeForm.notes} onChange={(e) => setPlaceForm((p) => ({ ...p, notes: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
+                <button onClick={submitPlace} disabled={placeSubmitting} style={primaryButtonStyle(placeSubmitting)}>{placeSubmitting ? 'Submitting...' : 'Submit Place'}</button>
+                {placeMessage && <p style={messageStyle}>{placeMessage}</p>}
+              </div>
+
+              <div style={actionCardStyle}>
+                <h3 style={actionTitleStyle}>🖼️ Добавить фотографию</h3>
+                <input placeholder="Название шула *" value={photoForm.placeName} onChange={(e) => setPhotoForm((p) => ({ ...p, placeName: e.target.value }))} style={inputStyle} />
+                <input placeholder="Ссылка на фото *" value={photoForm.photoUrl} onChange={(e) => setPhotoForm((p) => ({ ...p, photoUrl: e.target.value }))} style={inputStyle} />
+                <input placeholder="Ваш email" value={photoForm.submitterEmail} onChange={(e) => setPhotoForm((p) => ({ ...p, submitterEmail: e.target.value }))} style={inputStyle} />
+                <textarea placeholder="Описание" rows={3} value={photoForm.notes} onChange={(e) => setPhotoForm((p) => ({ ...p, notes: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
+                <button onClick={submitPhoto} disabled={photoSubmitting} style={primaryButtonStyle(photoSubmitting)}>{photoSubmitting ? 'Submitting...' : 'Submit Photo'}</button>
+                {photoMessage && <p style={messageStyle}>{photoMessage}</p>}
+              </div>
+
+              <div style={actionCardStyle}>
+                <h3 style={actionTitleStyle}>🕒 Добавить расписание миньяна</h3>
+                <input placeholder="Название шула *" value={minyanForm.placeName} onChange={(e) => setMinyanForm((p) => ({ ...p, placeName: e.target.value }))} style={inputStyle} />
+                <textarea placeholder="Расписание миньяна *" rows={4} value={minyanForm.schedule} onChange={(e) => setMinyanForm((p) => ({ ...p, schedule: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
+                <input placeholder="Ваш email" value={minyanForm.submitterEmail} onChange={(e) => setMinyanForm((p) => ({ ...p, submitterEmail: e.target.value }))} style={inputStyle} />
+                <textarea placeholder="Комментарий" rows={2} value={minyanForm.notes} onChange={(e) => setMinyanForm((p) => ({ ...p, notes: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
+                <button onClick={submitMinyan} disabled={minyanSubmitting} style={primaryButtonStyle(minyanSubmitting)}>{minyanSubmitting ? 'Submitting...' : 'Submit Minyan Schedule'}</button>
+                {minyanMessage && <p style={messageStyle}>{minyanMessage}</p>}
+              </div>
+            </div>
+          </div>
         </section>
 
         {activeTab === 'ch-shuls' && (
@@ -487,301 +558,9 @@ export default function ShulsPage() {
                 </div>
               </article>
             ))}
-            {kollelList.length === 0 && (
-              <article style={{ ...cardStyle, padding: '1rem' }}>
-                <p style={{ margin: 0, color: '#475569' }}>No Kollel entries found yet.</p>
-              </article>
-            )}
           </section>
         )}
-
-        {activeTab === 'ohel' && (
-          <section className="ohel-section">
-            <div className="ohel-header">
-              <div>
-                <h2 className="ohel-title">Ohel Photo Archive</h2>
-                <p className="ohel-subtitle">Full-screen gallery. Click on any photo to enlarge.</p>
-              </div>
-              <div className="ohel-counter">{ohelPhotos.length} photos</div>
-            </div>
-
-            <div className="ohel-grid">
-              {ohelPhotos.map((photo, idx) => (
-                <button
-                  key={photo.id}
-                  type="button"
-                  className="ohel-card"
-                  onClick={() => openOhelLightbox(idx)}
-                >
-                  <img src={photo.src} alt={photo.title} className="ohel-image" loading="lazy" />
-                  <div className="ohel-overlay">
-                    <span className="ohel-chip">{photo.title}</span>
-                    <span className="ohel-chip subtle">View</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section style={{ marginTop: '1.2rem', ...cardStyle }}>
-          <div style={{ padding: '1rem' }}>
-            <h2 style={{ marginTop: 0, marginBottom: '0.5rem', fontSize: '1.15rem' }}>Add a New Place</h2>
-            <p style={{ marginTop: 0, color: '#475569' }}>
-              Suggest a new Shul, Synagogue, Beit Midrash, or Kollel. Submission goes to admin moderation.
-            </p>
-            <div style={{ display: 'grid', gap: '0.55rem', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-              <input
-                placeholder="Name *"
-                value={suggestionForm.name}
-                onChange={(e) => setSuggestionForm((prev) => ({ ...prev, name: e.target.value }))}
-                style={inputStyle}
-              />
-              <select
-                value={suggestionForm.type}
-                onChange={(e) => setSuggestionForm((prev) => ({ ...prev, type: e.target.value as PlaceSuggestionForm['type'] }))}
-                style={inputStyle}
-              >
-                <option value="shul">Shul</option>
-                <option value="synagogue">Synagogue</option>
-                <option value="beit-midrash">Beit Midrash</option>
-                <option value="kollel">Kollel</option>
-              </select>
-              <input
-                placeholder="Address *"
-                value={suggestionForm.address}
-                onChange={(e) => setSuggestionForm((prev) => ({ ...prev, address: e.target.value }))}
-                style={inputStyle}
-              />
-              <input
-                placeholder="Phone"
-                value={suggestionForm.phone}
-                onChange={(e) => setSuggestionForm((prev) => ({ ...prev, phone: e.target.value }))}
-                style={inputStyle}
-              />
-              <input
-                placeholder="Your email (optional)"
-                value={suggestionForm.submitterEmail}
-                onChange={(e) => setSuggestionForm((prev) => ({ ...prev, submitterEmail: e.target.value }))}
-                style={inputStyle}
-              />
-            </div>
-            <textarea
-              placeholder="Notes"
-              rows={3}
-              value={suggestionForm.notes}
-              onChange={(e) => setSuggestionForm((prev) => ({ ...prev, notes: e.target.value }))}
-              style={{ ...inputStyle, marginTop: '0.55rem', resize: 'vertical' }}
-            />
-            <button
-              type="button"
-              onClick={submitPlaceSuggestion}
-              disabled={suggestionSubmitting}
-              style={{
-                marginTop: '0.6rem',
-                border: 'none',
-                background: suggestionSubmitting ? '#94a3b8' : '#1d4ed8',
-                color: 'white',
-                borderRadius: '10px',
-                padding: '0.65rem 0.9rem',
-                fontWeight: 700,
-                cursor: suggestionSubmitting ? 'wait' : 'pointer',
-              }}
-            >
-              {suggestionSubmitting ? 'Submitting...' : 'Submit Place'}
-            </button>
-            {suggestionMessage && <p style={{ margin: '0.55rem 0 0', color: '#0f766e', fontSize: '0.9rem' }}>{suggestionMessage}</p>}
-          </div>
-        </section>
       </main>
-
-      {activeOhelIndex !== null && (
-        <div className="ohel-lightbox" onClick={closeOhelLightbox}>
-          <button type="button" className="ohel-close" onClick={closeOhelLightbox} aria-label="Close preview">×</button>
-          <button type="button" className="ohel-nav prev" onClick={(e) => { e.stopPropagation(); showPrevOhelPhoto(); }} aria-label="Previous photo">‹</button>
-          <div className="ohel-stage" onClick={(e) => e.stopPropagation()}>
-            <img src={ohelPhotos[activeOhelIndex].src} alt={ohelPhotos[activeOhelIndex].title} className="ohel-stage-image" />
-            <div className="ohel-stage-caption">
-              <span>{ohelPhotos[activeOhelIndex].title}</span>
-              <span>{activeOhelIndex + 1} / {ohelPhotos.length}</span>
-            </div>
-          </div>
-          <button type="button" className="ohel-nav next" onClick={(e) => { e.stopPropagation(); showNextOhelPhoto(); }} aria-label="Next photo">›</button>
-        </div>
-      )}
-
-      <style jsx>{`
-        .ohel-section {
-          border-radius: 20px;
-          padding: 1rem;
-          background:
-            radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.16), transparent 40%),
-            radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.14), transparent 45%),
-            #ffffff;
-          border: 1px solid #dbeafe;
-        }
-        .ohel-header {
-          display: flex;
-          gap: 1rem;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 1rem;
-          flex-wrap: wrap;
-        }
-        .ohel-title {
-          margin: 0;
-          font-size: 1.5rem;
-          color: #0f172a;
-          letter-spacing: 0.01em;
-        }
-        .ohel-subtitle {
-          margin: 0.45rem 0 0;
-          color: #334155;
-        }
-        .ohel-counter {
-          background: linear-gradient(135deg, #1d4ed8, #0ea5e9);
-          color: white;
-          border-radius: 999px;
-          padding: 0.45rem 0.8rem;
-          font-weight: 700;
-          font-size: 0.9rem;
-        }
-        .ohel-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-          gap: 0.9rem;
-        }
-        .ohel-card {
-          position: relative;
-          border: none;
-          padding: 0;
-          border-radius: 16px;
-          overflow: hidden;
-          cursor: pointer;
-          background: #0f172a;
-          text-align: left;
-          box-shadow: 0 10px 28px rgba(15, 23, 42, 0.2);
-          transition: transform 0.25s ease, box-shadow 0.25s ease;
-        }
-        .ohel-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 16px 36px rgba(15, 23, 42, 0.3);
-        }
-        .ohel-image {
-          width: 100%;
-          height: 240px;
-          object-fit: cover;
-          display: block;
-          transition: transform 0.35s ease;
-        }
-        .ohel-card:hover .ohel-image {
-          transform: scale(1.04);
-        }
-        .ohel-overlay {
-          position: absolute;
-          inset: auto 0 0 0;
-          padding: 0.7rem;
-          display: flex;
-          justify-content: space-between;
-          gap: 0.4rem;
-          align-items: center;
-          background: linear-gradient(to top, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.08));
-        }
-        .ohel-chip {
-          background: rgba(255, 255, 255, 0.92);
-          color: #0f172a;
-          border-radius: 999px;
-          padding: 0.24rem 0.62rem;
-          font-size: 0.8rem;
-          font-weight: 600;
-          white-space: nowrap;
-        }
-        .ohel-chip.subtle {
-          background: rgba(14, 165, 233, 0.9);
-          color: white;
-        }
-        .ohel-lightbox {
-          position: fixed;
-          inset: 0;
-          z-index: 1000;
-          background: rgba(2, 6, 23, 0.86);
-          backdrop-filter: blur(4px);
-          display: grid;
-          grid-template-columns: 64px minmax(0, 1fr) 64px;
-          align-items: center;
-          padding: 1rem;
-          gap: 0.75rem;
-        }
-        .ohel-stage {
-          max-width: 1100px;
-          width: 100%;
-          margin: 0 auto;
-          border-radius: 14px;
-          overflow: hidden;
-          border: 1px solid rgba(148, 163, 184, 0.4);
-          background: #020617;
-          box-shadow: 0 28px 60px rgba(0, 0, 0, 0.45);
-        }
-        .ohel-stage-image {
-          width: 100%;
-          max-height: calc(100vh - 160px);
-          object-fit: contain;
-          display: block;
-          background: #020617;
-        }
-        .ohel-stage-caption {
-          color: #e2e8f0;
-          display: flex;
-          justify-content: space-between;
-          gap: 1rem;
-          padding: 0.7rem 0.9rem;
-          background: rgba(15, 23, 42, 0.85);
-          font-size: 0.9rem;
-        }
-        .ohel-nav, .ohel-close {
-          border: 1px solid rgba(148, 163, 184, 0.45);
-          background: rgba(15, 23, 42, 0.7);
-          color: #f8fafc;
-          border-radius: 12px;
-          cursor: pointer;
-        }
-        .ohel-nav {
-          width: 52px;
-          height: 52px;
-          font-size: 2rem;
-          line-height: 1;
-          display: grid;
-          place-items: center;
-        }
-        .ohel-close {
-          position: absolute;
-          top: 16px;
-          right: 16px;
-          width: 44px;
-          height: 44px;
-          font-size: 1.8rem;
-          line-height: 1;
-          z-index: 1001;
-        }
-        @media (max-width: 900px) {
-          .ohel-lightbox {
-            grid-template-columns: 1fr;
-            gap: 0.5rem;
-          }
-          .ohel-nav {
-            position: fixed;
-            bottom: 14px;
-            width: 46px;
-            height: 46px;
-            border-radius: 999px;
-          }
-          .ohel-nav.prev { left: 14px; }
-          .ohel-nav.next { right: 14px; }
-          .ohel-stage-image {
-            max-height: calc(100vh - 220px);
-          }
-        }
-      `}</style>
 
       <Footer />
     </div>
@@ -835,6 +614,37 @@ const imageStyle: CSSProperties = {
   height: '180px',
   objectFit: 'cover',
 };
+
+const actionCardStyle: CSSProperties = {
+  border: '1px solid #e2e8f0',
+  borderRadius: '12px',
+  padding: '0.8rem',
+  display: 'grid',
+  gap: '0.45rem',
+  alignContent: 'start',
+};
+
+const actionTitleStyle: CSSProperties = {
+  margin: 0,
+  fontSize: '1rem',
+  color: '#0f172a',
+};
+
+const messageStyle: CSSProperties = {
+  margin: '0.2rem 0 0',
+  color: '#0f766e',
+  fontSize: '0.9rem',
+};
+
+const primaryButtonStyle = (disabled: boolean): CSSProperties => ({
+  border: 'none',
+  background: disabled ? '#94a3b8' : '#1d4ed8',
+  color: 'white',
+  borderRadius: '10px',
+  padding: '0.65rem 0.9rem',
+  fontWeight: 700,
+  cursor: disabled ? 'wait' : 'pointer',
+});
 
 const pillTeal: CSSProperties = {
   background: '#ecfeff',
