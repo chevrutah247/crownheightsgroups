@@ -118,14 +118,12 @@ export default function ShulsPage() {
   }, [shuls]);
 
   const ohelPhotos = useMemo(() => {
-    return Array.from({ length: 24 }, (_, i) => {
-      const n = String(i + 1).padStart(2, '0');
-      return {
-        id: `ohel-${n}`,
-        src: `/images/ohel/ohel-${n}.jpg`,
-        title: `Ohel - фото ${i + 1}`,
-      };
-    });
+    const fileNames = ['01.jpg', '02.jpg', '03.jpg', '04.jpg', '10.jpg', '11.jpg', '12.jpg', '13.jpg', '14.jpg', '15.jpg', '16.jpg', '17.jpg', '18.jpg', '19.jpg', '20.jpg'];
+    return fileNames.map((fileName, i) => ({
+      id: `ohel-${fileName.replace('.jpg', '')}`,
+      src: `/images/ohel/${fileName}`,
+      title: `Ohel - фото ${i + 1}`,
+    }));
   }, []);
 
   const reviewsByShul = useMemo(() => {
