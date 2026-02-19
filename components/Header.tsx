@@ -107,7 +107,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <Link href="/classifieds" className="nav-link" style={{ color: '#16a34a' }}>📋 Classifieds</Link>
             <Link href="/business" className="nav-link" style={{ color: '#8b5cf6' }}>🏪 Business</Link>
             <Link href="/events" className="nav-link">Events</Link>
-            <Link href="/shuls" className="nav-link">Photo Archive</Link>
+            <Link href="/photo-archive" className="nav-link">Photo Archive</Link>
             <Link href="/news" className="nav-link">News</Link>
             <Link href="/services" className="nav-link">Services</Link>
             

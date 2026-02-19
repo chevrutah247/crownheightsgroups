@@ -25,9 +25,9 @@ interface ReviewForm {
 type TabId = 'ch-shuls' | 'mikvahs' | 'beit-midrash' | 'ohel';
 
 const tabs: { id: TabId; label: string }[] = [
-  { id: 'ch-shuls', label: 'Синагоги Crown Heights' },
-  { id: 'mikvahs', label: 'Миквы Crown Heights' },
-  { id: 'beit-midrash', label: 'Бейт Мидраш' },
+  { id: 'ch-shuls', label: 'Crown Heights Shuls' },
+  { id: 'mikvahs', label: 'Crown Heights Mikvahs' },
+  { id: 'beit-midrash', label: 'Beit Midrash' },
   { id: 'ohel', label: 'Ohel' },
 ];
 
@@ -123,7 +123,7 @@ export default function ShulsPage() {
     return fileNames.map((fileName, i) => ({
       id: `ohel-${fileName.replace('.jpg', '')}`,
       src: `/images/ohel/${fileName}`,
-      title: `Ohel - фото ${i + 1}`,
+      title: `Ohel - Photo ${i + 1}`,
     }));
   }, []);
 
@@ -202,6 +202,12 @@ export default function ShulsPage() {
     }
   };
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (tab === 'ohel') setActiveTab('ohel');
+  }, []);
+
   const handleLogout = () => {
     localStorage.clear();
     window.location.href = '/auth/login';
@@ -248,14 +254,14 @@ export default function ShulsPage() {
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1rem' }}>
         <section style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%)', borderRadius: '20px', padding: '2rem', color: 'white', marginBottom: '1.5rem' }}>
-          <h1 style={{ margin: 0, fontSize: '2rem' }}>Еврейские места Краун Хайтс</h1>
+          <h1 style={{ margin: 0, fontSize: '2rem' }}>Jewish Places of Crown Heights</h1>
           <p style={{ marginTop: '0.75rem', marginBottom: 0, opacity: 0.9 }}>
-            Синагоги, миквы, Бейт Мидраш и архив Ohel.
+            Synagogues, Mikvahs, Beit Midrash, and Ohel Archive.
           </p>
           <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <Badge text={`${shuls.length} синагог`} />
-            <Badge text={`${crownHeightsMikvahs.length} миквы`} />
-            <Badge text={`${ohelPhotos.length} фото Ohel`} />
+            <Badge text={`${shuls.length} Shuls`} />
+            <Badge text={`${crownHeightsMikvahs.length} Mikvahs`} />
+            <Badge text={`${ohelPhotos.length} Ohel Photos`} />
           </div>
         </section>
 
@@ -285,7 +291,7 @@ export default function ShulsPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Поиск по названию, адресу, телефону"
+                placeholder="Search by name, address, phone..."
                 style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '1rem' }}
               />
             </div>
@@ -317,7 +323,7 @@ export default function ShulsPage() {
                           ☎️ <a href={`tel:${shul.phone.replace(/[^0-9+]/g, '')}`} style={{ color: '#0f766e', textDecoration: 'none' }}>{shul.phone}</a>
                         </p>
                       )}
-                      {shul.contactName && <p style={{ margin: 0, color: '#475569', fontSize: '0.95rem' }}>Контакт: {shul.contactName}</p>}
+                      {shul.contactName && <p style={{ margin: 0, color: '#475569', fontSize: '0.95rem' }}>Contact: {shul.contactName}</p>}
 
                       <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                         <span style={pillTeal}>{shulReviews.length} reviews</span>
@@ -328,7 +334,7 @@ export default function ShulsPage() {
                         onClick={() => setExpandedId(expanded ? null : shul.id)}
                         style={{ marginTop: '0.9rem', width: '100%', border: '1px solid #cbd5e1', background: expanded ? '#f8fafc' : 'white', borderRadius: '10px', padding: '0.55rem 0.75rem', fontWeight: 600, cursor: 'pointer' }}
                       >
-                        {expanded ? 'Скрыть отзывы' : 'Открыть отзывы и оставить отзыв'}
+                        {expanded ? 'Hide Reviews' : 'Reviews & Leave a Review'}
                       </button>
 
                       {expanded && (
@@ -347,16 +353,16 @@ export default function ShulsPage() {
                             </div>
                           )}
 
-                          <h3 style={{ marginTop: 0, marginBottom: '0.6rem', fontSize: '1rem' }}>Оставить отзыв (после модерации админом)</h3>
+                          <h3 style={{ marginTop: 0, marginBottom: '0.6rem', fontSize: '1rem' }}>Leave a Review (moderated by admin)</h3>
                           <div style={{ display: 'grid', gap: '0.55rem' }}>
-                            <input placeholder="Имя" value={form.authorName} onChange={(e) => updateForm(shul.id, { authorName: e.target.value })} style={inputStyle} />
-                            <input placeholder="Email (необязательно)" value={form.authorEmail} onChange={(e) => updateForm(shul.id, { authorEmail: e.target.value })} style={inputStyle} />
+                            <input placeholder="Your name" value={form.authorName} onChange={(e) => updateForm(shul.id, { authorName: e.target.value })} style={inputStyle} />
+                            <input placeholder="Email (optional)" value={form.authorEmail} onChange={(e) => updateForm(shul.id, { authorEmail: e.target.value })} style={inputStyle} />
                             <select value={String(form.rating)} onChange={(e) => updateForm(shul.id, { rating: Number(e.target.value) })} style={inputStyle}>
                               {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} stars</option>)}
                             </select>
-                            <textarea placeholder="Ваш отзыв" value={form.comment} onChange={(e) => updateForm(shul.id, { comment: e.target.value })} rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
+                            <textarea placeholder="Your review" value={form.comment} onChange={(e) => updateForm(shul.id, { comment: e.target.value })} rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
                             <button onClick={() => submitReview(shul.id)} disabled={submittingFor === shul.id} style={{ border: 'none', background: submittingFor === shul.id ? '#94a3b8' : '#1d4ed8', color: 'white', borderRadius: '10px', padding: '0.65rem 0.9rem', fontWeight: 700, cursor: submittingFor === shul.id ? 'wait' : 'pointer' }}>
-                              {submittingFor === shul.id ? 'Submitting...' : 'Отправить отзыв'}
+                              {submittingFor === shul.id ? 'Submitting...' : 'Submit Review'}
                             </button>
                             {messageByShul[shul.id] && <p style={{ margin: 0, color: '#0f766e', fontSize: '0.9rem' }}>{messageByShul[shul.id]}</p>}
                           </div>
@@ -396,10 +402,10 @@ export default function ShulsPage() {
           <section className="ohel-section">
             <div className="ohel-header">
               <div>
-                <h2 className="ohel-title">Фотоархив Ohel</h2>
-                <p className="ohel-subtitle">Современная галерея с полноэкранным просмотром. Нажмите на фото.</p>
+                <h2 className="ohel-title">Ohel Photo Archive</h2>
+                <p className="ohel-subtitle">Full-screen gallery. Click on any photo to enlarge.</p>
               </div>
-              <div className="ohel-counter">{ohelPhotos.length} фото</div>
+              <div className="ohel-counter">{ohelPhotos.length} photos</div>
             </div>
 
             <div className="ohel-grid">
@@ -413,7 +419,7 @@ export default function ShulsPage() {
                   <img src={photo.src} alt={photo.title} className="ohel-image" loading="lazy" />
                   <div className="ohel-overlay">
                     <span className="ohel-chip">{photo.title}</span>
-                    <span className="ohel-chip subtle">Открыть</span>
+                    <span className="ohel-chip subtle">View</span>
                   </div>
                 </button>
               ))}
