@@ -50,6 +50,7 @@ export default function ShulsPage() {
   const [messageByShul, setMessageByShul] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<TabId>('ch-shuls');
   const [activeOhelIndex, setActiveOhelIndex] = useState<number | null>(null);
+  const [ohelPhotos, setOhelPhotos] = useState<{ id: string; src: string; title: string }[]>([]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -118,13 +119,20 @@ export default function ShulsPage() {
     });
   }, [shuls]);
 
-  const ohelPhotos = useMemo(() => {
-    const fileNames = ['01.jpg', '02.jpg', '03.jpg', '04.jpg', '10.jpg', '11.jpg', '12.jpg', '13.jpg', '14.jpg', '15.jpg', '16.jpg', '17.jpg', '18.jpg', '19.jpg', '20.jpg'];
-    return fileNames.map((fileName, i) => ({
-      id: `ohel-${fileName.replace('.jpg', '')}`,
-      src: `/images/ohel/${fileName}`,
-      title: `Ohel - Photo ${i + 1}`,
-    }));
+  useEffect(() => {
+    const loadOhelPhotos = async () => {
+      try {
+        const res = await fetch('/api/ohel-photos');
+        const data = await res.json();
+        if (Array.isArray(data?.photos)) {
+          setOhelPhotos(data.photos);
+        }
+      } catch (error) {
+        console.error('Failed to load Ohel photos', error);
+      }
+    };
+
+    loadOhelPhotos();
   }, []);
 
   const reviewsByShul = useMemo(() => {

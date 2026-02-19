@@ -27,6 +27,8 @@ const quickAccessItems = [
   { title: 'Free / Gemach', icon: '🆓', color: '#0891b2', href: '/gemach', desc: 'Free loans & resources', isStatic: true },
   { title: 'Rides', icon: '🚗', color: '#4f46e5', keywords: ['ride', 'carpool', 'travel'], desc: 'Carpool & rides' },
   { title: 'News', icon: '📰', color: '#b91c1c', href: '/news', desc: 'Community news', isStatic: true },
+  { title: 'Shuls & Mikvahs', icon: '🕍', color: '#1e3a5f', href: '/shuls', desc: 'Synagogues & mikvahs', isStatic: true },
+  { title: 'Yeshiva Directory', icon: '📚', color: '#1a5c3a', href: '/yeshivas', desc: 'Schools worldwide', isStatic: true },
 ];
 
 const addItems = [
