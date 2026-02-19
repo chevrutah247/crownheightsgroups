@@ -17,8 +17,17 @@ interface PhotoItem {
   title: string;
 }
 
+type CollectionId = 'ohel' | 'rebbe-library' | 'broadcast-booth';
+
+const collections: { id: CollectionId; label: string; subtitle: string; api: string }[] = [
+  { id: 'ohel', label: 'Ohel', subtitle: 'Ohel archive gallery', api: '/api/ohel-photos' },
+  { id: 'rebbe-library', label: 'Rebbe Library', subtitle: 'Archive from Rebbe Library', api: '/api/rebbe-library-photos' },
+  { id: 'broadcast-booth', label: 'Broadcast Booth', subtitle: 'Room used for Rebbe speech broadcasts', api: '/api/broadcast-booth-photos' },
+];
+
 export default function PhotoArchivePage() {
   const [user, setUser] = useState<UserInfo | null>(null);
+  const [activeCollection, setActiveCollection] = useState<CollectionId>('ohel');
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
@@ -46,15 +55,16 @@ export default function PhotoArchivePage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('/api/ohel-photos');
+        const current = collections.find((c) => c.id === activeCollection);
+        const res = await fetch(current?.api || '/api/ohel-photos');
         const data = await res.json();
         if (Array.isArray(data?.photos)) setPhotos(data.photos);
       } catch (error) {
-        console.error('Failed to load Ohel photos', error);
+        console.error('Failed to load archive photos', error);
       }
     };
     load();
-  }, []);
+  }, [activeCollection]);
 
   useEffect(() => {
     if (activeIndex === null) return;
@@ -80,10 +90,33 @@ export default function PhotoArchivePage() {
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1rem' }}>
         <section style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)', borderRadius: '20px', padding: '1.5rem', color: 'white', marginBottom: '1rem' }}>
           <h1 style={{ margin: 0, fontSize: '2rem' }}>Photo Archive</h1>
-          <p style={{ marginTop: '0.65rem', marginBottom: 0, opacity: 0.9 }}>Ohel archive gallery</p>
+          <p style={{ marginTop: '0.65rem', marginBottom: 0, opacity: 0.9 }}>
+            {collections.find((c) => c.id === activeCollection)?.subtitle}
+          </p>
           <div style={{ marginTop: '0.75rem', display: 'inline-block', background: 'rgba(255,255,255,0.14)', borderRadius: '12px', padding: '0.55rem 0.85rem', fontWeight: 700 }}>
             {photos.length} photos
           </div>
+        </section>
+
+        <section style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginBottom: '1rem' }}>
+          {collections.map((collection) => (
+            <button
+              key={collection.id}
+              type="button"
+              onClick={() => { setActiveCollection(collection.id); setActiveIndex(null); }}
+              style={{
+                border: '1px solid #cbd5e1',
+                background: activeCollection === collection.id ? '#1d4ed8' : 'white',
+                color: activeCollection === collection.id ? 'white' : '#334155',
+                borderRadius: '999px',
+                padding: '0.45rem 0.85rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {collection.label}
+            </button>
+          ))}
         </section>
 
         <section style={{
