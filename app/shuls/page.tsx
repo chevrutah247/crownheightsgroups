@@ -49,6 +49,7 @@ export default function ShulsPage() {
   const [submittingFor, setSubmittingFor] = useState<string | null>(null);
   const [messageByShul, setMessageByShul] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<TabId>('ch-shuls');
+  const [activeOhelIndex, setActiveOhelIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -205,6 +206,32 @@ export default function ShulsPage() {
     localStorage.clear();
     window.location.href = '/auth/login';
   };
+
+  const closeOhelLightbox = () => setActiveOhelIndex(null);
+  const openOhelLightbox = (idx: number) => setActiveOhelIndex(idx);
+  const showPrevOhelPhoto = () => {
+    setActiveOhelIndex((prev) => {
+      if (prev === null) return prev;
+      return prev === 0 ? ohelPhotos.length - 1 : prev - 1;
+    });
+  };
+  const showNextOhelPhoto = () => {
+    setActiveOhelIndex((prev) => {
+      if (prev === null) return prev;
+      return prev === ohelPhotos.length - 1 ? 0 : prev + 1;
+    });
+  };
+
+  useEffect(() => {
+    if (activeOhelIndex === null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeOhelLightbox();
+      if (event.key === 'ArrowLeft') showPrevOhelPhoto();
+      if (event.key === 'ArrowRight') showNextOhelPhoto();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activeOhelIndex, ohelPhotos.length]);
 
   if (loading) {
     return (
@@ -366,20 +393,222 @@ export default function ShulsPage() {
         )}
 
         {activeTab === 'ohel' && (
-          <section>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
-              {ohelPhotos.map((photo) => (
-                <article key={photo.id} style={cardStyle}>
-                  <img src={photo.src} alt={photo.title} style={{ width: '100%', height: '210px', objectFit: 'cover' }} loading="lazy" />
-                  <div style={{ padding: '0.8rem' }}>
-                    <p style={{ margin: '0 0 0.4rem', fontWeight: 600 }}>{photo.title}</p>
+          <section className="ohel-section">
+            <div className="ohel-header">
+              <div>
+                <h2 className="ohel-title">Фотоархив Ohel</h2>
+                <p className="ohel-subtitle">Современная галерея с полноэкранным просмотром. Нажмите на фото.</p>
+              </div>
+              <div className="ohel-counter">{ohelPhotos.length} фото</div>
+            </div>
+
+            <div className="ohel-grid">
+              {ohelPhotos.map((photo, idx) => (
+                <button
+                  key={photo.id}
+                  type="button"
+                  className="ohel-card"
+                  onClick={() => openOhelLightbox(idx)}
+                >
+                  <img src={photo.src} alt={photo.title} className="ohel-image" loading="lazy" />
+                  <div className="ohel-overlay">
+                    <span className="ohel-chip">{photo.title}</span>
+                    <span className="ohel-chip subtle">Открыть</span>
                   </div>
-                </article>
+                </button>
               ))}
             </div>
           </section>
         )}
       </main>
+
+      {activeOhelIndex !== null && (
+        <div className="ohel-lightbox" onClick={closeOhelLightbox}>
+          <button type="button" className="ohel-close" onClick={closeOhelLightbox} aria-label="Close preview">×</button>
+          <button type="button" className="ohel-nav prev" onClick={(e) => { e.stopPropagation(); showPrevOhelPhoto(); }} aria-label="Previous photo">‹</button>
+          <div className="ohel-stage" onClick={(e) => e.stopPropagation()}>
+            <img src={ohelPhotos[activeOhelIndex].src} alt={ohelPhotos[activeOhelIndex].title} className="ohel-stage-image" />
+            <div className="ohel-stage-caption">
+              <span>{ohelPhotos[activeOhelIndex].title}</span>
+              <span>{activeOhelIndex + 1} / {ohelPhotos.length}</span>
+            </div>
+          </div>
+          <button type="button" className="ohel-nav next" onClick={(e) => { e.stopPropagation(); showNextOhelPhoto(); }} aria-label="Next photo">›</button>
+        </div>
+      )}
+
+      <style jsx>{`
+        .ohel-section {
+          border-radius: 20px;
+          padding: 1rem;
+          background:
+            radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.16), transparent 40%),
+            radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.14), transparent 45%),
+            #ffffff;
+          border: 1px solid #dbeafe;
+        }
+        .ohel-header {
+          display: flex;
+          gap: 1rem;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 1rem;
+          flex-wrap: wrap;
+        }
+        .ohel-title {
+          margin: 0;
+          font-size: 1.5rem;
+          color: #0f172a;
+          letter-spacing: 0.01em;
+        }
+        .ohel-subtitle {
+          margin: 0.45rem 0 0;
+          color: #334155;
+        }
+        .ohel-counter {
+          background: linear-gradient(135deg, #1d4ed8, #0ea5e9);
+          color: white;
+          border-radius: 999px;
+          padding: 0.45rem 0.8rem;
+          font-weight: 700;
+          font-size: 0.9rem;
+        }
+        .ohel-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 0.9rem;
+        }
+        .ohel-card {
+          position: relative;
+          border: none;
+          padding: 0;
+          border-radius: 16px;
+          overflow: hidden;
+          cursor: pointer;
+          background: #0f172a;
+          text-align: left;
+          box-shadow: 0 10px 28px rgba(15, 23, 42, 0.2);
+          transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .ohel-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 16px 36px rgba(15, 23, 42, 0.3);
+        }
+        .ohel-image {
+          width: 100%;
+          height: 240px;
+          object-fit: cover;
+          display: block;
+          transition: transform 0.35s ease;
+        }
+        .ohel-card:hover .ohel-image {
+          transform: scale(1.04);
+        }
+        .ohel-overlay {
+          position: absolute;
+          inset: auto 0 0 0;
+          padding: 0.7rem;
+          display: flex;
+          justify-content: space-between;
+          gap: 0.4rem;
+          align-items: center;
+          background: linear-gradient(to top, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.08));
+        }
+        .ohel-chip {
+          background: rgba(255, 255, 255, 0.92);
+          color: #0f172a;
+          border-radius: 999px;
+          padding: 0.24rem 0.62rem;
+          font-size: 0.8rem;
+          font-weight: 600;
+          white-space: nowrap;
+        }
+        .ohel-chip.subtle {
+          background: rgba(14, 165, 233, 0.9);
+          color: white;
+        }
+        .ohel-lightbox {
+          position: fixed;
+          inset: 0;
+          z-index: 1000;
+          background: rgba(2, 6, 23, 0.86);
+          backdrop-filter: blur(4px);
+          display: grid;
+          grid-template-columns: 64px minmax(0, 1fr) 64px;
+          align-items: center;
+          padding: 1rem;
+          gap: 0.75rem;
+        }
+        .ohel-stage {
+          max-width: 1100px;
+          width: 100%;
+          margin: 0 auto;
+          border-radius: 14px;
+          overflow: hidden;
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          background: #020617;
+          box-shadow: 0 28px 60px rgba(0, 0, 0, 0.45);
+        }
+        .ohel-stage-image {
+          width: 100%;
+          max-height: calc(100vh - 160px);
+          object-fit: contain;
+          display: block;
+          background: #020617;
+        }
+        .ohel-stage-caption {
+          color: #e2e8f0;
+          display: flex;
+          justify-content: space-between;
+          gap: 1rem;
+          padding: 0.7rem 0.9rem;
+          background: rgba(15, 23, 42, 0.85);
+          font-size: 0.9rem;
+        }
+        .ohel-nav, .ohel-close {
+          border: 1px solid rgba(148, 163, 184, 0.45);
+          background: rgba(15, 23, 42, 0.7);
+          color: #f8fafc;
+          border-radius: 12px;
+          cursor: pointer;
+        }
+        .ohel-nav {
+          width: 52px;
+          height: 52px;
+          font-size: 2rem;
+          line-height: 1;
+          display: grid;
+          place-items: center;
+        }
+        .ohel-close {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          width: 44px;
+          height: 44px;
+          font-size: 1.8rem;
+          line-height: 1;
+          z-index: 1001;
+        }
+        @media (max-width: 900px) {
+          .ohel-lightbox {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+          }
+          .ohel-nav {
+            position: fixed;
+            bottom: 14px;
+            width: 46px;
+            height: 46px;
+            border-radius: 999px;
+          }
+          .ohel-nav.prev { left: 14px; }
+          .ohel-nav.next { right: 14px; }
+          .ohel-stage-image {
+            max-height: calc(100vh - 220px);
+          }
+        }
+      `}</style>
 
       <Footer />
     </div>
