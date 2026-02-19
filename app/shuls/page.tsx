@@ -22,12 +22,22 @@ interface ReviewForm {
   comment: string;
 }
 
-type TabId = 'ch-shuls' | 'mikvahs' | 'beit-midrash' | 'ohel';
+interface PlaceSuggestionForm {
+  name: string;
+  type: 'shul' | 'synagogue' | 'beit-midrash' | 'kollel';
+  address: string;
+  phone: string;
+  notes: string;
+  submitterEmail: string;
+}
+
+type TabId = 'ch-shuls' | 'mikvahs' | 'beit-midrash' | 'kollel' | 'ohel';
 
 const tabs: { id: TabId; label: string }[] = [
   { id: 'ch-shuls', label: 'Crown Heights Shuls' },
   { id: 'mikvahs', label: 'Crown Heights Mikvahs' },
   { id: 'beit-midrash', label: 'Beit Midrash' },
+  { id: 'kollel', label: 'Kollel' },
   { id: 'ohel', label: 'Ohel' },
 ];
 
@@ -36,6 +46,15 @@ const blankForm: ReviewForm = {
   authorEmail: '',
   rating: 5,
   comment: '',
+};
+
+const blankSuggestionForm: PlaceSuggestionForm = {
+  name: '',
+  type: 'shul',
+  address: '',
+  phone: '',
+  notes: '',
+  submitterEmail: '',
 };
 
 export default function ShulsPage() {
@@ -51,6 +70,9 @@ export default function ShulsPage() {
   const [activeTab, setActiveTab] = useState<TabId>('ch-shuls');
   const [activeOhelIndex, setActiveOhelIndex] = useState<number | null>(null);
   const [ohelPhotos, setOhelPhotos] = useState<{ id: string; src: string; title: string }[]>([]);
+  const [suggestionForm, setSuggestionForm] = useState<PlaceSuggestionForm>(blankSuggestionForm);
+  const [suggestionSubmitting, setSuggestionSubmitting] = useState(false);
+  const [suggestionMessage, setSuggestionMessage] = useState('');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -116,6 +138,13 @@ export default function ShulsPage() {
     return shuls.filter((shul) => {
       const n = shul.name.toLowerCase();
       return n.includes('bais ') || n.includes('beis ') || n.includes('beit ') || n.includes('bais') || n.includes('beis');
+    });
+  }, [shuls]);
+
+  const kollelList = useMemo(() => {
+    return shuls.filter((shul) => {
+      const n = shul.name.toLowerCase();
+      return n.includes('kollel') || n.includes('hakolel') || n.includes('avreichem');
     });
   }, [shuls]);
 
@@ -214,7 +243,47 @@ export default function ShulsPage() {
     if (typeof window === 'undefined') return;
     const tab = new URLSearchParams(window.location.search).get('tab');
     if (tab === 'ohel') setActiveTab('ohel');
+    if (tab === 'kollel') setActiveTab('kollel');
   }, []);
+
+  const submitPlaceSuggestion = async () => {
+    if (!suggestionForm.name.trim() || !suggestionForm.address.trim()) {
+      setSuggestionMessage('Name and address are required.');
+      return;
+    }
+
+    setSuggestionSubmitting(true);
+    setSuggestionMessage('');
+    try {
+      const payload = {
+        type: 'place',
+        contactEmail: suggestionForm.submitterEmail.trim() || undefined,
+        payload: {
+          name: suggestionForm.name.trim(),
+          placeType: suggestionForm.type,
+          address: suggestionForm.address.trim(),
+          phone: suggestionForm.phone.trim() || undefined,
+          notes: suggestionForm.notes.trim() || undefined,
+          source: 'shuls-page',
+        },
+      };
+
+      const res = await fetch('/api/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to submit suggestion');
+
+      setSuggestionForm(blankSuggestionForm);
+      setSuggestionMessage('Submitted. Admin will review and publish.');
+    } catch (error: any) {
+      setSuggestionMessage(error?.message || 'Failed to submit suggestion');
+    } finally {
+      setSuggestionSubmitting(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -264,11 +333,12 @@ export default function ShulsPage() {
         <section style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%)', borderRadius: '20px', padding: '2rem', color: 'white', marginBottom: '1.5rem' }}>
           <h1 style={{ margin: 0, fontSize: '2rem' }}>Jewish Places of Crown Heights</h1>
           <p style={{ marginTop: '0.75rem', marginBottom: 0, opacity: 0.9 }}>
-            Synagogues, Mikvahs, Beit Midrash, and Ohel Archive.
+            Synagogues, Mikvahs, Beit Midrash, Kollel, and Ohel Archive.
           </p>
           <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <Badge text={`${shuls.length} Shuls`} />
             <Badge text={`${crownHeightsMikvahs.length} Mikvahs`} />
+            <Badge text={`${kollelList.length} Kollel`} />
             <Badge text={`${ohelPhotos.length} Ohel Photos`} />
           </div>
         </section>
@@ -406,6 +476,25 @@ export default function ShulsPage() {
           </section>
         )}
 
+        {activeTab === 'kollel' && (
+          <section style={gridStyle}>
+            {kollelList.map((shul) => (
+              <article key={shul.id} style={cardStyle}>
+                <div style={{ padding: '1rem' }}>
+                  <h2 style={{ marginTop: 0, marginBottom: '0.5rem', fontSize: '1.1rem' }}>{shul.name}</h2>
+                  <p style={{ margin: '0 0 0.4rem', color: '#334155' }}>📍 {shul.address}</p>
+                  {shul.phone && <p style={{ margin: 0 }}>☎️ {shul.phone}</p>}
+                </div>
+              </article>
+            ))}
+            {kollelList.length === 0 && (
+              <article style={{ ...cardStyle, padding: '1rem' }}>
+                <p style={{ margin: 0, color: '#475569' }}>No Kollel entries found yet.</p>
+              </article>
+            )}
+          </section>
+        )}
+
         {activeTab === 'ohel' && (
           <section className="ohel-section">
             <div className="ohel-header">
@@ -434,6 +523,76 @@ export default function ShulsPage() {
             </div>
           </section>
         )}
+
+        <section style={{ marginTop: '1.2rem', ...cardStyle }}>
+          <div style={{ padding: '1rem' }}>
+            <h2 style={{ marginTop: 0, marginBottom: '0.5rem', fontSize: '1.15rem' }}>Add a New Place</h2>
+            <p style={{ marginTop: 0, color: '#475569' }}>
+              Suggest a new Shul, Synagogue, Beit Midrash, or Kollel. Submission goes to admin moderation.
+            </p>
+            <div style={{ display: 'grid', gap: '0.55rem', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+              <input
+                placeholder="Name *"
+                value={suggestionForm.name}
+                onChange={(e) => setSuggestionForm((prev) => ({ ...prev, name: e.target.value }))}
+                style={inputStyle}
+              />
+              <select
+                value={suggestionForm.type}
+                onChange={(e) => setSuggestionForm((prev) => ({ ...prev, type: e.target.value as PlaceSuggestionForm['type'] }))}
+                style={inputStyle}
+              >
+                <option value="shul">Shul</option>
+                <option value="synagogue">Synagogue</option>
+                <option value="beit-midrash">Beit Midrash</option>
+                <option value="kollel">Kollel</option>
+              </select>
+              <input
+                placeholder="Address *"
+                value={suggestionForm.address}
+                onChange={(e) => setSuggestionForm((prev) => ({ ...prev, address: e.target.value }))}
+                style={inputStyle}
+              />
+              <input
+                placeholder="Phone"
+                value={suggestionForm.phone}
+                onChange={(e) => setSuggestionForm((prev) => ({ ...prev, phone: e.target.value }))}
+                style={inputStyle}
+              />
+              <input
+                placeholder="Your email (optional)"
+                value={suggestionForm.submitterEmail}
+                onChange={(e) => setSuggestionForm((prev) => ({ ...prev, submitterEmail: e.target.value }))}
+                style={inputStyle}
+              />
+            </div>
+            <textarea
+              placeholder="Notes"
+              rows={3}
+              value={suggestionForm.notes}
+              onChange={(e) => setSuggestionForm((prev) => ({ ...prev, notes: e.target.value }))}
+              style={{ ...inputStyle, marginTop: '0.55rem', resize: 'vertical' }}
+            />
+            <button
+              type="button"
+              onClick={submitPlaceSuggestion}
+              disabled={suggestionSubmitting}
+              style={{
+                marginTop: '0.6rem',
+                border: 'none',
+                background: suggestionSubmitting ? '#94a3b8' : '#1d4ed8',
+                color: 'white',
+                borderRadius: '10px',
+                padding: '0.65rem 0.9rem',
+                fontWeight: 700,
+                cursor: suggestionSubmitting ? 'wait' : 'pointer',
+              }}
+            >
+              {suggestionSubmitting ? 'Submitting...' : 'Submit Place'}
+            </button>
+            {suggestionMessage && <p style={{ margin: '0.55rem 0 0', color: '#0f766e', fontSize: '0.9rem' }}>{suggestionMessage}</p>}
+          </div>
+        </section>
       </main>
 
       {activeOhelIndex !== null && (
