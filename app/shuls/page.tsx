@@ -46,10 +46,10 @@ interface MinyanSuggestionForm {
 type TabId = 'ch-shuls' | 'mikvahs' | 'beit-midrash' | 'kollel';
 
 const tabs: { id: TabId; label: string }[] = [
-  { id: 'ch-shuls', label: 'Синагоги' },
-  { id: 'mikvahs', label: 'Миквы' },
-  { id: 'beit-midrash', label: 'Бейт Мидраш' },
-  { id: 'kollel', label: 'Коллели' },
+  { id: 'ch-shuls', label: 'Synagogues' },
+  { id: 'mikvahs', label: 'Mikvahs' },
+  { id: 'beit-midrash', label: 'Beit Midrash' },
+  { id: 'kollel', label: 'Kollel' },
 ];
 
 const blankReviewForm: ReviewForm = {
@@ -357,9 +357,9 @@ export default function ShulsPage() {
 
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1rem' }}>
         <section style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%)', borderRadius: '20px', padding: '2rem', color: 'white', marginBottom: '1.25rem' }}>
-          <h1 style={{ margin: 0, fontSize: '2rem' }}>Синагоги Crown Heights</h1>
+          <h1 style={{ margin: 0, fontSize: '2rem' }}>Crown Heights Synagogues</h1>
           <p style={{ marginTop: '0.75rem', marginBottom: 0, opacity: 0.9 }}>
-            Шулы, Миквы, Бейт Мидраш и Коллели.
+            Shuls, Mikvahs, Beit Midrash, and Kollel.
           </p>
           <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <Badge text={`${shuls.length} Shuls`} />
@@ -391,42 +391,42 @@ export default function ShulsPage() {
 
         <section style={{ ...cardStyle, marginBottom: '1rem' }}>
           <div style={{ padding: '1rem' }}>
-            <h2 style={{ marginTop: 0, marginBottom: '0.5rem', fontSize: '1.15rem' }}>Добавить в раздел</h2>
-            <p style={{ marginTop: 0, color: '#475569' }}>Опции доступны во всем разделе СИНАГОГИ.</p>
+            <h2 style={{ marginTop: 0, marginBottom: '0.5rem', fontSize: '1.15rem' }}>Add to This Section</h2>
+            <p style={{ marginTop: 0, color: '#475569' }}>These options are available across the Synagogues section.</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.8rem' }}>
               <div style={actionCardStyle}>
-                <h3 style={actionTitleStyle}>➕ Добавить свой шул</h3>
-                <input placeholder="Название *" value={placeForm.name} onChange={(e) => setPlaceForm((p) => ({ ...p, name: e.target.value }))} style={inputStyle} />
+                <h3 style={actionTitleStyle}>➕ Add Your Shul</h3>
+                <input placeholder="Name *" value={placeForm.name} onChange={(e) => setPlaceForm((p) => ({ ...p, name: e.target.value }))} style={inputStyle} />
                 <select value={placeForm.type} onChange={(e) => setPlaceForm((p) => ({ ...p, type: e.target.value as PlaceSuggestionForm['type'] }))} style={inputStyle}>
                   <option value="shul">Shul</option>
                   <option value="synagogue">Synagogue</option>
                   <option value="beit-midrash">Beit Midrash</option>
                   <option value="kollel">Kollel</option>
                 </select>
-                <input placeholder="Адрес *" value={placeForm.address} onChange={(e) => setPlaceForm((p) => ({ ...p, address: e.target.value }))} style={inputStyle} />
-                <input placeholder="Телефон" value={placeForm.phone} onChange={(e) => setPlaceForm((p) => ({ ...p, phone: e.target.value }))} style={inputStyle} />
-                <input placeholder="Ваш email" value={placeForm.submitterEmail} onChange={(e) => setPlaceForm((p) => ({ ...p, submitterEmail: e.target.value }))} style={inputStyle} />
-                <textarea placeholder="Комментарий" rows={3} value={placeForm.notes} onChange={(e) => setPlaceForm((p) => ({ ...p, notes: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
+                <input placeholder="Address *" value={placeForm.address} onChange={(e) => setPlaceForm((p) => ({ ...p, address: e.target.value }))} style={inputStyle} />
+                <input placeholder="Phone" value={placeForm.phone} onChange={(e) => setPlaceForm((p) => ({ ...p, phone: e.target.value }))} style={inputStyle} />
+                <input placeholder="Your email" value={placeForm.submitterEmail} onChange={(e) => setPlaceForm((p) => ({ ...p, submitterEmail: e.target.value }))} style={inputStyle} />
+                <textarea placeholder="Comment" rows={3} value={placeForm.notes} onChange={(e) => setPlaceForm((p) => ({ ...p, notes: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
                 <button onClick={submitPlace} disabled={placeSubmitting} style={primaryButtonStyle(placeSubmitting)}>{placeSubmitting ? 'Submitting...' : 'Submit Place'}</button>
                 {placeMessage && <p style={messageStyle}>{placeMessage}</p>}
               </div>
 
               <div style={actionCardStyle}>
-                <h3 style={actionTitleStyle}>🖼️ Добавить фотографию</h3>
-                <input placeholder="Название шула *" value={photoForm.placeName} onChange={(e) => setPhotoForm((p) => ({ ...p, placeName: e.target.value }))} style={inputStyle} />
-                <input placeholder="Ссылка на фото *" value={photoForm.photoUrl} onChange={(e) => setPhotoForm((p) => ({ ...p, photoUrl: e.target.value }))} style={inputStyle} />
-                <input placeholder="Ваш email" value={photoForm.submitterEmail} onChange={(e) => setPhotoForm((p) => ({ ...p, submitterEmail: e.target.value }))} style={inputStyle} />
-                <textarea placeholder="Описание" rows={3} value={photoForm.notes} onChange={(e) => setPhotoForm((p) => ({ ...p, notes: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
+                <h3 style={actionTitleStyle}>🖼️ Add Photo</h3>
+                <input placeholder="Shul name *" value={photoForm.placeName} onChange={(e) => setPhotoForm((p) => ({ ...p, placeName: e.target.value }))} style={inputStyle} />
+                <input placeholder="Photo URL *" value={photoForm.photoUrl} onChange={(e) => setPhotoForm((p) => ({ ...p, photoUrl: e.target.value }))} style={inputStyle} />
+                <input placeholder="Your email" value={photoForm.submitterEmail} onChange={(e) => setPhotoForm((p) => ({ ...p, submitterEmail: e.target.value }))} style={inputStyle} />
+                <textarea placeholder="Description" rows={3} value={photoForm.notes} onChange={(e) => setPhotoForm((p) => ({ ...p, notes: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
                 <button onClick={submitPhoto} disabled={photoSubmitting} style={primaryButtonStyle(photoSubmitting)}>{photoSubmitting ? 'Submitting...' : 'Submit Photo'}</button>
                 {photoMessage && <p style={messageStyle}>{photoMessage}</p>}
               </div>
 
               <div style={actionCardStyle}>
-                <h3 style={actionTitleStyle}>🕒 Добавить расписание миньяна</h3>
-                <input placeholder="Название шула *" value={minyanForm.placeName} onChange={(e) => setMinyanForm((p) => ({ ...p, placeName: e.target.value }))} style={inputStyle} />
-                <textarea placeholder="Расписание миньяна *" rows={4} value={minyanForm.schedule} onChange={(e) => setMinyanForm((p) => ({ ...p, schedule: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
-                <input placeholder="Ваш email" value={minyanForm.submitterEmail} onChange={(e) => setMinyanForm((p) => ({ ...p, submitterEmail: e.target.value }))} style={inputStyle} />
-                <textarea placeholder="Комментарий" rows={2} value={minyanForm.notes} onChange={(e) => setMinyanForm((p) => ({ ...p, notes: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
+                <h3 style={actionTitleStyle}>🕒 Add Minyan Schedule</h3>
+                <input placeholder="Shul name *" value={minyanForm.placeName} onChange={(e) => setMinyanForm((p) => ({ ...p, placeName: e.target.value }))} style={inputStyle} />
+                <textarea placeholder="Minyan schedule *" rows={4} value={minyanForm.schedule} onChange={(e) => setMinyanForm((p) => ({ ...p, schedule: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
+                <input placeholder="Your email" value={minyanForm.submitterEmail} onChange={(e) => setMinyanForm((p) => ({ ...p, submitterEmail: e.target.value }))} style={inputStyle} />
+                <textarea placeholder="Comment" rows={2} value={minyanForm.notes} onChange={(e) => setMinyanForm((p) => ({ ...p, notes: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
                 <button onClick={submitMinyan} disabled={minyanSubmitting} style={primaryButtonStyle(minyanSubmitting)}>{minyanSubmitting ? 'Submitting...' : 'Submit Minyan Schedule'}</button>
                 {minyanMessage && <p style={messageStyle}>{minyanMessage}</p>}
               </div>
