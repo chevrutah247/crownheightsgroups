@@ -239,7 +239,21 @@ export const defaultShuls: Shul[] = [
     entranceImageUrl: 'https://collive.com/wp-content/uploads/photos/2013/09/26930_13430_213461179229666.jpg',
     photoSourceUrl: 'https://collive.com/shuls-of-crown-heights/'
   },
-  { id: 'unzer-shul', name: 'Unzer Shul', address: '1457 Union St', crossStreets: 'Kingston & Albany', phone: '347-314-9076', contactName: 'Y. Baumgarten' }
+  { id: 'unzer-shul', name: 'Unzer Shul', address: '1457 Union St', crossStreets: 'Kingston & Albany', phone: '347-314-9076', contactName: 'Y. Baumgarten' },
+  // Additional shuls from GoDaven.com
+  { id: '701-empire', name: '701 Empire', address: '701 Empire Blvd', crossStreets: 'Albany & Kingston' },
+  { id: 'aish-chaim', name: 'Aish Chaim', address: 'Crown Heights, Brooklyn' },
+  { id: 'anchor-health-mincha-minyan', name: 'Anchor Health Mincha Minyan', address: 'Crown Heights, Brooklyn' },
+  { id: 'bais-gimpel-chaim-nemes-hall', name: 'Bais Gimpel Chaim (The Nemes Hall)', address: 'Crown Heights, Brooklyn' },
+  { id: 'bais-shmuel-chabad', name: 'Bais Shmuel Chabad', address: 'Crown Heights, Brooklyn' },
+  { id: 'beis-mendel', name: 'Beis Mendel', address: 'Crown Heights, Brooklyn' },
+  { id: 'bet-mazal', name: 'Bet Mazal', address: 'Crown Heights, Brooklyn' },
+  { id: 'hasofer', name: 'Hasofer', address: 'Crown Heights, Brooklyn' },
+  { id: 'menachem-nachum-spinka', name: 'Menachem Nachum / Spinka', address: 'Crown Heights, Brooklyn' },
+  { id: 'ok-kosher-minyan', name: 'OK Kosher Minyan', address: 'Crown Heights, Brooklyn' },
+  { id: 'ot-zal', name: 'Ot Zal', address: 'Crown Heights, Brooklyn' },
+  { id: 'prospect-heights-shul', name: 'Prospect Heights Shul', address: 'Prospect Heights / Crown Heights, Brooklyn' },
+  { id: 'reb-getzels-shul', name: "Reb Getzel's Shul", address: 'Crown Heights, Brooklyn' },
 ];
 
 export const SHULS_SOURCE_URL = 'https://chcentral.org/resources/directory/shuls/';
