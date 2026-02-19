@@ -329,6 +329,12 @@ export default function AdminPage() {
               </li>
             ))}
             <li className="admin-nav-item" style={{ marginTop: '2rem' }}>
+              <Link href="/admin/shul-reviews" style={{ color: '#0f766e', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>🕍</span><span>Shul Reviews</span></Link>
+            </li>
+            <li className="admin-nav-item">
+              <Link href="/admin/pending-shuls" style={{ color: '#b45309', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>📋</span><span>Pending Shuls (12)</span></Link>
+            </li>
+            <li className="admin-nav-item">
               <Link href="/" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>🏠</span><span>Back to Site</span></Link>
             </li>
           </ul>

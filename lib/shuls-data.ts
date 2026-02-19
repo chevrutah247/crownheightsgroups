@@ -240,20 +240,35 @@ export const defaultShuls: Shul[] = [
     photoSourceUrl: 'https://collive.com/shuls-of-crown-heights/'
   },
   { id: 'unzer-shul', name: 'Unzer Shul', address: '1457 Union St', crossStreets: 'Kingston & Albany', phone: '347-314-9076', contactName: 'Y. Baumgarten' },
-  // Additional shuls from GoDaven.com
+  // 701 Empire has an address from GoDaven
   { id: '701-empire', name: '701 Empire', address: '701 Empire Blvd', crossStreets: 'Albany & Kingston' },
-  { id: 'aish-chaim', name: 'Aish Chaim', address: 'Crown Heights, Brooklyn' },
-  { id: 'anchor-health-mincha-minyan', name: 'Anchor Health Mincha Minyan', address: 'Crown Heights, Brooklyn' },
-  { id: 'bais-gimpel-chaim-nemes-hall', name: 'Bais Gimpel Chaim (The Nemes Hall)', address: 'Crown Heights, Brooklyn' },
-  { id: 'bais-shmuel-chabad', name: 'Bais Shmuel Chabad', address: 'Crown Heights, Brooklyn' },
-  { id: 'beis-mendel', name: 'Beis Mendel', address: 'Crown Heights, Brooklyn' },
-  { id: 'bet-mazal', name: 'Bet Mazal', address: 'Crown Heights, Brooklyn' },
-  { id: 'hasofer', name: 'Hasofer', address: 'Crown Heights, Brooklyn' },
-  { id: 'menachem-nachum-spinka', name: 'Menachem Nachum / Spinka', address: 'Crown Heights, Brooklyn' },
-  { id: 'ok-kosher-minyan', name: 'OK Kosher Minyan', address: 'Crown Heights, Brooklyn' },
-  { id: 'ot-zal', name: 'Ot Zal', address: 'Crown Heights, Brooklyn' },
-  { id: 'prospect-heights-shul', name: 'Prospect Heights Shul', address: 'Prospect Heights / Crown Heights, Brooklyn' },
-  { id: 'reb-getzels-shul', name: "Reb Getzel's Shul", address: 'Crown Heights, Brooklyn' },
+];
+
+// Shuls found on GoDaven.com without full addresses — pending admin moderation
+export interface PendingShul {
+  id: string;
+  name: string;
+  address: string;
+  crossStreets?: string;
+  phone?: string;
+  contactName?: string;
+  source: string;
+  addedAt: string;
+}
+
+export const pendingShulsDefaults: PendingShul[] = [
+  { id: 'aish-chaim', name: 'Aish Chaim', address: '', source: 'GoDaven.com', addedAt: '2026-02-18' },
+  { id: 'anchor-health-mincha-minyan', name: 'Anchor Health Mincha Minyan', address: '', source: 'GoDaven.com', addedAt: '2026-02-18' },
+  { id: 'bais-gimpel-chaim-nemes-hall', name: 'Bais Gimpel Chaim (The Nemes Hall)', address: '', source: 'GoDaven.com', addedAt: '2026-02-18' },
+  { id: 'bais-shmuel-chabad', name: 'Bais Shmuel Chabad', address: '', source: 'GoDaven.com', addedAt: '2026-02-18' },
+  { id: 'beis-mendel', name: 'Beis Mendel', address: '', source: 'GoDaven.com', addedAt: '2026-02-18' },
+  { id: 'bet-mazal', name: 'Bet Mazal', address: '', source: 'GoDaven.com', addedAt: '2026-02-18' },
+  { id: 'hasofer', name: 'Hasofer', address: '', source: 'GoDaven.com', addedAt: '2026-02-18' },
+  { id: 'menachem-nachum-spinka', name: 'Menachem Nachum / Spinka', address: '', source: 'GoDaven.com', addedAt: '2026-02-18' },
+  { id: 'ok-kosher-minyan', name: 'OK Kosher Minyan', address: '', source: 'GoDaven.com', addedAt: '2026-02-18' },
+  { id: 'ot-zal', name: 'Ot Zal', address: '', source: 'GoDaven.com', addedAt: '2026-02-18' },
+  { id: 'prospect-heights-shul', name: 'Prospect Heights Shul', address: '', source: 'GoDaven.com', addedAt: '2026-02-18' },
+  { id: 'reb-getzels-shul', name: "Reb Getzel's Shul", address: '', source: 'GoDaven.com', addedAt: '2026-02-18' },
 ];
 
 export const SHULS_SOURCE_URL = 'https://chcentral.org/resources/directory/shuls/';
