@@ -56,6 +56,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
           </Link>
           <nav className="nav" style={{ flexWrap: 'wrap', gap: '0.25rem 0.5rem', alignItems: 'center' }}>
             <Link href="/" className="nav-link">Home</Link>
+            <Link href="/shuls" className="nav-link">Synagogues</Link>
             <Link href="/groups" className="nav-link">Groups</Link>
             
             {/* Mitzvah Dropdown */}
@@ -107,7 +108,6 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <Link href="/classifieds" className="nav-link" style={{ color: '#16a34a' }}>📋 Classifieds</Link>
             <Link href="/business" className="nav-link" style={{ color: '#8b5cf6' }}>🏪 Business</Link>
             <Link href="/events" className="nav-link">Events</Link>
-            <Link href="/shuls" className="nav-link" style={{ color: '#1e3a5f' }}>СИНАГОГИ</Link>
             <Link href="/photo-archive" className="nav-link">Photo Archive</Link>
             <Link href="/news" className="nav-link">News</Link>
             <Link href="/services" className="nav-link">Services</Link>
