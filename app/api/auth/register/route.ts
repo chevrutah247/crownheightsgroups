@@ -62,6 +62,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Block + in email (anti-alias spam)
+    if (email.includes('+')) {
+      return NextResponse.json(
+        { error: 'Email cannot contain the + symbol' },
+        { status: 400 }
+      );
+    }
+
+    // Validate name (letters only)
+    const nameRegex = /^[\p{L}\s'-]+$/u;
+    if (!nameRegex.test(name)) {
+      return NextResponse.json(
+        { error: 'Name can only contain letters' },
+        { status: 400 }
+      );
+    }
+
     if (password.length < 6) {
       return NextResponse.json(
         { error: 'Password must be at least 6 characters' },

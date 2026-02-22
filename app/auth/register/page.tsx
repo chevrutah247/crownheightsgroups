@@ -15,6 +15,19 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
+    // Block + in email (anti-alias spam)
+    if (email.includes('+')) {
+      setError('Email cannot contain the + symbol');
+      return;
+    }
+
+    // Validate name (letters only)
+    const nameRegex = /^[\p{L}\s'-]+$/u;
+    if (!nameRegex.test(name)) {
+      setError('Name can only contain letters');
+      return;
+    }
+
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
       return;

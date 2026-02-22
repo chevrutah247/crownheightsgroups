@@ -58,6 +58,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Block + in email (anti-alias spam)
+    if (email.includes('+')) {
+      return NextResponse.json(
+        { error: 'Email cannot contain the + symbol' },
+        { status: 400 }
+      );
+    }
+
     // Verify reCAPTCHA if token provided
     if (recaptchaToken) {
       const isHuman = await verifyRecaptcha(recaptchaToken);
