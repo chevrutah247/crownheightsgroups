@@ -33,6 +33,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+  },
   alternates: {
     canonical: 'https://crownheightsgroups.com',
   },
