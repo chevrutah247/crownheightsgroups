@@ -1,8 +1,8 @@
 import { MetadataRoute } from 'next';
-import { categories, serviceCategories } from '@/lib/data';
+import { categories } from '@/lib/data';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://crownheightsgroups.com';
+  const baseUrl = 'https://www.crownheightsgroups.com';
   const lastModified = new Date();
 
   const staticPages = [
@@ -24,6 +24,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/suggest`, lastModified, changeFrequency: 'monthly' as const, priority: 0.6 },
     { url: `${baseUrl}/suggest-group`, lastModified, changeFrequency: 'monthly' as const, priority: 0.6 },
     { url: `${baseUrl}/suggest-service`, lastModified, changeFrequency: 'monthly' as const, priority: 0.6 },
+    { url: `${baseUrl}/shuls`, lastModified, changeFrequency: 'weekly' as const, priority: 0.8 },
+    { url: `${baseUrl}/yeshivas`, lastModified, changeFrequency: 'weekly' as const, priority: 0.8 },
+    { url: `${baseUrl}/lottery`, lastModified, changeFrequency: 'weekly' as const, priority: 0.7 },
+    { url: `${baseUrl}/photo-archive`, lastModified, changeFrequency: 'weekly' as const, priority: 0.65 },
     { url: `${baseUrl}/contact`, lastModified, changeFrequency: 'monthly' as const, priority: 0.5 },
     { url: `${baseUrl}/cyber-safety`, lastModified, changeFrequency: 'monthly' as const, priority: 0.5 },
   ];
@@ -35,10 +39,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  const servicePages = serviceCategories.map((cat) => ({
-    url: `${baseUrl}/services/${cat.slug}`,
+  const serviceTypes = [
+    'plumber', 'electrician', 'locksmith', 'handyman', 'cleaning', 'hvac',
+    'taxi', 'glass', 'moving', 'painter', 'sim-cards', 'notary',
+    'musicians', 'tile', 'carpenter',
+  ];
+  const servicePages = serviceTypes.map((slug) => ({
+    url: `${baseUrl}/services/${slug}`,
     lastModified,
-    changeFrequency: 'weekly' as const,
+    changeFrequency: 'monthly' as const,
     priority: 0.7,
   }));
 
