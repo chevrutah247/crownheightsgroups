@@ -22,7 +22,7 @@ export default function DoNotCallPopup() {
   }
 
   async function handleShare() {
-    const text = '📵 Надоели спам-звонки? Зарегистрируй свой номер на DoNotCall.gov — через 31 день нежелательные маркетинговые звонки прекратятся. Это бесплатный государственный сервис FTC (Федеральной торговой комиссии США). 👉 https://www.donotcall.gov/';
+    const text = '📵 Tired of spam calls? Register your number at DoNotCall.gov — within 31 days telemarketers are legally required to stop calling you. It\'s a free official service by the FTC. 👉 https://www.donotcall.gov/';
     if (navigator.share) {
       try { await navigator.share({ title: 'Do Not Call Registry', text }); } catch {}
     } else {
@@ -74,7 +74,7 @@ export default function DoNotCallPopup() {
             color: '#fff', fontSize: 22, fontWeight: 800, margin: 0, lineHeight: 1.2,
             fontFamily: 'system-ui, -apple-system, sans-serif',
           }}>
-            Надоели СКАМЕРЫ<br />и спам-звонки?
+            Tired of SCAMMERS<br />and Spam Calls?
           </h2>
         </div>
 
@@ -84,10 +84,10 @@ export default function DoNotCallPopup() {
             fontSize: 15, lineHeight: 1.6, color: '#374151', margin: '0 0 16px',
             fontFamily: 'system-ui, sans-serif',
           }}>
-            <strong style={{ color: '#111' }}>Do Not Call Registry</strong> — это{' '}
-            <strong>официальный бесплатный сервис</strong> Федеральной торговой комиссии США (FTC).
-            Зарегистрируйте свой номер телефона, и через <strong>31 день</strong> маркетинговые
-            компании будут <strong>обязаны по закону</strong> прекратить вам звонить.
+            The <strong style={{ color: '#111' }}>Do Not Call Registry</strong> is an{' '}
+            <strong>official free service</strong> by the Federal Trade Commission (FTC).
+            Register your phone number, and within <strong>31 days</strong> telemarketers are{' '}
+            <strong>legally required</strong> to stop calling you.
           </p>
 
           {/* Trust badges */}
@@ -95,10 +95,10 @@ export default function DoNotCallPopup() {
             display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap',
           }}>
             {[
-              { icon: '🏛️', text: 'Гос. сервис США' },
-              { icon: '🆓', text: 'Полностью бесплатно' },
-              { icon: '🔒', text: 'Безопасно и законно' },
-              { icon: '⏱️', text: 'Результат за 31 день' },
+              { icon: '🏛️', text: 'U.S. Government' },
+              { icon: '🆓', text: '100% Free' },
+              { icon: '🔒', text: 'Safe & Legal' },
+              { icon: '⏱️', text: 'Results in 31 Days' },
             ].map((badge, i) => (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: 6,
@@ -129,7 +129,7 @@ export default function DoNotCallPopup() {
             onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
-            🛡️ Зарегистрировать номер на DoNotCall.gov
+            🛡️ Register Your Number at DoNotCall.gov
           </a>
 
           {/* Share */}
@@ -145,7 +145,7 @@ export default function DoNotCallPopup() {
             onMouseEnter={e => { e.currentTarget.style.background = '#e5e7eb'; }}
             onMouseLeave={e => { e.currentTarget.style.background = '#f3f4f6'; }}
           >
-            {copied ? '✅ Ссылка скопирована!' : '📤 Поделиться с друзьями'}
+            {copied ? '✅ Link Copied!' : '📤 Share with Friends'}
           </button>
 
           {/* Disclaimer */}
@@ -153,8 +153,8 @@ export default function DoNotCallPopup() {
             fontSize: 11, color: '#9ca3af', textAlign: 'center', margin: '12px 0 0',
             lineHeight: 1.4,
           }}>
-            Сервис не блокирует звонки от благотворительных организаций,
-            политических кампаний и опросов. Для жалоб на нарушителей используйте тот же сайт.
+            This service does not block calls from charities, political campaigns,
+            or surveys. You can also file complaints about illegal robocalls on the same website.
           </p>
         </div>
 
