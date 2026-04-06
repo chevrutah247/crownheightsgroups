@@ -64,77 +64,120 @@ export function LandDonationBanner() {
   );
 }
 
-// ===== SHIDDUCH BANNER (for /kallah) =====
+// ===== SHIDDUCH BANNER (for /kallah) — Gold & Confetti =====
 export function ShidduchBanner() {
   const [dismissed, setDismissed] = useState(false);
   if (dismissed) return null;
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #1e3a5f 0%, #1a2744 100%)',
-      borderRadius: 16, padding: '24px', marginBottom: 24, position: 'relative',
-      border: '1px solid rgba(37,99,235,0.2)',
+      background: 'linear-gradient(135deg, #1a1206 0%, #2d1f0e 40%, #1a1206 100%)',
+      borderRadius: 20, padding: '32px 24px', marginBottom: 24, position: 'relative',
+      border: '2px solid rgba(212,168,83,0.3)', overflow: 'hidden',
+      boxShadow: '0 8px 32px rgba(212,168,83,0.15)',
     }}>
+      {/* Confetti / sparkle particles */}
+      <style>{`
+        @keyframes shidduchFloat { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(-60px) rotate(360deg);opacity:0} }
+        @keyframes shidduchShimmer { 0%,100%{opacity:0.3} 50%{opacity:0.8} }
+        @keyframes shidduchPulse { 0%,100%{box-shadow:0 0 20px rgba(212,168,83,0.3)} 50%{box-shadow:0 0 40px rgba(212,168,83,0.6)} }
+        .confetti-dot { position:absolute; width:6px; height:6px; border-radius:50%; animation: shidduchFloat 3s ease-in infinite; }
+        .shimmer-line { position:absolute; width:1px; height:30px; background:linear-gradient(180deg,transparent,rgba(212,168,83,0.4),transparent); animation: shidduchShimmer 2s ease-in-out infinite; }
+      `}</style>
+      {/* Decorative confetti dots */}
+      {[
+        { left:'5%',top:'10%',bg:'#d4a853',delay:'0s',dur:'2.5s' },
+        { left:'15%',top:'5%',bg:'#e8c97a',delay:'0.5s',dur:'3s' },
+        { left:'85%',top:'8%',bg:'#d4a853',delay:'1s',dur:'2.8s' },
+        { left:'90%',top:'20%',bg:'#f5edd8',delay:'0.3s',dur:'3.2s' },
+        { left:'30%',top:'3%',bg:'#e8b860',delay:'1.5s',dur:'2.6s' },
+        { left:'70%',top:'12%',bg:'#d4a853',delay:'0.8s',dur:'3s' },
+        { left:'50%',top:'2%',bg:'#f5edd8',delay:'2s',dur:'2.4s' },
+        { left:'95%',top:'40%',bg:'#e8c97a',delay:'0.2s',dur:'3.5s' },
+      ].map((c,i) => (
+        <div key={i} className="confetti-dot" style={{ left:c.left, top:c.top, background:c.bg, animationDelay:c.delay, animationDuration:c.dur }} />
+      ))}
+      {/* Shimmer lines */}
+      {[
+        { left:'10%',top:'0',delay:'0s' },
+        { left:'25%',top:'5%',delay:'1s' },
+        { left:'75%',top:'0',delay:'0.5s' },
+        { left:'60%',top:'8%',delay:'1.5s' },
+      ].map((s,i) => (
+        <div key={i} className="shimmer-line" style={{ left:s.left, top:s.top, animationDelay:s.delay }} />
+      ))}
+
+      {/* Ambient glow */}
+      <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle, rgba(212,168,83,0.08) 0%, transparent 70%)', pointerEvents:'none' }} />
+
       <button onClick={() => setDismissed(true)} style={{
-        position: 'absolute', top: 10, right: 12, background: 'rgba(255,255,255,0.1)',
-        border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer',
-        color: 'rgba(255,255,255,0.5)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        position: 'absolute', top: 12, right: 14, background: 'rgba(212,168,83,0.15)',
+        border: '1px solid rgba(212,168,83,0.2)', borderRadius: '50%', width: 30, height: 30, cursor: 'pointer',
+        color: 'rgba(212,168,83,0.6)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2,
       }}>✕</button>
 
-      {/* Main Shidduch CTA */}
-      <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <div style={{ fontSize: 42, marginBottom: 8 }}>💕</div>
-        <h3 style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: '0 0 8px' }}>
-          Looking for Your Bashert?
+      {/* Logo */}
+      <div style={{ textAlign: 'center', marginBottom: 16, position: 'relative', zIndex: 1 }}>
+        <img src="/images/getashidduch-logo.png" alt="GetAShidduch" style={{ height: 56, margin: '0 auto', filter: 'brightness(1.2)' }} />
+      </div>
+
+      {/* Main CTA */}
+      <div style={{ textAlign: 'center', marginBottom: 24, position: 'relative', zIndex: 1 }}>
+        <h3 style={{
+          background: 'linear-gradient(135deg, #d4a853, #e8c97a, #f5edd8, #e8c97a, #d4a853)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          fontSize: 28, fontWeight: 800, margin: '0 0 10px', lineHeight: 1.2,
+          fontFamily: 'Georgia, serif',
+        }}>
+          Ready for Your Shidduch?
         </h3>
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, lineHeight: 1.6, maxWidth: 500, margin: '0 auto 16px' }}>
-          <strong style={{ color: '#93c5fd' }}>GetAShidduch.org</strong> — a free Jewish matchmaking platform
+        <p style={{ color: 'rgba(245,237,216,0.6)', fontSize: 15, lineHeight: 1.6, maxWidth: 480, margin: '0 auto 20px' }}>
+          <strong style={{ color: '#e8c97a' }}>GetAShidduch.org</strong> — a free Jewish matchmaking platform
           with smart compatibility matching. Join hundreds of Jewish singles worldwide.
         </p>
         <a href="https://www.getashidduch.org/en/get-a-shidduch" target="_blank" rel="noopener noreferrer" style={{
-          display: 'inline-block', padding: '12px 28px', borderRadius: 12,
-          background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff',
-          fontSize: 16, fontWeight: 700, textDecoration: 'none',
-          boxShadow: '0 4px 14px rgba(37,99,235,0.3)',
+          display: 'inline-block', padding: '14px 36px', borderRadius: 14,
+          background: 'linear-gradient(135deg, #d4a853, #e8c97a)', color: '#1a1206',
+          fontSize: 17, fontWeight: 800, textDecoration: 'none', letterSpacing: 0.5,
+          boxShadow: '0 4px 20px rgba(212,168,83,0.4)',
+          animation: 'shidduchPulse 2s ease-in-out infinite',
         }}>
-          Create Free Profile →
+          ✨ Find Your Match — It&apos;s Free ✨
         </a>
       </div>
 
-      {/* Two additional CTAs */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        {/* Stories */}
+      {/* Two cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, position: 'relative', zIndex: 1 }}>
         <a href="https://www.getashidduch.org/en/stories" target="_blank" rel="noopener noreferrer" style={{
-          display: 'block', padding: '16px', borderRadius: 12,
-          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-          textDecoration: 'none', textAlign: 'center', transition: 'background 0.2s',
+          display: 'block', padding: '18px', borderRadius: 14,
+          background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.15)',
+          textDecoration: 'none', textAlign: 'center',
         }}>
-          <div style={{ fontSize: 28, marginBottom: 6 }}>📖</div>
-          <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>💍</div>
+          <div style={{ color: '#e8c97a', fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
             Share Your Story
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, lineHeight: 1.4 }}>
-            Inspire others! Tell us how you found your match — your story could help someone find theirs.
+          <div style={{ color: 'rgba(245,237,216,0.45)', fontSize: 12, lineHeight: 1.5 }}>
+            Found your match? Inspire others! Your story could help someone find theirs.
           </div>
         </a>
 
-        {/* Report */}
         <a href="https://www.getashidduch.org/en/report" target="_blank" rel="noopener noreferrer" style={{
-          display: 'block', padding: '16px', borderRadius: 12,
-          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-          textDecoration: 'none', textAlign: 'center', transition: 'background 0.2s',
+          display: 'block', padding: '18px', borderRadius: 14,
+          background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.15)',
+          textDecoration: 'none', textAlign: 'center',
         }}>
-          <div style={{ fontSize: 28, marginBottom: 6 }}>🛡️</div>
-          <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>🛡️</div>
+          <div style={{ color: '#e8c97a', fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
             Protect the Community
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, lineHeight: 1.4 }}>
-            Know someone who shouldn't be dating? Report to our confidential blacklist to keep others safe.
+          <div style={{ color: 'rgba(245,237,216,0.45)', fontSize: 12, lineHeight: 1.5 }}>
+            Know someone problematic? Report confidentially to keep our community safe.
           </div>
         </a>
       </div>
 
-      <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11, textAlign: 'center', marginTop: 14 }}>
+      <p style={{ color: 'rgba(212,168,83,0.25)', fontSize: 11, textAlign: 'center', marginTop: 16, position: 'relative', zIndex: 1 }}>
         A project of Education On The Go Corp · 501(c)(3) · EIN: 92-1172505
       </p>
     </div>
