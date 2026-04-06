@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { LandDonationBanner } from '@/components/PromoBanners';
 
 interface Campaign {
   id: string;
@@ -89,6 +90,7 @@ export default function CharityPage() {
       <Header user={null} onLogout={() => {}} />
       
       <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem' }}>
+        <LandDonationBanner />
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <h1 style={{ color: '#1e3a5f', marginBottom: '0.5rem' }}>💝 Charity Campaigns</h1>
           <p style={{ color: '#666' }}>Help families and individuals in our community</p>

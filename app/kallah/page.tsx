@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { ShidduchBanner } from '@/components/PromoBanners';
 
 interface UserInfo { name: string; email: string; role: 'user' | 'admin'; }
 
@@ -107,6 +108,7 @@ export default function KallahPage() {
     <div>
       <Header user={user} onLogout={handleLogout} />
       <main className="main">
+        <ShidduchBanner />
         {/* Hero with Image */}
        <div style={{ background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 50%, #fbcfe8 100%)', borderRadius: '20px', marginBottom: '2rem', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
   <img src="/images/huppah-banner.jpg" alt="Chuppah" style={{ width: '100%', height: '200px', objectFit: 'cover', objectPosition: 'center' }} />
