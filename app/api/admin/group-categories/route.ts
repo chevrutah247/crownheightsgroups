@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { requireAdmin } from '@/lib/admin-auth';
 
 const REDIS_KEY = 'groupCategories';
 
@@ -64,6 +65,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     const newCategory = await request.json();
@@ -81,6 +87,11 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     const updated = await request.json();
@@ -98,6 +109,11 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     const { id } = await request.json();

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { requireAdmin } from '@/lib/admin-auth';
 
 const defaultCategories = [
   { id: '1', name: 'Plumber', nameRu: 'Сантехник', slug: 'plumber', icon: '🔧', order: 1 },
@@ -37,9 +38,14 @@ function getRedis() {
 
 export async function GET() {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'No database' }, { status: 500 });
-    
+
     await redis.set('serviceCategories', JSON.stringify(defaultCategories));
     
     return NextResponse.json({ success: true, count: defaultCategories.length });

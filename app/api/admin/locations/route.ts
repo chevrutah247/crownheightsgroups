@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { requireAdmin } from '@/lib/admin-auth';
 
 function getRedis() {
   const url = process.env.KV_REST_API_URL;
@@ -10,9 +11,14 @@ function getRedis() {
 
 export async function GET(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json([]);
-    
+
     const stored = await redis.get('locations');
     if (stored) {
       const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
@@ -27,9 +33,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    
+
     const newLoc = await request.json();
     
     let locations: any[] = [];
@@ -74,9 +85,14 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    
+
     const updated = await request.json();
     
     let locations: any[] = [];
@@ -103,9 +119,14 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    
+
     const { id } = await request.json();
     
     let locations: any[] = [];

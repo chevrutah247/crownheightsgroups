@@ -526,16 +526,67 @@ export default function ShulsPage() {
         )}
 
         {activeTab === 'mikvahs' && (
-          <section style={gridStyle}>
-            {crownHeightsMikvahs.map((m) => (
-              <PlaceCard key={m.id} place={m} />
-            ))}
-          </section>
+          <>
+            <a
+              href="https://www.mikvah.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                width: '100%',
+                marginBottom: '1.25rem',
+                padding: '1.5rem 2rem',
+                background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+                borderRadius: '16px',
+                textAlign: 'center',
+                textDecoration: 'none',
+                color: 'white',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(59,130,246,0.4)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>Mikvah.org</span>
+              <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.95rem', opacity: 0.9 }}>
+                Find a Mikvah anywhere in the world — global directory of Mikvahs
+              </span>
+            </a>
+            <section style={gridStyle}>
+              {crownHeightsMikvahs.map((m) => (
+                <PlaceCard key={m.id} place={m} />
+              ))}
+            </section>
+          </>
         )}
 
         {activeTab === 'beit-midrash' && (
-          <section style={gridStyle}>
-            {beitMidrashList.map((shul) => (
+          <>
+            <a
+              href="https://www.rjnsheichabad.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                width: '100%',
+                marginBottom: '1.25rem',
+                padding: '1.5rem 2rem',
+                background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)',
+                borderRadius: '16px',
+                textAlign: 'center',
+                textDecoration: 'none',
+                color: 'white',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(124,58,237,0.4)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>RJNS — Расписание уроков Торы</span>
+              <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.95rem', opacity: 0.9 }}>
+                rjnsheichabad.com — Шиурим, расписание, Теилим и многое другое
+              </span>
+            </a>
+            <section style={gridStyle}>
+              {beitMidrashList.map((shul) => (
               <article key={shul.id} style={cardStyle}>
                 <div style={{ padding: '1rem' }}>
                   <h2 style={{ marginTop: 0, marginBottom: '0.5rem', fontSize: '1.1rem' }}>{shul.name}</h2>
@@ -544,7 +595,8 @@ export default function ShulsPage() {
                 </div>
               </article>
             ))}
-          </section>
+            </section>
+          </>
         )}
 
         {activeTab === 'kollel' && (

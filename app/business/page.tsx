@@ -147,7 +147,7 @@ export default function BusinessPage() {
           </div>
 
           <div style={{ marginBottom: '1.5rem' }}>
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search businesses, cities..." style={{ width: '100%', maxWidth: '400px', display: 'block', margin: '0 auto', padding: '0.75rem 1rem', border: '2px solid #e2e8f0', borderRadius: '8px', fontSize: '1rem' }} />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search businesses, cities..." aria-label="Search businesses" style={{ width: '100%', maxWidth: '400px', display: 'block', margin: '0 auto', padding: '0.75rem 1rem', border: '2px solid #e2e8f0', borderRadius: '8px', fontSize: '1rem' }} />
           </div>
 
           {/* Location Filters */}

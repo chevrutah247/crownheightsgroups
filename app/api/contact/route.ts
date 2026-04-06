@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 
 const EMAIL_CONFIG = {
-  user: 'contact@edonthego.org',
-  pass: 'qvun irsl zsaf asux',
+  user: process.env.EMAIL_USER || '',
+  pass: process.env.EMAIL_PASS || '',
 };
 
 export async function POST(request: NextRequest) {

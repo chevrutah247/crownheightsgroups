@@ -111,8 +111,8 @@ export default function Header({ user, onLogout }: HeaderProps) {
             <Link href="/photo-archive" className="nav-link">Photo Archive</Link>
             <Link href="/news" className="nav-link">News</Link>
             <Link href="/services" className="nav-link">Services</Link>
-            <Link href="/yeshivas" className="nav-link" style={{ color: '#1e3a5f' }}>📚 Yeshivas</Link>
-            
+            <Link href="/yeshivas" className="nav-link" style={{ color: '#a3e635' }}>📚 Yeshivas</Link>
+
             {/* 🔍 Search Button */}
             <button 
               onClick={() => setShowSearch(true)} 
@@ -135,6 +135,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
               onMouseOver={(e) => { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.color = 'white'; }}
               onMouseOut={(e) => { e.currentTarget.style.background = pulse ? '#3b82f6' : '#f3f4f6'; e.currentTarget.style.color = pulse ? 'white' : '#374151'; }}
               title="Search (Press /)"
+              aria-label="Search groups, businesses, events"
             >
               🔍 <span>Search</span>
               <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: pulse ? 'rgba(255,255,255,0.2)' : '#e5e7eb', borderRadius: '4px', marginLeft: '4px' }}>/</span>
@@ -146,7 +147,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
             {user ? (
               <>
                 <Link href="/profile" className="nav-link" style={{ color: '#10b981' }}>{user.name}</Link>
-                <button onClick={onLogout} className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>Logout</button>
+                <button onClick={onLogout} aria-label="Log out" className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>Logout</button>
               </>
             ) : (
               <Link href="/auth/login" style={{

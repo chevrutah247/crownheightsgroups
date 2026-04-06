@@ -63,6 +63,7 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [jewishDate, setJewishDate] = useState<string>('');
   const [parsha, setParsha] = useState<string>('');
+  const [holidayCountdowns, setHolidayCountdowns] = useState<Array<{ label: string; date: string; days: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
 
@@ -149,6 +150,60 @@ export default function HomePage() {
         const parshaData = await parshaRes.json();
         const parshaItem = parshaData.items?.find((item: any) => item.category === 'parashat');
         if (parshaItem) setParsha(parshaItem.title);
+
+        const years = [today.getFullYear(), today.getFullYear() + 1];
+        const eventResponses = await Promise.all(
+          years.map((year) =>
+            fetch(`https://www.hebcal.com/hebcal?cfg=json&maj=on&min=on&mod=on&year=${year}&month=x&i=off`)
+              .then((r) => r.json())
+              .catch(() => ({ items: [] }))
+          )
+        );
+
+        const allItems = eventResponses.flatMap((r: any) => (Array.isArray(r?.items) ? r.items : []));
+        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        const getNextEvent = (matcher: (title: string) => boolean) => {
+          const candidates = allItems
+            .filter((item: any) => typeof item?.title === 'string' && typeof item?.date === 'string')
+            .filter((item: any) => matcher(item.title))
+            .map((item: any) => ({ ...item, d: new Date(item.date) }))
+            .filter((item: any) => !Number.isNaN(item.d.getTime()))
+            .filter((item: any) => item.d >= startOfToday)
+            .sort((a: any, b: any) => a.d.getTime() - b.d.getTime());
+          return candidates[0];
+        };
+
+        const nextFastOfEsther = getNextEvent((title) => {
+          const t = title.toLowerCase();
+          return t.includes('ta\'anit esther') || t.includes('taanit esther') || t.includes('fast of esther');
+        });
+
+        const nextPurim = getNextEvent((title) => {
+          const t = title.toLowerCase();
+          return t.includes('purim') && !t.includes('katan');
+        });
+
+        const countFromToday = (date: Date) => Math.ceil((date.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
+        const nextEvents: Array<{ label: string; date: string; days: number }> = [];
+
+        if (nextFastOfEsther) {
+          nextEvents.push({
+            label: 'Fast of Esther',
+            date: nextFastOfEsther.d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+            days: countFromToday(nextFastOfEsther.d),
+          });
+        }
+
+        if (nextPurim) {
+          nextEvents.push({
+            label: 'Purim',
+            date: nextPurim.d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+            days: countFromToday(nextPurim.d),
+          });
+        }
+
+        setHolidayCountdowns(nextEvents);
       } catch (error) { console.error('Failed to fetch Jewish info:', error); }
     };
     fetchJewishInfo();
@@ -208,6 +263,16 @@ export default function HomePage() {
                   <div style={{ fontWeight: 'bold' }}>{parsha}</div>
                 </div>
               )}
+              {holidayCountdowns.map((holiday) => (
+                <div key={holiday.label}>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>
+                    {holiday.label} ({holiday.date})
+                  </div>
+                  <div style={{ fontWeight: 'bold' }}>
+                    {holiday.days <= 0 ? 'Today' : `${holiday.days} day${holiday.days === 1 ? '' : 's'} left`}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -236,6 +301,73 @@ export default function HomePage() {
       </section>
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+
+        {/* 💍 SHIDDUCH BANNER */}
+        <section style={{ marginBottom: '1.5rem' }}>
+          <style>{`
+            @keyframes shimmer-border {
+              0%, 100% { border-color: #f472b6; box-shadow: 0 0 15px rgba(244,114,182,0.4), inset 0 0 15px rgba(244,114,182,0.1); }
+              25% { border-color: #c084fc; box-shadow: 0 0 20px rgba(192,132,252,0.5), inset 0 0 20px rgba(192,132,252,0.1); }
+              50% { border-color: #fb923c; box-shadow: 0 0 25px rgba(251,146,60,0.5), inset 0 0 25px rgba(251,146,60,0.1); }
+              75% { border-color: #facc15; box-shadow: 0 0 20px rgba(250,204,21,0.5), inset 0 0 20px rgba(250,204,21,0.1); }
+            }
+            @keyframes confetti-float {
+              0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+              100% { transform: translateY(-20px) rotate(360deg); opacity: 0.3; }
+            }
+            .shidduch-banner { animation: shimmer-border 3s ease-in-out infinite; }
+            .shidduch-banner:hover { transform: translateY(-3px) !important; }
+            .confetti-piece { animation: confetti-float 2s ease-in-out infinite alternate; display: inline-block; }
+          `}</style>
+          <a href="https://getashidduch.org" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'block' }}>
+            <div
+              className="shidduch-banner"
+              style={{
+                background: 'linear-gradient(135deg, #831843 0%, #be185d 30%, #9333ea 70%, #6d28d9 100%)',
+                borderRadius: '20px',
+                padding: '1.5rem 2rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                border: '3px solid #f472b6',
+                transition: 'transform 0.3s',
+                position: 'relative',
+                overflow: 'hidden',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ position: 'absolute', top: '10px', left: '15px', fontSize: '1.5rem', pointerEvents: 'none' }}>
+                <span className="confetti-piece" style={{ animationDelay: '0s' }}>🎊</span>
+                <span className="confetti-piece" style={{ animationDelay: '0.5s' }}>✨</span>
+              </div>
+              <div style={{ position: 'absolute', top: '10px', right: '15px', fontSize: '1.5rem', pointerEvents: 'none' }}>
+                <span className="confetti-piece" style={{ animationDelay: '0.3s' }}>💍</span>
+                <span className="confetti-piece" style={{ animationDelay: '0.8s' }}>🎊</span>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 0.35rem 0', fontSize: '1.4rem', color: 'white', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                  💍 Shidduch — Find Your Match!
+                </h3>
+                <p style={{ margin: 0, color: 'rgba(255,255,255,0.9)', fontSize: '0.95rem' }}>
+                  GetAShidduch.org — Free matchmaking service for the Jewish community
+                </p>
+              </div>
+              <div style={{
+                background: 'linear-gradient(135deg, #ffd700, #f59e0b)',
+                color: '#831843',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '25px',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                whiteSpace: 'nowrap',
+              }}>
+                Get Started →
+              </div>
+            </div>
+          </a>
+        </section>
 
         {/* 📚 TORAH LEARNING BANNER */}
         <section style={{ marginBottom: '1.5rem' }}>

@@ -3,8 +3,8 @@ import { Redis } from '@upstash/redis';
 import nodemailer from 'nodemailer';
 
 const EMAIL_CONFIG = {
-  user: 'contact@edonthego.org',
-  pass: 'qvun irsl zsaf asux',
+  user: process.env.EMAIL_USER || '',
+  pass: process.env.EMAIL_PASS || '',
 };
 
 function getRedis() {
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const secret = searchParams.get('secret');
     const frequency = searchParams.get('frequency') || 'weekly';
     
-    if (secret !== process.env.CRON_SECRET && secret !== 'manual-trigger') {
+    if (secret !== process.env.CRON_SECRET) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     

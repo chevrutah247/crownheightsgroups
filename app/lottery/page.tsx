@@ -165,7 +165,7 @@ export default function LotteryPage() {
             padding: '1rem 2.5rem',
             marginBottom: '2rem'
           }}>
-            <span style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>From $3 / week</span>
+            <span style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>From $2 / week</span>
           </div>
 
           {/* Countdown Timer */}
@@ -227,7 +227,7 @@ export default function LotteryPage() {
 
           <button
             onClick={() => {
-              const text = `Join our lottery pool! 🎰 Only $3/week for Mega Millions + Powerball. We buy the tickets, you share the winnings! Join here: https://crownheightsgroups.com/lottery/join`;
+              const text = `Join our lottery pool! 🎰 Only $2/week for Powerball or $7/week for both lotteries. We buy the tickets, you share the winnings! Join here: https://crownheightsgroups.com/lottery/join`;
               if (navigator.share) {
                 navigator.share({ title: 'Lottery Pool', text, url: 'https://crownheightsgroups.com/lottery/join' }).catch(() => {});
               } else {
@@ -259,7 +259,7 @@ export default function LotteryPage() {
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
             {[
-              { step: '1', icon: '📝', title: 'Register & Pay $3', desc: 'Sign up and make your weekly contribution via secure payment' },
+              { step: '1', icon: '📝', title: 'Register & Pay', desc: 'Sign up and make your weekly contribution via secure payment' },
               { step: '2', icon: '🎫', title: 'We Buy Numbers', desc: 'Every Friday we purchase Mega Millions & Powerball entries for the pool' },
               { step: '3', icon: '💰', title: 'Share Winnings', desc: 'Any winnings are split equally among all participants' }
             ].map(item => (
@@ -302,7 +302,7 @@ export default function LotteryPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             {[
               { icon: '📈', title: 'Better Odds', desc: 'More tickets = more chances to win' },
-              { icon: '💵', title: 'Affordable', desc: 'From $3/week — choose your lottery' },
+              { icon: '💵', title: 'Affordable', desc: 'From $2/week — choose your lottery' },
               { icon: '👥', title: 'Community', desc: 'Win together with neighbors' },
               { icon: '📸', title: 'Transparent', desc: 'All numbers emailed to you' },
               { icon: '🔒', title: 'Secure', desc: 'Payments via Square' },
@@ -446,7 +446,7 @@ export default function LotteryPage() {
             textDecoration: 'none',
             boxShadow: '0 4px 20px rgba(255, 215, 0, 0.3)'
           }}>
-            🎟️ JOIN NOW - Only $3
+            🎟️ JOIN NOW - From $2
           </Link>
         </section>
 

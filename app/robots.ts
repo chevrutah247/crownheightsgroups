@@ -6,14 +6,9 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin', '/api/', '/auth/', '/profile'],
-      },
-      {
-        userAgent: 'Googlebot',
-        allow: '/',
-        disallow: ['/admin', '/api/', '/auth/', '/profile'],
+        disallow: ['/admin/', '/api/', '/auth/', '/profile'],
       },
     ],
-    sitemap: 'https://crownheightsgroups.com/sitemap.xml',
+    sitemap: 'https://www.crownheightsgroups.com/sitemap.xml',
   };
 }

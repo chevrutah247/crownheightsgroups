@@ -1,6 +1,7 @@
 // app/api/lottery/admin/save-numbers/route.ts
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '@/lib/admin-auth';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,6 +10,11 @@ const supabase = createClient(
 
 export async function POST(request: Request) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const { poolWeekId, adminNumbers } = await request.json();
 
     if (!poolWeekId) {

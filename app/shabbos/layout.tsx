@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Shabbos Hospitality - Crown Heights',
     description: 'Connect with Shabbos hosts in Crown Heights. Find or offer Shabbat meals.',
-    url: 'https://crownheightsgroups.com/shabbos',
+    url: 'https://www.crownheightsgroups.com/shabbos',
   },
-  alternates: { canonical: 'https://crownheightsgroups.com/shabbos' },
+  alternates: { canonical: 'https://www.crownheightsgroups.com/shabbos' },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

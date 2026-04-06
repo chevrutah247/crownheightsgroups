@@ -11,9 +11,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'WhatsApp Groups Directory - Crown Heights',
     description: 'Browse and join 500+ WhatsApp groups for Crown Heights community.',
-    url: 'https://crownheightsgroups.com/groups',
+    url: 'https://www.crownheightsgroups.com/groups',
   },
-  alternates: { canonical: 'https://crownheightsgroups.com/groups' },
+  alternates: { canonical: 'https://www.crownheightsgroups.com/groups' },
 };
 
 export default function GroupsPage() {

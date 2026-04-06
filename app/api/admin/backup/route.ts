@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { requireAdmin } from '@/lib/admin-auth';
 
 function getRedis() {
   const url = process.env.KV_REST_API_URL;
@@ -10,6 +11,11 @@ function getRedis() {
 
 export async function GET() {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
     

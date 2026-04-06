@@ -239,9 +239,9 @@ export async function POST(request: Request) {
 
     // 4. Calculate amount based on lottery type
     const priceMap: Record<string, number> = {
-      powerball: 300,      // $3.00 ($2 ticket + $1 service)
-      megamillions: 600,   // $6.00 ($5 ticket + $1 service)
-      both: 900,           // $9.00 ($7 tickets + $2 service)
+      powerball: 200,      // $2.00 (ticket cost only)
+      megamillions: 500,   // $5.00 (ticket cost only)
+      both: 700,           // $7.00 (both tickets)
     };
     const unitPriceCents = priceMap[lotteryType] || 300;
     const totalPriceCents = unitPriceCents * ticketQty;

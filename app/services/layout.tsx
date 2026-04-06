@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Local Services & Professionals - Crown Heights',
     description: 'Find trusted local professionals in Crown Heights: plumbers, electricians, taxi, and more.',
-    url: 'https://crownheightsgroups.com/services',
+    url: 'https://www.crownheightsgroups.com/services',
   },
-  alternates: { canonical: 'https://crownheightsgroups.com/services' },
+  alternates: { canonical: 'https://www.crownheightsgroups.com/services' },
 };
 
 const servicesSchema = {
@@ -17,7 +17,7 @@ const servicesSchema = {
   '@type': 'ItemList',
   name: 'Crown Heights Local Services',
   description: 'Directory of local services and professionals in Crown Heights, Brooklyn',
-  url: 'https://crownheightsgroups.com/services',
+  url: 'https://www.crownheightsgroups.com/services',
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'Plumbers' },
     { '@type': 'ListItem', position: 2, name: 'Electricians' },

@@ -78,24 +78,6 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
   const redis = getRedis();
   if (!redis) return undefined;
   
-  // Init default admin if needed
-  if (email.toLowerCase() === 'admin@crownheightsgroups.com') {
-    const existing = await redis.get('user:admin@crownheightsgroups.com');
-    if (!existing) {
-      const admin: User = {
-        id: 'admin-1',
-        email: 'admin@crownheightsgroups.com',
-        password: hashPassword('admin123'),
-        name: 'Admin',
-        isVerified: true,
-        createdAt: new Date().toISOString(),
-        role: 'admin'
-      };
-      await redis.set('user:admin@crownheightsgroups.com', JSON.stringify(admin));
-      return admin;
-    }
-  }
-  
   const data = await redis.get(`user:${email.toLowerCase()}`);
   let user: User | undefined;
   

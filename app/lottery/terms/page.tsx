@@ -66,7 +66,7 @@ export default function LotteryTermsPage() {
                 <li><strong>"Administrator"</strong> — The operator of the Pool, responsible for purchasing tickets and distributing winnings.</li>
                 <li><strong>"Participant"</strong> — Any individual who has paid the participation fee and is registered for the current week's pool.</li>
                 <li><strong>"Pool Week"</strong> — The period from Thursday 10:01 PM EST to the following Thursday 10:00 PM EST.</li>
-                <li><strong>"Contribution"</strong> — The participation fee paid by each Participant to join the weekly Pool, determined by the selected lottery type: Powerball ($3.00), Mega Millions ($6.00), or Both ($9.00), multiplied by the number of Shares purchased.</li>
+                <li><strong>"Contribution"</strong> — The participation fee paid by each Participant to join the weekly Pool, determined by the selected lottery type: Powerball ($2.00), Mega Millions ($5.00), or Both ($7.00), multiplied by the number of Shares purchased.</li>
                 <li><strong>"Share"</strong> — A single unit of participation in the Pool. Each Share entitles the holder to one equal portion of any winnings. A Participant may purchase multiple Shares (up to 10) to increase their proportional claim to winnings.</li>
               </ul>
             </section>
@@ -90,7 +90,7 @@ export default function LotteryTermsPage() {
                 4. Registration and Participation
               </h3>
               <p><strong>4.1. Registration:</strong> To join the Pool, you must create an account with your legal first and last name, valid email address, and optional lottery number preferences.</p>
-              <p><strong>4.2. Payment:</strong> Participation is confirmed ONLY upon successful payment of the applicable Contribution fee. Pricing varies by lottery type: Powerball — $3.00 ($2.00 ticket + $1.00 service fee); Mega Millions — $6.00 ($5.00 ticket + $1.00 service fee); Both — $9.00 ($7.00 tickets + $2.00 service fee). Each additional Share purchased multiplies the base price accordingly.</p>
+              <p><strong>4.2. Payment:</strong> Participation is confirmed ONLY upon successful payment of the applicable Contribution fee. Pricing varies by lottery type: Powerball — $2.00; Mega Millions — $5.00; Both — $7.00. Each additional Share purchased multiplies the base price accordingly.</p>
               <p><strong>4.3. Confirmation:</strong> Upon successful payment, you will receive a confirmation email. This email serves as proof of your participation.</p>
               <p><strong>4.4. Pool Formation:</strong> Each Pool Week begins Thursday at 10:01 PM EST and ends the following Thursday at 10:00 PM EST.</p>
               <p><strong>4.5. Number Selection:</strong> Participants may optionally submit their preferred lottery numbers. The Administrator reserves the right to select final numbers at their discretion.</p>

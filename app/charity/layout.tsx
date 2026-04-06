@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Charity & Fundraising - Crown Heights Groups',
     description: 'Support Jewish community campaigns and charity initiatives.',
-    url: 'https://crownheightsgroups.com/charity',
+    url: 'https://www.crownheightsgroups.com/charity',
   },
-  alternates: { canonical: 'https://crownheightsgroups.com/charity' },
+  alternates: { canonical: 'https://www.crownheightsgroups.com/charity' },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

@@ -1,6 +1,7 @@
 // app/api/lottery/admin/current-pool/route.ts
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '@/lib/admin-auth';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,6 +10,11 @@ const supabase = createClient(
 
 export async function GET() {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     // Get current active pool week (open or numbers_sent)
     const { data: poolWeek, error: poolError } = await supabase
       .from('pool_weeks')

@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Gemach - Free Loans & Community Resources',
     description: 'Find gemach services: interest-free loans, free food, clothing, and more.',
-    url: 'https://crownheightsgroups.com/gemach',
+    url: 'https://www.crownheightsgroups.com/gemach',
   },
-  alternates: { canonical: 'https://crownheightsgroups.com/gemach' },
+  alternates: { canonical: 'https://www.crownheightsgroups.com/gemach' },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

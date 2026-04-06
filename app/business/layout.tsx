@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Jewish Business Directory - Crown Heights & Worldwide',
     description: 'Browse Jewish-owned businesses worldwide in Crown Heights and beyond.',
-    url: 'https://crownheightsgroups.com/business',
+    url: 'https://www.crownheightsgroups.com/business',
   },
-  alternates: { canonical: 'https://crownheightsgroups.com/business' },
+  alternates: { canonical: 'https://www.crownheightsgroups.com/business' },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

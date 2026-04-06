@@ -103,38 +103,43 @@ export default function ShareButtons({ title, description, url }: ShareButtonsPr
       <button
         onClick={shareViaWhatsApp}
         title="Share via WhatsApp"
+        aria-label="Share via WhatsApp"
         style={{ ...buttonStyle, background: '#25D366' }}
       >
         <WhatsAppIcon />
       </button>
-      
+
       <button
         onClick={shareViaTelegram}
         title="Share via Telegram"
+        aria-label="Share via Telegram"
         style={{ ...buttonStyle, background: '#0088cc' }}
       >
         <TelegramIcon />
       </button>
-      
+
       <button
         onClick={shareViaFacebook}
         title="Share via Facebook"
+        aria-label="Share via Facebook"
         style={{ ...buttonStyle, background: '#1877F2' }}
       >
         <FacebookIcon />
       </button>
-      
+
       <button
         onClick={shareViaEmail}
         title="Share via Email"
+        aria-label="Share via Email"
         style={{ ...buttonStyle, background: '#6366f1' }}
       >
         <EmailIcon />
       </button>
-      
+
       <button
         onClick={copyLink}
         title={copied ? 'Copied!' : 'Copy Link'}
+        aria-label={copied ? 'Link copied' : 'Copy link'}
         style={{ ...buttonStyle, background: copied ? '#10b981' : '#9ca3af' }}
       >
         {copied ? <CheckIcon /> : <LinkIcon />}

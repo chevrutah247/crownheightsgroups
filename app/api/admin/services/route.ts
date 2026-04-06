@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { requireAdmin } from '@/lib/admin-auth';
 
 function getRedis() {
   const url = process.env.KV_REST_API_URL;
@@ -26,9 +27,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    
+
     const newService = await request.json();
     
     let services: any[] = [];
@@ -78,9 +84,14 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    
+
     const updated = await request.json();
     
     let services: any[] = [];
@@ -126,9 +137,14 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    
+
     const { id } = await request.json();
     
     let services: any[] = [];

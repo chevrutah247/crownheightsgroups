@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Torah Learning Groups - Study Partners & Classes',
     description: 'Join Torah study groups in multiple languages. Find chavrusas and daily shiurim.',
-    url: 'https://crownheightsgroups.com/torah-groups',
+    url: 'https://www.crownheightsgroups.com/torah-groups',
   },
-  alternates: { canonical: 'https://crownheightsgroups.com/torah-groups' },
+  alternates: { canonical: 'https://www.crownheightsgroups.com/torah-groups' },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { requireAdmin } from '@/lib/admin-auth';
 
 const defaultCategories = [
   { id: '1', name: 'Plumber', nameRu: 'Сантехник', slug: 'plumber', icon: '🔧', order: 1 },
@@ -36,9 +37,14 @@ function getRedis() {
 
 export async function GET() {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json(defaultCategories);
-    
+
     const stored = await redis.get('serviceCategories');
     if (stored) {
       const data = typeof stored === 'string' ? JSON.parse(stored) : stored;
@@ -56,9 +62,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    
+
     const newCat = await request.json();
     console.log('Creating category:', newCat);
     
@@ -97,9 +108,14 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    
+
     const updated = await request.json();
     
     let categories: any[] = [];
@@ -126,9 +142,14 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    
+
     const { id } = await request.json();
     
     let categories: any[] = [];

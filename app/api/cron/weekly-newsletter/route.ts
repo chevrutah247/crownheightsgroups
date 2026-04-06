@@ -143,8 +143,7 @@ export async function GET(request: NextRequest) {
   // Verify cron secret for security
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    // Allow without secret for testing
-    console.log('Warning: No CRON_SECRET verification');
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {

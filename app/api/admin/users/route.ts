@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { requireAdmin } from '@/lib/admin-auth';
 
 // Protected superadmin email - cannot be deleted or demoted
 const SUPERADMIN_EMAIL = 'chevrutah24x7@gmail.com';
@@ -46,6 +47,11 @@ export async function GET() {
 // Update user role
 export async function PUT(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });
@@ -84,6 +90,11 @@ export async function PUT(request: NextRequest) {
 // Delete user
 export async function DELETE(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 });

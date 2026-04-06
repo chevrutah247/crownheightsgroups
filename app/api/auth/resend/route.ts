@@ -3,8 +3,8 @@ import nodemailer from 'nodemailer';
 import { getUserByEmail, regenerateVerificationCode } from '@/lib/auth';
 
 const EMAIL_CONFIG = {
-  user: 'contact@edonthego.org',
-  pass: 'qvun irsl zsaf asux',
+  user: process.env.EMAIL_USER || '',
+  pass: process.env.EMAIL_PASS || '',
 };
 
 export async function POST(request: NextRequest) {

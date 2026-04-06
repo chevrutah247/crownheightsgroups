@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { pendingShulsDefaults, defaultShuls, type PendingShul, type Shul } from '@/lib/shuls-data';
+import { requireAdmin } from '@/lib/admin-auth';
 
 const PENDING_KEY = 'pending_shuls';
 const SHULS_KEY = 'shuls_directory';
@@ -28,6 +29,11 @@ async function getPending(redis: Redis | null): Promise<PendingShul[]> {
 // GET — list all pending shuls
 export async function GET() {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     const pending = await getPending(redis);
     return NextResponse.json(pending);
@@ -40,6 +46,11 @@ export async function GET() {
 // PUT — approve (move to active shuls) or delete a pending shul
 export async function PUT(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) {
       return NextResponse.json({ error: 'KV is not configured' }, { status: 500 });
@@ -98,6 +109,11 @@ export async function PUT(request: NextRequest) {
 // POST — add a new pending shul
 export async function POST(request: NextRequest) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) {
       return NextResponse.json({ error: 'KV is not configured' }, { status: 500 });

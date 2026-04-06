@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { requireAdmin } from '@/lib/admin-auth';
 
 const defaultLocations = [
   { id: '1', neighborhood: 'Crown Heights', city: 'Brooklyn', state: 'NY', country: 'USA', status: 'approved', order: 1 },
@@ -33,6 +34,11 @@ function getRedis() {
 
 export async function GET() {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return NextResponse.json({ error: adminCheck.error }, { status: 401 });
+    }
+
     const redis = getRedis();
     if (!redis) return NextResponse.json({ error: 'No database' }, { status: 500 });
     await redis.set('locations', JSON.stringify(defaultLocations));

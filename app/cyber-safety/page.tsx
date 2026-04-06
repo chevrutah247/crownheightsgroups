@@ -117,7 +117,7 @@ export default function CyberSafetyPage() {
           boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
         }}>
           <img 
-            src="/images/banner-header.png" 
+            src="/images/banner-header.jpg" 
             alt="CrownHeightsGroups.com - Cyber Safety"
             style={{ 
               width: '100%', 

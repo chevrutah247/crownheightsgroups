@@ -205,17 +205,17 @@ export default function LotteryJoinPage() {
   };
 
   const getBasePrice = () => {
-    if (lotteryType === 'powerball') return 3;
-    if (lotteryType === 'megamillions') return 6;
-    return 9; // both
+    if (lotteryType === 'powerball') return 2;
+    if (lotteryType === 'megamillions') return 5;
+    return 7; // both
   };
 
   const getPrice = () => getBasePrice() * ticketQty;
 
   const getPriceBreakdown = () => {
-    if (lotteryType === 'powerball') return { ticket: 2 * ticketQty, service: 1 * ticketQty, total: 3 * ticketQty };
-    if (lotteryType === 'megamillions') return { ticket: 5 * ticketQty, service: 1 * ticketQty, total: 6 * ticketQty };
-    return { ticket: 7 * ticketQty, service: 2 * ticketQty, total: 9 * ticketQty }; // both
+    if (lotteryType === 'powerball') return { ticket: 2 * ticketQty, total: 2 * ticketQty };
+    if (lotteryType === 'megamillions') return { ticket: 5 * ticketQty, total: 5 * ticketQty };
+    return { ticket: 7 * ticketQty, total: 7 * ticketQty }; // both
   };
 
   const inputStyle = {
@@ -323,7 +323,7 @@ export default function LotteryJoinPage() {
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
               <button
                 onClick={() => {
-                  const text = `Join our lottery pool! 🎰 Only $3/week for Mega Millions + Powerball. Join here: https://crownheightsgroups.com/lottery/join${resultData.referralCode ? `?ref=${resultData.referralCode}` : ''}`;
+                  const text = `Join our lottery pool! 🎰 Only $2/week for Powerball or $7/week for both lotteries. Join here: https://crownheightsgroups.com/lottery/join${resultData.referralCode ? `?ref=${resultData.referralCode}` : ''}`;
                   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                 }}
                 style={{ padding: '0.75rem 1.5rem', background: '#25D366', color: 'white', border: 'none', borderRadius: '10px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer' }}
@@ -332,7 +332,7 @@ export default function LotteryJoinPage() {
               </button>
               <button
                 onClick={() => {
-                  const text = `Join our lottery pool! 🎰 Only $3/week for Mega Millions + Powerball.\nhttps://crownheightsgroups.com/lottery/join${resultData.referralCode ? `?ref=${resultData.referralCode}` : ''}`;
+                  const text = `Join our lottery pool! 🎰 Only $2/week for Powerball or $7/week for both lotteries.\nhttps://crownheightsgroups.com/lottery/join${resultData.referralCode ? `?ref=${resultData.referralCode}` : ''}`;
                   navigator.clipboard.writeText(text);
                   alert('Message copied! Paste it anywhere.');
                 }}
@@ -504,7 +504,7 @@ export default function LotteryJoinPage() {
                       <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: lotteryType === 'powerball' ? '#E31837' : '#333' }}>🔴 Powerball</span>
                       <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '2px' }}>Mon, Wed & Sat at 10:59 PM ET</div>
                     </div>
-                    <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: lotteryType === 'powerball' ? '#E31837' : '#333' }}>$3</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: lotteryType === 'powerball' ? '#E31837' : '#333' }}>$2</span>
                   </button>
                   <button
                     type="button"
@@ -525,7 +525,7 @@ export default function LotteryJoinPage() {
                       <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: lotteryType === 'megamillions' ? '#1d4ed8' : '#333' }}>🔵 Mega Millions</span>
                       <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '2px' }}>Tue & Fri at 11 PM ET</div>
                     </div>
-                    <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: lotteryType === 'megamillions' ? '#1d4ed8' : '#333' }}>$6</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: lotteryType === 'megamillions' ? '#1d4ed8' : '#333' }}>$5</span>
                   </button>
                   <button
                     type="button"
@@ -547,7 +547,7 @@ export default function LotteryJoinPage() {
                       <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '2px' }}>Best value — play all 5 weekly drawings!</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: lotteryType === 'both' ? '#166534' : '#333' }}>$9</span>
+                      <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: lotteryType === 'both' ? '#166534' : '#333' }}>$7</span>
                       {lotteryType !== 'both' && <div style={{ fontSize: '0.7rem', color: '#22c55e', fontWeight: 'bold' }}>BEST VALUE</div>}
                     </div>
                   </button>
@@ -757,10 +757,6 @@ export default function LotteryJoinPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', color: '#666' }}>
                     <span>{lotteryType === 'both' ? 'Powerball + Mega Millions' : lotteryType === 'powerball' ? 'Powerball' : 'Mega Millions'} ticket:</span>
                     <span>${getPriceBreakdown().ticket}.00</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', color: '#666' }}>
-                    <span>Service fee:</span>
-                    <span>${getPriceBreakdown().service}.00</span>
                   </div>
                   <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', fontWeight: 'bold' }}>
                     <span>Total:</span>

@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Community Classifieds - Crown Heights Groups',
     description: 'Free classifieds board for Crown Heights. Buy, sell, find housing, jobs, and more.',
-    url: 'https://crownheightsgroups.com/classifieds',
+    url: 'https://www.crownheightsgroups.com/classifieds',
   },
-  alternates: { canonical: 'https://crownheightsgroups.com/classifieds' },
+  alternates: { canonical: 'https://www.crownheightsgroups.com/classifieds' },
 };
 
 const classifiedsSchema = {
@@ -17,7 +17,7 @@ const classifiedsSchema = {
   '@type': 'ItemList',
   name: 'Crown Heights Community Classifieds',
   description: 'Free classifieds board for the Crown Heights Jewish community',
-  url: 'https://crownheightsgroups.com/classifieds',
+  url: 'https://www.crownheightsgroups.com/classifieds',
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'Items For Sale' },
     { '@type': 'ListItem', position: 2, name: 'Free Stuff' },

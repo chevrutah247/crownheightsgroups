@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Hachnasat Kallah - Wedding Services & Gemach',
     description: 'Free and affordable wedding services for Jewish brides.',
-    url: 'https://crownheightsgroups.com/kallah',
+    url: 'https://www.crownheightsgroups.com/kallah',
   },
-  alternates: { canonical: 'https://crownheightsgroups.com/kallah' },
+  alternates: { canonical: 'https://www.crownheightsgroups.com/kallah' },
 };
 
 const kallahSchema = {
@@ -17,7 +17,7 @@ const kallahSchema = {
   '@type': 'ItemList',
   name: 'Hachnasat Kallah - Wedding Gemach Services',
   description: 'Free and affordable wedding services for Jewish brides in Israel',
-  url: 'https://crownheightsgroups.com/kallah',
+  url: 'https://www.crownheightsgroups.com/kallah',
   numberOfItems: 23,
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'Wedding Dresses Gemach' },
