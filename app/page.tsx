@@ -19,6 +19,7 @@ const partners = [
 ];
 
 const quickAccessItems = [
+  { title: 'Store Specials', icon: '🏷️', color: '#059669', href: '/specials', desc: 'Compare grocery prices', isStatic: true, isNew: true },
   { title: 'Classifieds', icon: '📋', color: '#16a34a', href: '/classifieds', desc: 'Buy, sell, housing, jobs', isStatic: true },
   { title: 'WhatsApp Groups', icon: '👥', color: '#25D366', href: '/groups', desc: 'All community groups', isStatic: true },
   { title: 'Services', icon: '🔧', color: '#2563eb', href: '/services', desc: 'Local professionals', isStatic: true },
@@ -32,7 +33,6 @@ const quickAccessItems = [
   { title: 'News', icon: '📰', color: '#b91c1c', href: '/news', desc: 'Community news', isStatic: true },
   { title: 'Synagogues', icon: '🕍', color: '#1e3a5f', href: '/shuls', desc: 'Shuls, Kollel, Beit Midrash, Mikvahs', isStatic: true },
   { title: 'Yeshiva Directory', icon: '📚', color: '#1a5c3a', href: '/yeshivas', desc: 'Schools worldwide', isStatic: true },
-  { title: 'Store Specials', icon: '🏷️', color: '#059669', href: '/specials', desc: 'Compare grocery prices', isStatic: true, isNew: true },
 ];
 
 const addItems = [
