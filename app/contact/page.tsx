@@ -249,15 +249,6 @@ export default function ContactPage() {
               </ul>
             </div>
 
-            {/* Contact Info */}
-            <div style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>📬 Direct Contact</h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '1.5rem' }}>📧</span>
-                <a href="mailto:contact@edonthego.org" style={{ color: '#2563eb' }}>contact@edonthego.org</a>
-              </div>
-            </div>
-
             {/* We Listen */}
             <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
               <h3 style={{ margin: '0 0 0.5rem 0' }}>🎯 We Listen!</h3>

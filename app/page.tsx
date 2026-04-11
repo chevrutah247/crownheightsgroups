@@ -10,9 +10,12 @@ interface UserInfo { name: string; email: string; role: 'user' | 'admin' | 'supe
 interface Category { id: string; name: string; icon: string; slug: string; order?: number; }
 
 const partners = [
-  { name: 'ShabbatHub', url: 'https://shabbathub.com', logo: '🕯️', desc: 'Shabbat hospitality' },
-  { name: 'Ed On The Go', url: 'https://edonthego.org', logo: '📚', desc: 'Jewish education' },
-  { name: 'Custom Glass Brooklyn', url: 'https://customglassbrooklyn.com', logo: '🪟', desc: 'Glass services' },
+  { name: 'ShabbatHub', url: 'https://shabbathub.com', logoUrl: '/images/shabbathub-logo.png', desc: 'Shabbat hospitality' },
+  { name: 'Ed On The Go', url: 'https://edonthego.org', logoUrl: '/images/edonthego-logo.png', desc: 'Jewish education' },
+  { name: 'GetAShidduch', url: 'https://getashidduch.org', logoUrl: '/images/getashidduch-logo.png', desc: 'Matchmaking platform' },
+  { name: 'Chevrutah', url: 'https://chevrutah.org', logoUrl: '/images/chevrutah-logo.png', desc: 'Torah study partners' },
+  { name: 'NURIT', url: 'https://nurit.vercel.app', logoUrl: '/images/nurit-logo.png', desc: 'Community project' },
+  { name: 'Custom Glass Brooklyn', url: 'https://customglassbrooklyn.com', logoUrl: null, logo: '🪟', desc: 'Glass services' },
 ];
 
 const quickAccessItems = [
@@ -709,7 +712,11 @@ export default function HomePage() {
                   boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                 }}
               >
-                <span style={{ fontSize: '2rem' }}>{partner.logo}</span>
+                {(partner as any).logoUrl ? (
+                  <img src={(partner as any).logoUrl} alt={partner.name} style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '8px' }} />
+                ) : (
+                  <span style={{ fontSize: '2rem' }}>{(partner as any).logo}</span>
+                )}
                 <div>
                   <div style={{ fontWeight: 'bold', color: '#333' }}>{partner.name}</div>
                   <div style={{ fontSize: '0.8rem', color: '#666' }}>{partner.desc}</div>
