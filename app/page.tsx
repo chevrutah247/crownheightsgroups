@@ -19,6 +19,7 @@ const partners = [
 ];
 
 const quickAccessItems = [
+  { title: 'Store Specials', icon: '🏷️', color: '#059669', href: '/specials', desc: 'Compare grocery prices', isStatic: true, isNew: true },
   { title: 'Classifieds', icon: '📋', color: '#16a34a', href: '/classifieds', desc: 'Buy, sell, housing, jobs', isStatic: true },
   { title: 'WhatsApp Groups', icon: '👥', color: '#25D366', href: '/groups', desc: 'All community groups', isStatic: true },
   { title: 'Services', icon: '🔧', color: '#2563eb', href: '/services', desc: 'Local professionals', isStatic: true },
