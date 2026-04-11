@@ -29,6 +29,7 @@ const quickAccessItems = [
   { title: 'News', icon: '📰', color: '#b91c1c', href: '/news', desc: 'Community news', isStatic: true },
   { title: 'Synagogues', icon: '🕍', color: '#1e3a5f', href: '/shuls', desc: 'Shuls, Kollel, Beit Midrash, Mikvahs', isStatic: true },
   { title: 'Yeshiva Directory', icon: '📚', color: '#1a5c3a', href: '/yeshivas', desc: 'Schools worldwide', isStatic: true },
+  { title: 'Store Specials', icon: '🏷️', color: '#059669', href: '/specials', desc: 'Compare grocery prices', isStatic: true, isNew: true },
 ];
 
 const addItems = [
@@ -512,21 +513,39 @@ export default function HomePage() {
           <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', textAlign: 'center' }}>🔍 Explore Our Community</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
             {quickAccessItems.map(item => (
-              <Link 
-                key={item.title} 
+              <Link
+                key={item.title}
                 href={getCategoryLink(item)}
-                style={{ 
+                style={{
                   textDecoration: 'none',
                   display: 'block',
-                  background: 'white',
+                  background: (item as any).isNew ? 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)' : 'white',
                   borderRadius: '16px',
                   padding: '1.25rem',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                  border: '2px solid ' + item.color + '20',
+                  boxShadow: (item as any).isNew ? '0 0 12px rgba(5,150,105,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
+                  border: '2px solid ' + ((item as any).isNew ? item.color + '60' : item.color + '20'),
                   transition: 'transform 0.2s, box-shadow 0.2s',
                   textAlign: 'center',
+                  position: 'relative',
+                  animation: (item as any).isNew ? 'pulse-glow 2s ease-in-out infinite' : 'none',
                 }}
               >
+                {(item as any).isNew && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-8px',
+                    right: '-8px',
+                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                    color: 'white',
+                    fontSize: '0.65rem',
+                    fontWeight: 800,
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 6px rgba(239,68,68,0.4)',
+                    letterSpacing: '0.5px',
+                    animation: 'bounce-badge 1.5s ease-in-out infinite',
+                  }}>NEW</span>
+                )}
                 <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{item.icon}</div>
                 <h3 style={{ color: item.color, margin: '0 0 0.25rem 0', fontSize: '1rem' }}>{item.title}</h3>
                 <p style={{ color: '#666', margin: 0, fontSize: '0.8rem' }}>{item.desc}</p>
