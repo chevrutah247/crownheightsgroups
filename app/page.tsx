@@ -374,6 +374,60 @@ export default function HomePage() {
           </a>
         </section>
 
+        {/* 🏷️ STORE SPECIALS BANNER */}
+        <section style={{ marginBottom: '1.5rem' }}>
+          <Link href="/specials" style={{ textDecoration: 'none', display: 'block' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%)',
+              borderRadius: '20px',
+              padding: '1.5rem 2rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              border: '2px solid rgba(255,255,255,0.2)',
+              boxShadow: '0 4px 20px rgba(5,150,105,0.3)',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              animation: 'pulse-glow 2s ease-in-out infinite',
+              position: 'relative',
+            }}>
+              <span style={{
+                position: 'absolute',
+                top: '-10px',
+                right: '20px',
+                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                color: 'white',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                padding: '4px 12px',
+                borderRadius: '10px',
+                boxShadow: '0 2px 8px rgba(239,68,68,0.4)',
+                letterSpacing: '1px',
+                animation: 'bounce-badge 1.5s ease-in-out infinite',
+              }}>NEW</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '2.5rem' }}>🏷️</span>
+                <div>
+                  <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', color: 'white', fontWeight: 'bold' }}>Store Specials — Price Comparison</h3>
+                  <p style={{ margin: 0, color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem' }}>Compare weekly deals from KosherTown, Kosher Family & Empire Kosher</p>
+                </div>
+              </div>
+              <div style={{
+                background: 'linear-gradient(135deg, #ffd700, #f59e0b)',
+                color: '#065f46',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '25px',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                whiteSpace: 'nowrap',
+              }}>
+                Compare Now →
+              </div>
+            </div>
+          </Link>
+        </section>
+
         {/* 📚 TORAH LEARNING BANNER */}
         <section style={{ marginBottom: '1.5rem' }}>
           <a href="https://www.torahmates.org/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'block' }}>
