@@ -37,6 +37,7 @@ export default function AdminPage() {
   const [eventSuggestions, setEventSuggestions] = useState<any[]>([]);
   const [campaignSuggestions, setCampaignSuggestions] = useState<any[]>([]);
   const [locationSuggestions, setLocationSuggestions] = useState<any[]>([]);
+  const [pendingShulsCount, setPendingShulsCount] = useState<number>(0);
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -67,6 +68,7 @@ export default function AdminPage() {
       fetch('/api/suggest-campaign').then(r => r.json()).then(d => setCampaignSuggestions(Array.isArray(d) ? d : [])).catch(() => {}),
       fetch('/api/location-suggestions').then(r => r.json()).then(d => setLocationSuggestions(Array.isArray(d) ? d : [])).catch(() => {}),
       fetch('/api/business').then(r => r.json()).then(d => setBusinesses(Array.isArray(d) ? d : [])).catch(() => {}),
+      fetch('/api/admin/pending-shuls').then(r => r.json()).then(d => setPendingShulsCount(Array.isArray(d) ? d.length : 0)).catch(() => {}),
       // Fetch lottery data
       fetch('/api/lottery/admin/current-pool').then(r => r.json()).then(d => {
         if (d.poolWeek) {
@@ -332,7 +334,7 @@ export default function AdminPage() {
               <Link href="/admin/shul-reviews" style={{ color: '#0f766e', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>🕍</span><span>Shul Reviews</span></Link>
             </li>
             <li className="admin-nav-item">
-              <Link href="/admin/pending-shuls" style={{ color: '#b45309', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>📋</span><span>Pending Shuls (12)</span></Link>
+              <Link href="/admin/pending-shuls" style={{ color: '#b45309', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>📋</span><span>Pending Shuls{pendingShulsCount > 0 ? ` (${pendingShulsCount})` : ''}</span></Link>
             </li>
             <li className="admin-nav-item">
               <Link href="/" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>🏠</span><span>Back to Site</span></Link>
