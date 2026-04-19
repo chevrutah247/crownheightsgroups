@@ -308,7 +308,7 @@ export default function HomePage() {
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
 
         {/* 📱 CONNECT2KEHILLA BANNER */}
-        <section style={{ marginBottom: '1.5rem' }}>
+        <section style={{ marginBottom: '1.5rem', marginTop: '0.5rem' }}>
           <style>{`
             @keyframes c2k-pulse {
               0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.55), 0 8px 28px rgba(30,58,95,0.25); transform: scale(1); }
@@ -365,12 +365,11 @@ export default function HomePage() {
                 border: '2px solid rgba(255,255,255,0.25)',
                 transition: 'transform 0.3s ease',
                 position: 'relative',
-                overflow: 'hidden',
               }}
             >
               <span style={{
                 position: 'absolute',
-                top: '-10px',
+                top: '-12px',
                 left: '20px',
                 background: 'linear-gradient(135deg, #ef4444, #dc2626)',
                 color: 'white',
