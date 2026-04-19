@@ -69,6 +69,7 @@ export default function HomePage() {
   const [jewishDate, setJewishDate] = useState<string>('');
   const [parsha, setParsha] = useState<string>('');
   const [holidayCountdowns, setHolidayCountdowns] = useState<Array<{ label: string; date: string; days: number }>>([]);
+  const [omerDay, setOmerDay] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
 
@@ -150,6 +151,18 @@ export default function HomePage() {
         const dateRes = await fetch('https://www.hebcal.com/converter?cfg=json&gy=' + today.getFullYear() + '&gm=' + (today.getMonth() + 1) + '&gd=' + today.getDate() + '&g2h=1');
         const dateData = await dateRes.json();
         if (dateData.hebrew) setJewishDate(dateData.hebrew);
+
+        // Sefirat HaOmer — parse from Hebcal events (e.g. "17th day of the Omer")
+        if (Array.isArray(dateData.events)) {
+          const omerEvent = dateData.events.find((e: string) => typeof e === 'string' && /day of the Omer/i.test(e));
+          if (omerEvent) {
+            const m = omerEvent.match(/(\d+)\w*\s+day of the Omer/i);
+            if (m) {
+              const d = parseInt(m[1], 10);
+              if (d >= 1 && d <= 49) setOmerDay(d);
+            }
+          }
+        }
         
         const parshaRes = await fetch('https://www.hebcal.com/shabbat?cfg=json&geonameid=5110302&M=on');
         const parshaData = await parshaRes.json();
@@ -179,36 +192,77 @@ export default function HomePage() {
           return candidates[0];
         };
 
-        const nextFastOfEsther = getNextEvent((title) => {
-          const t = title.toLowerCase();
-          return t.includes('ta\'anit esther') || t.includes('taanit esther') || t.includes('fast of esther');
-        });
-
-        const nextPurim = getNextEvent((title) => {
-          const t = title.toLowerCase();
-          return t.includes('purim') && !t.includes('katan');
-        });
-
         const countFromToday = (date: Date) => Math.ceil((date.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
-        const nextEvents: Array<{ label: string; date: string; days: number }> = [];
 
-        if (nextFastOfEsther) {
-          nextEvents.push({
-            label: 'Fast of Esther',
-            date: nextFastOfEsther.d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-            days: countFromToday(nextFastOfEsther.d),
+        // Standard holidays available in Hebcal events feed
+        const holidayMatchers: Array<{ label: string; match: (t: string) => boolean }> = [
+          { label: 'Pesach', match: (t) => t === 'pesach i' || t === 'pesach' },
+          { label: 'Lag BaOmer', match: (t) => t.includes('lag b') && t.includes('omer') },
+          { label: 'Shavuot', match: (t) => t === 'shavuot i' || t === 'shavuot' },
+          { label: "Tisha B'Av", match: (t) => t.includes("tish") && t.includes("av") && !t.includes('shabbat') },
+          { label: 'Rosh Hashana', match: (t) => t === 'rosh hashana' || t === 'rosh hashana i' || t === 'rosh hashanah' || t === 'rosh hashanah i' },
+          { label: 'Yom Kippur', match: (t) => t === 'yom kippur' },
+          { label: 'Sukkot', match: (t) => t === 'sukkot i' || t === 'sukkot' },
+          { label: 'Simchat Torah', match: (t) => t.includes('simchat torah') },
+          { label: 'Chanukah', match: (t) => t.includes('chanukah') && t.includes('1 candle') },
+        ];
+
+        const nextEvents: Array<{ label: string; date: Date; days: number }> = [];
+
+        for (const h of holidayMatchers) {
+          const ev = getNextEvent((title) => h.match(title.toLowerCase()));
+          if (ev) {
+            nextEvents.push({ label: h.label, date: ev.d, days: countFromToday(ev.d) });
+          }
+        }
+
+        // Chabad-specific Hebrew dates (not in Hebcal default events)
+        // hm format expected by Hebcal converter: "Tamuz", "Kislev", "Sh'vat"
+        const chabadDates: Array<{ label: string; hm: string; hd: number }> = [
+          { label: '3 Tammuz (Yahrzeit Rebbe)', hm: 'Tamuz', hd: 3 },
+          { label: '12 Tammuz (Chag HaGeula)', hm: 'Tamuz', hd: 12 },
+          { label: '19 Kislev (Chag HaGeula)', hm: 'Kislev', hd: 19 },
+          { label: '10 Shvat (Yahrzeit Rayatz)', hm: "Sh'vat", hd: 10 },
+        ];
+
+        const currentHy: number | undefined = dateData.hy;
+        if (currentHy) {
+          const chabadResults = await Promise.all(
+            chabadDates.map(async (c) => {
+              for (const hy of [currentHy, currentHy + 1]) {
+                try {
+                  const res = await fetch(
+                    `https://www.hebcal.com/converter?cfg=json&hy=${hy}&hm=${encodeURIComponent(c.hm)}&hd=${c.hd}&h2g=1&strict=1`
+                  );
+                  const j = await res.json();
+                  if (j?.gy && j?.gm && j?.gd) {
+                    const d = new Date(j.gy, j.gm - 1, j.gd);
+                    if (!Number.isNaN(d.getTime()) && d >= startOfToday) {
+                      return { label: c.label, date: d, days: countFromToday(d) };
+                    }
+                  }
+                } catch {}
+              }
+              return null;
+            })
+          );
+
+          chabadResults.forEach((r) => {
+            if (r) nextEvents.push(r);
           });
         }
 
-        if (nextPurim) {
-          nextEvents.push({
-            label: 'Purim',
-            date: nextPurim.d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-            days: countFromToday(nextPurim.d),
-          });
-        }
+        // Sort by date and keep the next 5
+        const sorted = nextEvents
+          .sort((a, b) => a.date.getTime() - b.date.getTime())
+          .slice(0, 5)
+          .map((e) => ({
+            label: e.label,
+            date: e.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+            days: e.days,
+          }));
 
-        setHolidayCountdowns(nextEvents);
+        setHolidayCountdowns(sorted);
       } catch (error) { console.error('Failed to fetch Jewish info:', error); }
     };
     fetchJewishInfo();
@@ -306,6 +360,110 @@ export default function HomePage() {
       </section>
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+
+        {/* 🕯️ SEFIRAT HAOMER BLOCK (auto-shown only during Omer period) */}
+        {omerDay !== null && (() => {
+          const sefirotHebrew = [
+            '', // index 0
+            'חסד שבחסד', 'גבורה שבחסד', 'תפארת שבחסד', 'נצח שבחסד', 'הוד שבחסד', 'יסוד שבחסד', 'מלכות שבחסד',
+            'חסד שבגבורה', 'גבורה שבגבורה', 'תפארת שבגבורה', 'נצח שבגבורה', 'הוד שבגבורה', 'יסוד שבגבורה', 'מלכות שבגבורה',
+            'חסד שבתפארת', 'גבורה שבתפארת', 'תפארת שבתפארת', 'נצח שבתפארת', 'הוד שבתפארת', 'יסוד שבתפארת', 'מלכות שבתפארת',
+            'חסד שבנצח', 'גבורה שבנצח', 'תפארת שבנצח', 'נצח שבנצח', 'הוד שבנצח', 'יסוד שבנצח', 'מלכות שבנצח',
+            'חסד שבהוד', 'גבורה שבהוד', 'תפארת שבהוד', 'נצח שבהוד', 'הוד שבהוד', 'יסוד שבהוד', 'מלכות שבהוד',
+            'חסד שביסוד', 'גבורה שביסוד', 'תפארת שביסוד', 'נצח שביסוד', 'הוד שביסוד', 'יסוד שביסוד', 'מלכות שביסוד',
+            'חסד שבמלכות', 'גבורה שבמלכות', 'תפארת שבמלכות', 'נצח שבמלכות', 'הוד שבמלכות', 'יסוד שבמלכות', 'מלכות שבמלכות',
+          ];
+          const weeks = Math.floor(omerDay / 7);
+          const extraDays = omerDay % 7;
+          const weekDayText = omerDay >= 7
+            ? `${weeks} week${weeks > 1 ? 's' : ''}${extraDays > 0 ? ` + ${extraDays} day${extraDays > 1 ? 's' : ''}` : ''}`
+            : '';
+          return (
+            <section style={{
+              background: 'linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #4a1d6e 100%)',
+              borderRadius: '20px',
+              padding: '1.75rem 2rem',
+              marginBottom: '1.5rem',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 6px 24px rgba(74,29,110,0.35)',
+              border: '1px solid rgba(251,191,36,0.25)',
+            }}>
+              {/* decorative glow circles */}
+              <div style={{ position: 'absolute', top: '-60px', right: '10%', width: '220px', height: '220px', background: '#a855f7', borderRadius: '50%', filter: 'blur(60px)', opacity: 0.15, pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', bottom: '-50px', left: '15%', width: '180px', height: '180px', background: '#f59e0b', borderRadius: '50%', filter: 'blur(60px)', opacity: 0.15, pointerEvents: 'none' }} />
+
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '1.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                {/* Day counter circle */}
+                <div style={{
+                  flexShrink: 0,
+                  width: '130px',
+                  height: '130px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(168,85,247,0.2))',
+                  border: '3px solid rgba(251,191,36,0.45)',
+                  boxShadow: '0 0 40px rgba(168,85,247,0.25)',
+                }}>
+                  <span style={{ fontSize: '3rem', fontWeight: 800, color: '#fbbf24', fontFamily: 'Georgia, serif', lineHeight: 1 }}>{omerDay}</span>
+                  <span style={{ color: '#d8b4fe', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginTop: '0.3rem' }}>of the Omer</span>
+                </div>
+
+                {/* Content */}
+                <div style={{ flex: '1 1 320px', minWidth: 0, textAlign: 'center' }}>
+                  <div style={{
+                    display: 'inline-block',
+                    background: 'rgba(168,85,247,0.18)',
+                    border: '1px solid rgba(168,85,247,0.35)',
+                    color: '#d8b4fe',
+                    padding: '4px 14px',
+                    borderRadius: '999px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px',
+                    marginBottom: '0.8rem',
+                  }}>
+                    Sefirat HaOmer · ספירת העומר
+                  </div>
+                  <h2 style={{
+                    margin: '0 0 0.5rem 0',
+                    color: 'white',
+                    fontSize: '1.6rem',
+                    fontWeight: 700,
+                    fontFamily: 'Georgia, serif',
+                    direction: 'rtl',
+                  }}>
+                    {sefirotHebrew[omerDay]}
+                  </h2>
+                  <p style={{ color: 'rgba(216,180,254,0.85)', fontSize: '0.95rem', margin: '0 0 1rem 0' }}>
+                    Today is <strong style={{ color: '#fbbf24' }}>{omerDay}</strong> day{omerDay > 1 ? 's' : ''} of the Omer
+                    {weekDayText && <span style={{ opacity: 0.85 }}> &nbsp;({weekDayText})</span>}
+                  </p>
+                  {/* Progress bar */}
+                  <div style={{ maxWidth: '420px', margin: '0 auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'rgba(216,180,254,0.6)', marginBottom: '4px' }}>
+                      <span>Sefirat HaOmer</span>
+                      <span>{omerDay}/49</span>
+                    </div>
+                    <div style={{ height: '8px', background: 'rgba(88,28,135,0.5)', borderRadius: '999px', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${(omerDay / 49) * 100}%`,
+                        background: 'linear-gradient(90deg, #f59e0b, #a855f7)',
+                        borderRadius: '999px',
+                        transition: 'width 1s ease',
+                      }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          );
+        })()}
 
         {/* 📱 CONNECT2KEHILLA BANNER */}
         <section style={{ marginBottom: '1.5rem', marginTop: '0.5rem' }}>
