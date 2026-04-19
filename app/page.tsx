@@ -252,10 +252,10 @@ export default function HomePage() {
           });
         }
 
-        // Sort by date and keep the next 5
+        // Sort by date and show only the single nearest upcoming holiday
         const sorted = nextEvents
           .sort((a, b) => a.date.getTime() - b.date.getTime())
-          .slice(0, 5)
+          .slice(0, 1)
           .map((e) => ({
             label: e.label,
             date: e.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
