@@ -307,6 +307,131 @@ export default function HomePage() {
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
 
+        {/* 📱 CONNECT2KEHILLA BANNER */}
+        <section style={{ marginBottom: '1.5rem' }}>
+          <style>{`
+            @keyframes c2k-pulse {
+              0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.55), 0 8px 28px rgba(30,58,95,0.25); transform: scale(1); }
+              50% { box-shadow: 0 0 0 14px rgba(59,130,246,0), 0 10px 32px rgba(30,58,95,0.3); transform: scale(1.01); }
+            }
+            @keyframes c2k-shimmer {
+              0% { background-position: -200% 0; }
+              100% { background-position: 200% 0; }
+            }
+            @keyframes c2k-ring {
+              0%, 100% { transform: rotate(-8deg); }
+              10%, 30% { transform: rotate(14deg); }
+              20%, 40% { transform: rotate(-14deg); }
+              50% { transform: rotate(0deg); }
+            }
+            .c2k-banner { animation: c2k-pulse 2.2s ease-in-out infinite; }
+            .c2k-banner:hover { transform: translateY(-3px) scale(1.01) !important; }
+            .c2k-phone { animation: c2k-ring 2.5s ease-in-out infinite; display: inline-block; transform-origin: center; }
+            .c2k-cta {
+              background: linear-gradient(90deg, #ffd700 0%, #fbbf24 25%, #ffffff 50%, #fbbf24 75%, #ffd700 100%);
+              background-size: 200% 100%;
+              animation: c2k-shimmer 2.8s linear infinite;
+            }
+            .c2k-chip {
+              background: rgba(255,255,255,0.14);
+              border: 1px solid rgba(255,255,255,0.28);
+              color: #fff;
+              padding: 4px 10px;
+              border-radius: 999px;
+              font-size: 0.72rem;
+              font-weight: 700;
+              letter-spacing: 0.3px;
+              white-space: nowrap;
+              backdrop-filter: blur(4px);
+            }
+          `}</style>
+          <a
+            href="https://www.connect2kehilla.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: 'none', display: 'block' }}
+          >
+            <div
+              className="c2k-banner"
+              style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 40%, #2563eb 75%, #3b82f6 100%)',
+                borderRadius: '20px',
+                padding: '1.5rem 2rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                border: '2px solid rgba(255,255,255,0.25)',
+                transition: 'transform 0.3s ease',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              <span style={{
+                position: 'absolute',
+                top: '-10px',
+                left: '20px',
+                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                color: 'white',
+                fontSize: '0.7rem',
+                fontWeight: 800,
+                padding: '4px 12px',
+                borderRadius: '10px',
+                boxShadow: '0 2px 8px rgba(239,68,68,0.4)',
+                letterSpacing: '1px',
+                zIndex: 2,
+              }}>SMS DIRECTORY</span>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem', flex: '1 1 320px', minWidth: 0 }}>
+                <span className="c2k-phone" style={{ fontSize: '2.6rem', lineHeight: 1 }}>📱</span>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{
+                    margin: '0 0 0.35rem 0',
+                    fontSize: '1.3rem',
+                    color: 'white',
+                    fontWeight: 800,
+                    letterSpacing: '0.3px',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.25)',
+                  }}>
+                    Connect2Kehilla — Text <span style={{ color: '#ffd700' }}>(888) 516-3399</span>
+                  </h3>
+                  <p style={{
+                    margin: '0 0 0.6rem 0',
+                    color: 'rgba(255,255,255,0.92)',
+                    fontSize: '0.95rem',
+                    fontWeight: 500,
+                  }}>
+                    Find businesses, minyanim, jobs, zmanim & more — all by text message
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                    <span className="c2k-chip">PLUMBER + ZIP</span>
+                    <span className="c2k-chip">PIZZA + ZIP</span>
+                    <span className="c2k-chip">ZMANIM + ZIP</span>
+                    <span className="c2k-chip">SPECIALS + ZIP</span>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className="c2k-cta"
+                style={{
+                  color: '#0f172a',
+                  padding: '0.85rem 1.6rem',
+                  borderRadius: '25px',
+                  fontWeight: 800,
+                  fontSize: '1rem',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 14px rgba(255,215,0,0.35)',
+                  letterSpacing: '0.3px',
+                }}
+              >
+                Visit Site →
+              </div>
+            </div>
+          </a>
+        </section>
+
         {/* 💍 SHIDDUCH BANNER */}
         <section style={{ marginBottom: '1.5rem' }}>
           <style>{`
