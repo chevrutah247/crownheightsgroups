@@ -502,6 +502,45 @@ export default function HomePage() {
               white-space: nowrap;
               backdrop-filter: blur(4px);
             }
+            .c2k-chip-menu {
+              background: linear-gradient(135deg, #fde047, #f59e0b);
+              border: 1px solid rgba(255,255,255,0.6);
+              color: #0f172a;
+              padding: 4px 12px;
+              border-radius: 999px;
+              font-size: 0.75rem;
+              font-weight: 800;
+              letter-spacing: 0.5px;
+              white-space: nowrap;
+              box-shadow: 0 2px 8px rgba(251,191,36,0.45);
+              animation: c2k-menu-bounce 1.6s ease-in-out infinite;
+            }
+            @keyframes c2k-menu-bounce {
+              0%, 100% { transform: translateY(0) scale(1); }
+              50% { transform: translateY(-2px) scale(1.06); }
+            }
+            @keyframes c2k-new-blink {
+              0%, 49% {
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+                color: white;
+                box-shadow: 0 2px 18px rgba(239,68,68,0.9), 0 0 0 0 rgba(239,68,68,0.75);
+                transform: scale(1.06);
+              }
+              50%, 100% {
+                background: linear-gradient(135deg, #fde047, #facc15);
+                color: #7f1d1d;
+                box-shadow: 0 2px 22px rgba(250,204,21,0.95), 0 0 0 10px rgba(250,204,21,0);
+                transform: scale(1.14);
+              }
+            }
+            .c2k-new-badge {
+              animation: c2k-new-blink 0.75s steps(2, end) infinite;
+              transform-origin: left center;
+            }
+            .c2k-phone-bg { opacity: 0.18; }
+            @media (max-width: 860px) {
+              .c2k-phone-bg { display: none; }
+            }
           `}</style>
           <a
             href="https://www.connect2kehilla.com/"
@@ -523,24 +562,64 @@ export default function HomePage() {
                 border: '2px solid rgba(255,255,255,0.25)',
                 transition: 'transform 0.3s ease',
                 position: 'relative',
+                overflow: 'hidden',
               }}
             >
-              <span style={{
-                position: 'absolute',
-                top: '-12px',
-                left: '20px',
-                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                color: 'white',
-                fontSize: '0.7rem',
-                fontWeight: 800,
-                padding: '4px 12px',
-                borderRadius: '10px',
-                boxShadow: '0 2px 8px rgba(239,68,68,0.4)',
-                letterSpacing: '1px',
-                zIndex: 2,
-              }}>SMS DIRECTORY</span>
+              {/* Kosher phone silhouette watermark */}
+              <svg
+                className="c2k-phone-bg"
+                aria-hidden="true"
+                viewBox="0 0 100 180"
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%) rotate(-6deg)',
+                  height: '180px',
+                  width: '100px',
+                  pointerEvents: 'none',
+                  zIndex: 0,
+                }}
+              >
+                {/* Phone body */}
+                <rect x="6" y="4" width="88" height="172" rx="14" fill="rgba(255,255,255,0.08)" stroke="white" strokeWidth="2.5" />
+                {/* Screen */}
+                <rect x="16" y="14" width="68" height="50" rx="4" fill="rgba(255,255,255,0.25)" stroke="white" strokeOpacity="0.6" strokeWidth="1" />
+                {/* Screen text */}
+                <text x="50" y="34" textAnchor="middle" fill="white" fontSize="10" fontWeight="700" fontFamily="system-ui, sans-serif">KOSHER</text>
+                <text x="50" y="50" textAnchor="middle" fill="white" fontSize="8" fontFamily="system-ui, sans-serif" opacity="0.85">PHONE</text>
+                {/* 4x3 keypad */}
+                {[0, 1, 2, 3].map((row) =>
+                  [0, 1, 2].map((col) => (
+                    <circle
+                      key={`k-${row}-${col}`}
+                      cx={22 + col * 28}
+                      cy={82 + row * 20}
+                      r="6.5"
+                      fill="white"
+                      fillOpacity="0.75"
+                    />
+                  ))
+                )}
+                {/* Speaker at top */}
+                <rect x="36" y="8" width="28" height="2.5" rx="1" fill="white" fillOpacity="0.7" />
+              </svg>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem', flex: '1 1 320px', minWidth: 0 }}>
+              <span className="c2k-new-badge" style={{
+                position: 'absolute',
+                top: '10px',
+                left: '16px',
+                fontSize: '0.78rem',
+                fontWeight: 900,
+                padding: '6px 16px',
+                borderRadius: '999px',
+                letterSpacing: '1.2px',
+                zIndex: 3,
+                whiteSpace: 'nowrap',
+                textShadow: '0 1px 2px rgba(0,0,0,0.25)',
+              }}>⚡ NEW · KOSHER PHONE SERVICE ⚡</span>
+
+              <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '1.1rem', flex: '1 1 320px', minWidth: 0, marginTop: '1rem' }}>
                 <span className="c2k-phone" style={{ fontSize: '2.6rem', lineHeight: 1 }}>📱</span>
                 <div style={{ minWidth: 0 }}>
                   <h3 style={{
@@ -561,7 +640,8 @@ export default function HomePage() {
                   }}>
                     Find businesses, minyanim, jobs, zmanim & more — all by text message
                   </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+                    <span className="c2k-chip-menu">💬 TEXT MENU</span>
                     <span className="c2k-chip">PLUMBER + ZIP</span>
                     <span className="c2k-chip">PIZZA + ZIP</span>
                     <span className="c2k-chip">ZMANIM + ZIP</span>
