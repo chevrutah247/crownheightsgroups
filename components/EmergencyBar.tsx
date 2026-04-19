@@ -49,6 +49,37 @@ export default function EmergencyBar() {
 
   return (
     <div style={barStyle}>
+      <style>{`
+        @keyframes cyber-pulse {
+          0%, 100% {
+            box-shadow: 0 2px 4px rgba(124, 58, 237, 0.3), 0 0 0 0 rgba(168, 85, 247, 0.55);
+            transform: scale(1);
+          }
+          50% {
+            box-shadow: 0 2px 10px rgba(124, 58, 237, 0.55), 0 0 0 10px rgba(168, 85, 247, 0);
+            transform: scale(1.04);
+          }
+        }
+        @keyframes cyber-lock-wiggle {
+          0%, 100% { transform: rotate(0deg); }
+          20% { transform: rotate(-10deg); }
+          40% { transform: rotate(10deg); }
+          60% { transform: rotate(-6deg); }
+          80% { transform: rotate(6deg); }
+        }
+        .cyber-pulse-btn {
+          animation: cyber-pulse 2s ease-in-out infinite;
+        }
+        .cyber-pulse-btn:hover {
+          animation-play-state: paused;
+          transform: translateY(-1px) scale(1.05) !important;
+        }
+        .cyber-pulse-btn .cyber-lock {
+          display: inline-block;
+          animation: cyber-lock-wiggle 2.5s ease-in-out infinite;
+          transform-origin: center;
+        }
+      `}</style>
       <span style={{ color: '#dc2626', fontWeight: 'bold', marginRight: '0.5rem' }}>EMERGENCY:</span>
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
         {emergencyContacts.map((contact) => (
@@ -58,13 +89,14 @@ export default function EmergencyBar() {
             <span>{contact.phone}</span>
           </a>
         ))}
-        
-        <a 
+
+        <a
           href="/cyber-safety"
+          className="cyber-pulse-btn"
           style={cyberButtonStyle}
           title="Cyber Security Tips"
         >
-          <span>🔒</span>
+          <span className="cyber-lock">🔒</span>
           <span style={{ fontWeight: 'bold' }}>Cyber Safety</span>
         </a>
       </div>
