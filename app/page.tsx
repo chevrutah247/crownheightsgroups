@@ -537,9 +537,50 @@ export default function HomePage() {
               animation: c2k-new-blink 0.75s steps(2, end) infinite;
               transform-origin: left center;
             }
-            .c2k-phone-bg { opacity: 0.18; }
+            .c2k-phone-bg { opacity: 0.95; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.45)); }
             @media (max-width: 860px) {
               .c2k-phone-bg { display: none; }
+            }
+            @keyframes kosher-screen-blink {
+              0%, 49% { fill: #0f172a; }
+              50%, 100% { fill: #1e293b; }
+            }
+            @keyframes kosher-start-blink {
+              0%, 49% { opacity: 1; fill: #fde047; }
+              50%, 100% { opacity: 0.25; fill: #facc15; }
+            }
+            @keyframes kosher-number-pulse {
+              0%, 49% { opacity: 1; }
+              50%, 100% { opacity: 0.55; }
+            }
+            .kosher-screen { animation: kosher-screen-blink 0.8s steps(2, end) infinite; }
+            .kosher-start-text { animation: kosher-start-blink 0.55s steps(2, end) infinite; }
+            .kosher-number-text { animation: kosher-number-pulse 0.8s steps(2, end) infinite; }
+            .c2k-chip-start {
+              border: 1.5px solid rgba(255,255,255,0.8);
+              color: white;
+              padding: 5px 14px;
+              border-radius: 999px;
+              font-size: 0.8rem;
+              font-weight: 900;
+              letter-spacing: 0.6px;
+              white-space: nowrap;
+              animation: c2k-start-blink 0.6s steps(2, end) infinite;
+              text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            }
+            @keyframes c2k-start-blink {
+              0%, 49% {
+                background: linear-gradient(135deg, #22c55e, #16a34a);
+                color: white;
+                transform: scale(1);
+                box-shadow: 0 2px 10px rgba(34,197,94,0.55);
+              }
+              50%, 100% {
+                background: linear-gradient(135deg, #fde047, #f59e0b);
+                color: #14532d;
+                transform: scale(1.12);
+                box-shadow: 0 2px 14px rgba(250,204,21,0.85);
+              }
             }
           `}</style>
           <a
@@ -565,44 +606,71 @@ export default function HomePage() {
                 overflow: 'hidden',
               }}
             >
-              {/* Kosher phone silhouette watermark */}
+              {/* Kosher phone with live screen showing phone number + blinking START */}
               <svg
                 className="c2k-phone-bg"
                 aria-hidden="true"
-                viewBox="0 0 100 180"
+                viewBox="0 0 140 260"
                 style={{
                   position: 'absolute',
-                  right: '12px',
+                  right: '20px',
                   top: '50%',
-                  transform: 'translateY(-50%) rotate(-6deg)',
-                  height: '180px',
-                  width: '100px',
+                  transform: 'translateY(-50%) rotate(-4deg)',
+                  height: '240px',
+                  width: '130px',
                   pointerEvents: 'none',
                   zIndex: 0,
                 }}
               >
                 {/* Phone body */}
-                <rect x="6" y="4" width="88" height="172" rx="14" fill="rgba(255,255,255,0.08)" stroke="white" strokeWidth="2.5" />
-                {/* Screen */}
-                <rect x="16" y="14" width="68" height="50" rx="4" fill="rgba(255,255,255,0.25)" stroke="white" strokeOpacity="0.6" strokeWidth="1" />
-                {/* Screen text */}
-                <text x="50" y="34" textAnchor="middle" fill="white" fontSize="10" fontWeight="700" fontFamily="system-ui, sans-serif">KOSHER</text>
-                <text x="50" y="50" textAnchor="middle" fill="white" fontSize="8" fontFamily="system-ui, sans-serif" opacity="0.85">PHONE</text>
-                {/* 4x3 keypad */}
+                <rect x="4" y="4" width="132" height="252" rx="18" fill="#1e293b" stroke="#94a3b8" strokeWidth="2" />
+                {/* Speaker grill at top */}
+                <rect x="52" y="11" width="36" height="3" rx="1.5" fill="#475569" />
+                {/* Screen area — subtly blinking */}
+                <rect className="kosher-screen" x="12" y="22" width="116" height="104" rx="6" stroke="#334155" strokeWidth="1" />
+                {/* Green header bar */}
+                <rect x="12" y="22" width="116" height="18" rx="6" fill="#059669" />
+                <rect x="12" y="32" width="116" height="8" fill="#059669" />
+                <text x="70" y="34" textAnchor="middle" fill="white" fontSize="7" fontWeight="700" fontFamily="system-ui, sans-serif">Connect2Kehilla</text>
+                {/* Phone number — pulsing */}
+                <text className="kosher-number-text" x="70" y="62" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="800" fontFamily="system-ui, sans-serif">(888)</text>
+                <text className="kosher-number-text" x="70" y="78" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="800" fontFamily="system-ui, sans-serif">516-3399</text>
+                {/* Divider */}
+                <line x1="30" y1="90" x2="110" y2="90" stroke="#334155" strokeWidth="1" />
+                {/* START — strongly blinking */}
+                <text className="kosher-start-text" x="70" y="114" textAnchor="middle" fontSize="18" fontWeight="900" fontFamily="system-ui, sans-serif" letterSpacing="2">START</text>
+                {/* 4x3 keypad with numbers */}
                 {[0, 1, 2, 3].map((row) =>
-                  [0, 1, 2].map((col) => (
-                    <circle
-                      key={`k-${row}-${col}`}
-                      cx={22 + col * 28}
-                      cy={82 + row * 20}
-                      r="6.5"
-                      fill="white"
-                      fillOpacity="0.75"
-                    />
-                  ))
+                  [0, 1, 2].map((col) => {
+                    const labels = ['1','2','3','4','5','6','7','8','9','*','0','#'];
+                    const label = labels[row * 3 + col];
+                    return (
+                      <g key={`k-${row}-${col}`}>
+                        <rect
+                          x={22 + col * 32}
+                          y={140 + row * 26}
+                          width="26"
+                          height="20"
+                          rx="5"
+                          fill="#334155"
+                          stroke="#475569"
+                          strokeWidth="0.6"
+                        />
+                        <text
+                          x={35 + col * 32}
+                          y={154 + row * 26}
+                          textAnchor="middle"
+                          fill="#e2e8f0"
+                          fontSize="10"
+                          fontWeight="600"
+                          fontFamily="system-ui, sans-serif"
+                        >
+                          {label}
+                        </text>
+                      </g>
+                    );
+                  })
                 )}
-                {/* Speaker at top */}
-                <rect x="36" y="8" width="28" height="2.5" rx="1" fill="white" fillOpacity="0.7" />
               </svg>
 
               <span className="c2k-new-badge" style={{
@@ -640,12 +708,12 @@ export default function HomePage() {
                   }}>
                     Find businesses, minyanim, jobs, zmanim & more — all by text message
                   </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', alignItems: 'center' }}>
+                    <span className="c2k-chip-start">🚀 TEXT START</span>
                     <span className="c2k-chip-menu">💬 TEXT MENU</span>
                     <span className="c2k-chip">PLUMBER + ZIP</span>
                     <span className="c2k-chip">PIZZA + ZIP</span>
                     <span className="c2k-chip">ZMANIM + ZIP</span>
-                    <span className="c2k-chip">SPECIALS + ZIP</span>
                   </div>
                 </div>
               </div>
