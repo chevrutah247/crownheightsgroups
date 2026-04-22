@@ -613,7 +613,7 @@ export default function HomePage() {
                 viewBox="0 0 140 260"
                 style={{
                   position: 'absolute',
-                  right: '20px',
+                  right: '190px',
                   top: '50%',
                   transform: 'translateY(-50%) rotate(-4deg)',
                   height: '240px',
@@ -729,6 +729,8 @@ export default function HomePage() {
                   whiteSpace: 'nowrap',
                   boxShadow: '0 4px 14px rgba(255,215,0,0.35)',
                   letterSpacing: '0.3px',
+                  position: 'relative',
+                  zIndex: 2,
                 }}
               >
                 Visit Site →
