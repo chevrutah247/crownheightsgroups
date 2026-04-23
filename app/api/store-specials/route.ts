@@ -3,13 +3,15 @@ import { Redis } from '@upstash/redis';
 
 export const dynamic = 'force-dynamic';
 
-const STORES = [
+// MCG (My Cloud Grocer) API stores — fetched directly
+const MCG_STORES = [
   {
     id: 'koshertown',
     name: 'KosherTown',
     logo: '/images/koshertown-logo.svg',
     url: 'https://koshertown.com/brooklyn/category/specials',
     apiBase: 'https://koshertown.com/api',
+    area: 'Crown Heights',
   },
   {
     id: 'kosherfamily',
@@ -17,6 +19,7 @@ const STORES = [
     logo: '/images/kosherfamily-logo.svg',
     url: 'https://kosherfamily.com/Brooklyn-Crown-Heights/category/specials',
     apiBase: 'https://kosherfamily.com/api',
+    area: 'Crown Heights',
   },
   {
     id: 'empire',
@@ -24,8 +27,35 @@ const STORES = [
     logo: '/images/empirekosher-logo.svg',
     url: 'https://empirekoshersupermarket.com/empire/category/specials',
     apiBase: 'https://empirekoshersupermarket.com/api',
+    area: 'Crown Heights',
+  },
+  {
+    id: 'mountainfruit',
+    name: 'Mountain Fruit',
+    logo: '/images/mountainfruit-logo.svg',
+    url: 'https://shopmountainfruit.com/Brooklyn-Midwood-BoroPark/category/specials',
+    apiBase: 'https://shopmountainfruit.com/api',
+    area: 'Flatbush',
+  },
+  {
+    id: 'breadberry',
+    name: 'Breadberry',
+    logo: '/images/breadberry-logo.svg',
+    url: 'https://breadberry.com/Brooklyn/category/specials',
+    apiBase: 'https://breadberry.com/api',
+    area: 'Borough Park',
   },
 ];
+
+// Stores served via connect2kehilla scraped DB
+const C2K_STORES = [
+  { id: 'kahans', name: "Kahan's Superette", logo: '/images/kahans-logo.svg', url: 'https://www.kahanskosher.com/specials', area: 'Crown Heights' },
+  { id: 'moishas', name: "Moisha's Discount", logo: '/images/moishas-logo.svg', url: 'https://moishas.com/specials', area: 'Flatbush' },
+  { id: 'goldbergs', name: "Goldberg's Freshmarket", logo: '/images/goldbergs-logo.svg', url: 'https://watsonsale.com/supermarkets/goldbergs-supermarket/', area: 'Borough Park' },
+  { id: 'krm', name: 'KRM Kollel Supermarket', logo: '/images/krm-logo.svg', url: 'https://watsonsale.com/supermarkets/krm-kollel-supermarket/', area: 'Borough Park' },
+];
+
+const C2K_BASE = process.env.CONNECT2KEHILLA_URL || 'https://connect2kehilla.com';
 
 interface StoreSpecial {
   id: string;
@@ -51,7 +81,7 @@ function normalizeName(name: string): string {
     .trim();
 }
 
-async function fetchStoreSpecials(store: typeof STORES[number]): Promise<StoreSpecial[]> {
+async function fetchMcgSpecials(store: typeof MCG_STORES[number]): Promise<StoreSpecial[]> {
   try {
     const res = await fetch(`${store.apiBase}/AjaxFilter/JsonProductsList?pageNumber=1`, {
       method: 'POST',
@@ -88,10 +118,37 @@ async function fetchStoreSpecials(store: typeof STORES[number]): Promise<StoreSp
   }
 }
 
+async function fetchC2kSpecials(storeId: string, storeName: string): Promise<StoreSpecial[]> {
+  try {
+    const res = await fetch(`${C2K_BASE}/api/specials?storeId=${storeId}`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const storeData = data.stores?.[0];
+    if (!storeData) return [];
+
+    return storeData.specials.map((s: any, i: number) => ({
+      id: `${storeId}-${i}`,
+      name: s.name,
+      normalizedName: normalizeName(s.name),
+      price: parseFloat(s.price?.replace(/[^0-9.]/g, '') || '0'),
+      priceDisplay: s.price,
+      oldPrice: s.oldPrice ?? null,
+      category: s.category ?? '',
+      image: '',
+      sku: '',
+      store: storeId,
+      storeName,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 function buildComparisons(allProducts: StoreSpecial[]) {
   const groups = new Map<string, StoreSpecial[]>();
 
-  // Group by SKU first
   for (const p of allProducts) {
     if (p.sku) {
       const key = `sku:${p.sku}`;
@@ -100,7 +157,6 @@ function buildComparisons(allProducts: StoreSpecial[]) {
     }
   }
 
-  // Group remaining by normalized name
   const skuMatched = new Set(
     Array.from(groups.values())
       .filter(g => g.length > 1)
@@ -115,12 +171,8 @@ function buildComparisons(allProducts: StoreSpecial[]) {
     groups.get(key)!.push(p);
   }
 
-  // Only keep groups with 2+ stores
-  const comparisons = Array.from(groups.entries())
-    .filter(([, items]) => {
-      const stores = new Set(items.map(i => i.store));
-      return stores.size >= 2;
-    })
+  return Array.from(groups.entries())
+    .filter(([, items]) => new Set(items.map(i => i.store)).size >= 2)
     .map(([, items]) => {
       const prices = items.map(i => ({
         store: i.store,
@@ -138,8 +190,6 @@ function buildComparisons(allProducts: StoreSpecial[]) {
       };
     })
     .sort((a, b) => a.productName.localeCompare(b.productName));
-
-  return comparisons;
 }
 
 function getRedis() {
@@ -149,14 +199,13 @@ function getRedis() {
   return null;
 }
 
-const CACHE_KEY = 'store-specials';
-const CACHE_TTL = 2 * 60 * 60; // 2 hours in seconds
+const CACHE_KEY = 'store-specials-v2';
+const CACHE_TTL = 2 * 60 * 60; // 2 hours
 
 export async function GET() {
   try {
     const redis = getRedis();
 
-    // Try cache first
     if (redis) {
       const cached = await redis.get(CACHE_KEY);
       if (cached) {
@@ -167,30 +216,42 @@ export async function GET() {
       }
     }
 
-    // Fetch fresh data from all stores
-    const results = await Promise.all(STORES.map(fetchStoreSpecials));
-    const allProducts = results.flat();
+    // Fetch MCG stores + c2k scraped stores in parallel
+    const [mcgResults, ...c2kResults] = await Promise.all([
+      Promise.all(MCG_STORES.map(fetchMcgSpecials)),
+      ...C2K_STORES.map(s => fetchC2kSpecials(s.id, s.name)),
+    ]);
+
+    const allMcg = mcgResults.flat();
+    const allC2k = c2kResults.flat();
+    const allProducts = [...allMcg, ...allC2k];
+
     const comparisons = buildComparisons(allProducts);
 
+    const allStores = [
+      ...MCG_STORES.map(s => ({ id: s.id, name: s.name, logo: s.logo, url: s.url, area: s.area })),
+      ...C2K_STORES,
+    ];
+
     const byStore: Record<string, StoreSpecial[]> = {};
-    for (const store of STORES) {
-      byStore[store.id] = allProducts.filter(p => p.store === store.id);
+    for (const s of allStores) {
+      byStore[s.id] = allProducts.filter(p => p.store === s.id);
     }
 
     const response = {
       timestamp: Date.now(),
-      stores: STORES.map(s => ({
+      stores: allStores.map(s => ({
         id: s.id,
         name: s.name,
         logo: s.logo,
         url: s.url,
+        area: s.area,
         count: byStore[s.id]?.length || 0,
       })),
       byStore,
       comparisons,
     };
 
-    // Cache in Redis
     if (redis) {
       await redis.set(CACHE_KEY, JSON.stringify(response), { ex: CACHE_TTL });
     }
