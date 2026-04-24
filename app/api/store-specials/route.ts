@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { manualStoresDefaults, type ManualStore } from '@/lib/manual-specials-data';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,14 +49,16 @@ const MCG_STORES = [
 ];
 
 // Stores served via connect2kehilla scraped DB
+// NOTE: Kahan's is intentionally NOT here — it's handled as a manual store
+// so the Crown Heights admin can edit it each Monday from the admin panel.
 const C2K_STORES = [
-  { id: 'kahans', name: "Kahan's Superette", logo: '/images/kahans-logo.svg', url: 'https://www.kahanskosher.com/specials', area: 'Crown Heights' },
   { id: 'moishas', name: "Moisha's Discount", logo: '/images/moishas-logo.svg', url: 'https://moishas.com/specials', area: 'Flatbush' },
   { id: 'goldbergs', name: "Goldberg's Freshmarket", logo: '/images/goldbergs-logo.svg', url: 'https://watsonsale.com/supermarkets/goldbergs-supermarket/', area: 'Borough Park' },
   { id: 'krm', name: 'KRM Kollel Supermarket', logo: '/images/krm-logo.svg', url: 'https://watsonsale.com/supermarkets/krm-kollel-supermarket/', area: 'Borough Park' },
 ];
 
 const C2K_BASE = process.env.CONNECT2KEHILLA_URL || 'https://connect2kehilla.com';
+const MANUAL_KEY = 'manual_store_specials';
 
 interface StoreSpecial {
   id: string;
@@ -216,7 +219,7 @@ export async function GET() {
       }
     }
 
-    // Fetch MCG stores + c2k scraped stores in parallel
+    // Fetch MCG stores + C2K scraped stores in parallel
     const [mcgResults, ...c2kResults] = await Promise.all([
       Promise.all(MCG_STORES.map(fetchMcgSpecials)),
       ...C2K_STORES.map(s => fetchC2kSpecials(s.id, s.name)),
@@ -225,30 +228,63 @@ export async function GET() {
     const allMcg = mcgResults.flat();
     const allC2k = c2kResults.flat();
     const allProducts = [...allMcg, ...allC2k];
-
     const comparisons = buildComparisons(allProducts);
 
-    const allStores = [
+    const apiStoreConfigs = [
       ...MCG_STORES.map(s => ({ id: s.id, name: s.name, logo: s.logo, url: s.url, area: s.area })),
       ...C2K_STORES,
     ];
 
     const byStore: Record<string, StoreSpecial[]> = {};
-    for (const s of allStores) {
+    for (const s of apiStoreConfigs) {
       byStore[s.id] = allProducts.filter(p => p.store === s.id);
     }
 
+    // Load manually-updated stores from Redis (Kahan's, Kol Tuv, Market Place)
+    let manualStores: ManualStore[] = manualStoresDefaults;
+    if (redis) {
+      try {
+        const raw = await redis.get(MANUAL_KEY);
+        if (raw) {
+          const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          if (Array.isArray(parsed)) manualStores = parsed;
+        }
+      } catch {}
+    }
+
+    const apiStoreInfo = apiStoreConfigs.map(s => ({
+      id: s.id,
+      name: s.name,
+      logo: s.logo,
+      logoEmoji: null as string | null,
+      url: s.url,
+      area: s.area,
+      count: byStore[s.id]?.length || 0,
+      manual: false as const,
+      updatedAt: null as string | null,
+      address: null as string | null,
+      phone: null as string | null,
+    }));
+
+    const manualStoreInfo = manualStores.map(s => ({
+      id: s.id,
+      name: s.name,
+      logo: s.logo || null,
+      logoEmoji: s.logoEmoji || null,
+      url: s.referenceUrl || '',
+      area: 'Crown Heights',
+      count: s.specials?.length || 0,
+      manual: true as const,
+      updatedAt: s.updatedAt || null,
+      address: s.address || null,
+      phone: s.phone || null,
+    }));
+
     const response = {
       timestamp: Date.now(),
-      stores: allStores.map(s => ({
-        id: s.id,
-        name: s.name,
-        logo: s.logo,
-        url: s.url,
-        area: s.area,
-        count: byStore[s.id]?.length || 0,
-      })),
+      stores: [...apiStoreInfo, ...manualStoreInfo],
       byStore,
+      manualStores,
       comparisons,
     };
 

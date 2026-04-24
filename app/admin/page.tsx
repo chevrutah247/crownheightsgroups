@@ -337,6 +337,9 @@ export default function AdminPage() {
               <Link href="/admin/pending-shuls" style={{ color: '#b45309', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>📋</span><span>Pending Shuls{pendingShulsCount > 0 ? ` (${pendingShulsCount})` : ''}</span></Link>
             </li>
             <li className="admin-nav-item">
+              <Link href="/admin/store-specials" style={{ color: '#059669', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>🛒</span><span>Store Specials</span></Link>
+            </li>
+            <li className="admin-nav-item">
               <Link href="/" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>🏠</span><span>Back to Site</span></Link>
             </li>
           </ul>
