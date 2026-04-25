@@ -340,6 +340,9 @@ export default function AdminPage() {
               <Link href="/admin/store-specials" style={{ color: '#059669', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>🛒</span><span>Store Specials</span></Link>
             </li>
             <li className="admin-nav-item">
+              <Link href="/admin/restaurants" style={{ color: '#c2410c', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>🍽️</span><span>Restaurants</span></Link>
+            </li>
+            <li className="admin-nav-item">
               <Link href="/" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><span>🏠</span><span>Back to Site</span></Link>
             </li>
           </ul>
