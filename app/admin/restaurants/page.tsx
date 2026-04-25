@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
-import type { Restaurant, RestaurantType, HashgachaId } from '@/lib/restaurants-data';
+import type { GoodFor, Restaurant, RestaurantType, HashgachaId } from '@/lib/restaurants-data';
 
 const TYPE_OPTIONS: { value: RestaurantType; label: string }[] = [
   { value: 'meat', label: '🥩 Meat' },
@@ -18,6 +18,22 @@ const TYPE_OPTIONS: { value: RestaurantType; label: string }[] = [
   { value: 'matzah', label: '🍞 Matzah' },
   { value: 'grocery', label: '🛒 Grocery' },
   { value: 'venue', label: '🎪 Venue' },
+  { value: 'vegan', label: '🌱 Vegan' },
+];
+
+const GOOD_FOR_OPTIONS: { value: GoodFor; label: string }[] = [
+  { value: 'breakfast', label: '🥞 Breakfast' },
+  { value: 'brunch', label: '🍳 Brunch' },
+  { value: 'lunch', label: '🥪 Lunch' },
+  { value: 'dinner', label: '🍽️ Dinner' },
+  { value: 'coffee', label: '☕ Coffee' },
+  { value: 'tea', label: '🍵 Tea' },
+  { value: 'dessert', label: '🍰 Dessert' },
+  { value: 'takeout', label: '🥡 Take-out' },
+  { value: 'delivery', label: '🛵 Delivery' },
+  { value: 'date-night', label: '💕 Date Night' },
+  { value: 'family', label: '👨‍👩‍👧 Family' },
+  { value: 'cocktails', label: '🍸 Cocktails' },
 ];
 
 const HASHGACHA_OPTIONS: { value: HashgachaId; label: string }[] = [
@@ -32,6 +48,8 @@ const HASHGACHA_OPTIONS: { value: HashgachaId; label: string }[] = [
   { value: 'crc-williamsburg', label: 'CRC Williamsburg' },
   { value: 'vkm', label: 'VKM (Vaad Kashrus Mehadrin)' },
   { value: 'national-kosher', label: 'National Kosher' },
+  { value: 'ikc', label: 'IKC (International Kosher Council)' },
+  { value: 'rabbi-matusof', label: 'Rabbi E. Matusof' },
   { value: 'other', label: 'Other (specify in notes)' },
 ];
 
@@ -217,6 +235,43 @@ export default function AdminRestaurantsPage() {
 
               <Label>Hours</Label>
               <input value={editing.hours || ''} onChange={(e) => setEditing({ ...editing, hours: e.target.value })} style={inputStyle} placeholder='e.g. "Su-Th 11am-10pm, F until 1hr before Shabbos"' />
+
+              <Label>Good for (select all that apply)</Label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', padding: '0.5rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                {GOOD_FOR_OPTIONS.map((opt) => {
+                  const checked = (editing.goodFor || []).includes(opt.value);
+                  return (
+                    <label
+                      key={opt.value}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        padding: '4px 10px',
+                        borderRadius: '999px',
+                        background: checked ? '#1e3a5f' : 'white',
+                        color: checked ? 'white' : '#334155',
+                        border: '1px solid ' + (checked ? '#1e3a5f' : '#cbd5e1'),
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          const current = editing.goodFor || [];
+                          const next = checked ? current.filter((g) => g !== opt.value) : [...current, opt.value];
+                          setEditing({ ...editing, goodFor: next });
+                        }}
+                        style={{ display: 'none' }}
+                      />
+                      {opt.label}
+                    </label>
+                  );
+                })}
+              </div>
 
               <Label>Notes</Label>
               <textarea value={editing.notes || ''} onChange={(e) => setEditing({ ...editing, notes: e.target.value })} style={{ ...inputStyle, minHeight: '60px' }} placeholder='e.g. "Delivery available", "Switched from CHK to VKM in May 2025"' />
