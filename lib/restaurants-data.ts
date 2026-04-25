@@ -479,23 +479,4 @@ export const restaurantsDefaults: Restaurant[] = [
     goodFor: ['takeout'],
   }),
 
-  // ============ CLOSED — kept for historical reference ============
-  t('r-carbon', 'Carbon Charcoal Grill & Bar', 'meat', 'chk', {
-    address: '262 Kingston Ave, Crown Heights',
-    cuisine: 'Charcoal Grill',
-    notes: 'CLOSED in 2024 after a 2-year run. Holy Schnitzel took over the location.',
-    status: 'closed',
-  }),
-  t('r-basil', 'Basil Pizza & Wine Bar', 'pizza', 'ou', {
-    address: '270 Kingston Ave, Crown Heights',
-    cuisine: 'Pizza · Wine Bar · Dairy',
-    notes: 'CLOSED. Replaced by Biarritz at the same location.',
-    status: 'closed',
-  }),
-  t('r-gombos', "Gombo's Heimishe Bakery", 'bakery', 'chk', {
-    address: 'Kingston Ave & President St, Crown Heights',
-    cuisine: 'Heimishe Bakery',
-    notes: 'CLOSED — lease ended, location was dismantled.',
-    status: 'closed',
-  }),
 ];
