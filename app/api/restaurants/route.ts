@@ -13,6 +13,10 @@ function getRedis() {
   return null;
 }
 
+// One-time cleanup: removed/closed entries that should be purged from Redis
+// even if they were saved by an earlier version of the seed.
+const PURGE_IDS = new Set(['r-carbon', 'r-basil', 'r-gombos']);
+
 async function loadRestaurants(): Promise<Restaurant[]> {
   const redis = getRedis();
   if (!redis) return restaurantsDefaults;
@@ -23,7 +27,14 @@ async function loadRestaurants(): Promise<Restaurant[]> {
       return restaurantsDefaults;
     }
     const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    return Array.isArray(parsed) ? parsed : restaurantsDefaults;
+    if (!Array.isArray(parsed)) return restaurantsDefaults;
+
+    // Auto-purge entries that have been removed from the canonical list
+    const cleaned = parsed.filter((r: Restaurant) => !PURGE_IDS.has(r.id));
+    if (cleaned.length !== parsed.length) {
+      await redis.set(RESTAURANTS_KEY, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
     return restaurantsDefaults;
   }
