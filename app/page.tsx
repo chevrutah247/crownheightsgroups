@@ -874,7 +874,7 @@ export default function HomePage() {
                 <span style={{ fontSize: '2.5rem' }}>🏷️</span>
                 <div>
                   <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', color: 'white', fontWeight: 'bold' }}>Store Specials — Price Comparison</h3>
-                  <p style={{ margin: 0, color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem' }}>Compare weekly deals from KosherTown, Kosher Family & Empire Kosher</p>
+                  <p style={{ margin: 0, color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem' }}>Compare weekly deals from KosherTown, Market Place & Empire Kosher</p>
                 </div>
               </div>
               <div style={{

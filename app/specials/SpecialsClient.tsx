@@ -17,12 +17,11 @@ type StoreConfig = {
 const ALL_STORES: StoreConfig[] = [
   // Crown Heights — auto (MCG API)
   { id: 'koshertown', name: 'KosherTown', logo: '/images/koshertown-logo.svg', url: 'https://koshertown.com/brooklyn/category/specials', hasApi: true, area: 'Crown Heights' },
-  { id: 'kosherfamily', name: 'Kosher Family', logo: '/images/kosherfamily-logo.svg', url: 'https://kosherfamily.com/Brooklyn-Crown-Heights/category/specials', hasApi: true, area: 'Crown Heights' },
+  { id: 'kosherfamily', name: 'Market Place', logo: '/images/kosherfamily-logo.svg', url: 'https://kosherfamily.com/Brooklyn-Crown-Heights/category/specials', hasApi: true, area: 'Crown Heights' },
   { id: 'empire', name: 'Empire Kosher', logo: '/images/empirekosher-logo.svg', url: 'https://empirekoshersupermarket.com/empire/category/specials', hasApi: true, area: 'Crown Heights' },
   // Crown Heights — manual (editable via /admin/store-specials)
   { id: 'kahans', name: "Kahan's Superette", logo: '/images/kahanskosher-logo.svg', url: 'https://www.kahanskosher.com/specials', hasApi: false, manual: true, area: 'Crown Heights' },
   { id: 'koltuv', name: 'Kol Tuv', logoEmoji: '🛍️', url: 'https://www.koltuvgrocery.com/', hasApi: false, manual: true, area: 'Crown Heights' },
-  { id: 'marketplace', name: 'Market Place', logoEmoji: '🏬', url: '', hasApi: false, manual: true, area: 'Crown Heights' },
   // Flatbush
   { id: 'mountainfruit', name: 'Mountain Fruit', logo: '/images/mountainfruit-logo.svg', url: 'https://shopmountainfruit.com/Brooklyn-Midwood-BoroPark/category/specials', hasApi: true, area: 'Flatbush' },
   { id: 'moishas', name: "Moisha's Discount", logo: '/images/moishas-logo.svg', url: 'https://moishas.com/specials', hasApi: true, area: 'Flatbush' },

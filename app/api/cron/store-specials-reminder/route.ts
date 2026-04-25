@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
         await resend.emails.send({
           from: 'Crown Heights Groups <updates@crownheightsgroups.com>',
           to,
-          subject: `🛒 ${today} — Update store specials (Kahan's, Kol Tuv, Market Place)`,
+          subject: `🛒 ${today} — Update store specials (Kahan's, Kol Tuv)`,
           html,
         });
         sent++;

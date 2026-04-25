@@ -25,6 +25,9 @@ async function requireAdminUser() {
   return { ok: true as const, user };
 }
 
+// IDs of manual stores that have been retired (e.g. duplicates of API stores).
+const PURGE_IDS = new Set(['marketplace']);
+
 async function loadStores(redis: Redis | null): Promise<ManualStore[]> {
   if (!redis) return manualStoresDefaults;
   const stored = await redis.get(MANUAL_KEY);
@@ -34,11 +37,21 @@ async function loadStores(redis: Redis | null): Promise<ManualStore[]> {
   }
   const parsed = typeof stored === 'string' ? JSON.parse(stored) : stored;
   if (!Array.isArray(parsed)) return manualStoresDefaults;
-  // Merge: add any default store that's missing in stored data
-  const merged = [...parsed];
+
+  // Filter out retired manual stores
+  const filtered = parsed.filter((s: ManualStore) => !PURGE_IDS.has(s.id));
+
+  // Add any default store that's missing in stored data
+  const merged = [...filtered];
   for (const def of manualStoresDefaults) {
     if (!merged.find((s: ManualStore) => s.id === def.id)) merged.push(def);
   }
+
+  // Persist cleanup if anything was filtered
+  if (filtered.length !== parsed.length) {
+    await redis.set(MANUAL_KEY, JSON.stringify(merged));
+  }
+
   return merged;
 }
 

@@ -140,7 +140,7 @@ export default function AdminStoreSpecialsPage() {
       </div>
 
       <p style={{ color: '#64748b', marginBottom: '1rem' }}>
-        These stores don't have an auto-fetch API. Update weekly — ideally each Monday. KosherTown, Empire, and Kosher Family are fetched automatically every 2 hours.
+        These stores don't have an auto-fetch API. Update weekly — ideally each Monday. KosherTown, Market Place, and Empire are fetched automatically every 2 hours.
       </p>
 
       {/* Store picker */}
