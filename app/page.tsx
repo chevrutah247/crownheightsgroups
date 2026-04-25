@@ -538,6 +538,20 @@ export default function HomePage() {
               animation: c2k-new-blink 0.75s steps(2, end) infinite;
               transform-origin: left center;
             }
+            @keyframes c2k-rabbi-shine {
+              0%, 100% {
+                box-shadow: 0 4px 14px rgba(34,197,94,0.55), 0 0 0 0 rgba(74,222,128,0.7);
+                transform: scale(1);
+              }
+              50% {
+                box-shadow: 0 4px 22px rgba(34,197,94,0.85), 0 0 0 12px rgba(74,222,128,0);
+                transform: scale(1.05);
+              }
+            }
+            .c2k-rabbi-badge {
+              animation: c2k-rabbi-shine 1.8s ease-in-out infinite;
+              transform-origin: right center;
+            }
             .c2k-phone-bg { opacity: 0.95; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.45)); }
             @media (max-width: 860px) {
               .c2k-phone-bg { display: none; }
@@ -687,6 +701,23 @@ export default function HomePage() {
                 whiteSpace: 'nowrap',
                 textShadow: '0 1px 2px rgba(0,0,0,0.25)',
               }}>⚡ NEW · KOSHER PHONE SERVICE ⚡</span>
+
+              <span className="c2k-rabbi-badge" style={{
+                position: 'absolute',
+                top: '10px',
+                right: '16px',
+                background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #facc15 100%)',
+                color: 'white',
+                fontSize: '0.78rem',
+                fontWeight: 900,
+                padding: '6px 16px',
+                borderRadius: '999px',
+                letterSpacing: '1.2px',
+                zIndex: 3,
+                whiteSpace: 'nowrap',
+                textShadow: '0 1px 3px rgba(0,0,0,0.4)',
+                border: '2px solid rgba(255,255,255,0.85)',
+              }}>✡ RABBINICAL APPROVAL ✡</span>
 
               <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '1.1rem', flex: '1 1 320px', minWidth: 0, marginTop: '1rem' }}>
                 <span className="c2k-phone" style={{ fontSize: '2.6rem', lineHeight: 1 }}>📱</span>
