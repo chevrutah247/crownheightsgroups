@@ -236,6 +236,12 @@ export default function AdminRestaurantsPage() {
               <Label>Hours</Label>
               <input value={editing.hours || ''} onChange={(e) => setEditing({ ...editing, hours: e.target.value })} style={inputStyle} placeholder='e.g. "Su-Th 11am-10pm, F until 1hr before Shabbos"' />
 
+              <Label>Description (1-2 sentence editorial blurb)</Label>
+              <textarea value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} style={{ ...inputStyle, minHeight: '50px' }} placeholder='What makes this place worth visiting?' />
+
+              <Label>Review summary (Yelp/Google snapshot)</Label>
+              <textarea value={editing.reviewSummary || ''} onChange={(e) => setEditing({ ...editing, reviewSummary: e.target.value })} style={{ ...inputStyle, minHeight: '50px' }} placeholder='What customers consistently praise / complain about' />
+
               <Label>Good for (select all that apply)</Label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', padding: '0.5rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                 {GOOD_FOR_OPTIONS.map((opt) => {
