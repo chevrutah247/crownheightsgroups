@@ -1,6 +1,7 @@
 // Crown Heights kosher restaurants, cafes, bakeries, caterers — with hashgacha info.
 // Seed data compiled from chkosher.org/listings (Beis Din Crown Heights / CHK),
-// crownheights.info, yeahthatskosher, and totallyjewishtravel (April 2026).
+// koshercactus.com, crownheights.info, yeahthatskosher, totallyjewishtravel,
+// reveriebrooklyn.com (April 2026).
 // Admin can add/edit/remove via /admin/restaurants.
 
 export type RestaurantType =
@@ -16,7 +17,22 @@ export type RestaurantType =
   | 'butcher'
   | 'matzah'
   | 'grocery'
-  | 'venue';
+  | 'venue'
+  | 'vegan';
+
+export type GoodFor =
+  | 'breakfast'
+  | 'brunch'
+  | 'lunch'
+  | 'dinner'
+  | 'coffee'
+  | 'tea'
+  | 'dessert'
+  | 'takeout'
+  | 'delivery'
+  | 'date-night'
+  | 'family'
+  | 'cocktails';
 
 export type HashgachaId =
   | 'chk' // Beis Din Crown Heights — CHK
@@ -30,6 +46,8 @@ export type HashgachaId =
   | 'crc-williamsburg'
   | 'vkm' // Vaad Kashrus Mehadrin
   | 'national-kosher'
+  | 'ikc' // International Kosher Council
+  | 'rabbi-matusof'
   | 'other';
 
 export interface Hashgacha {
@@ -132,6 +150,20 @@ export const hashgachas: Record<HashgachaId, Hashgacha> = {
     fullName: 'National Kosher Supervision (Rabbi Aaron D. Mehlman)',
     color: '#c2410c',
   },
+  'ikc': {
+    id: 'ikc',
+    name: 'IKC',
+    shortName: 'IKC',
+    fullName: 'International Kosher Council',
+    color: '#0d9488',
+  },
+  'rabbi-matusof': {
+    id: 'rabbi-matusof',
+    name: 'Rabbi Matusof',
+    shortName: 'R.M.',
+    fullName: 'Rabbi E. Matusof — private hashgacha',
+    color: '#a16207',
+  },
   'other': {
     id: 'other',
     name: 'Other',
@@ -146,7 +178,7 @@ export interface Restaurant {
   name: string;
   type: RestaurantType;
   hashgacha: HashgachaId;
-  hashgachaNote?: string;        // e.g. "Dairy — CHK" details
+  hashgachaNote?: string;        // e.g. "Cholov Yisroel, Pas Yisroel"
   address?: string;
   phone?: string;
   website?: string;
@@ -154,90 +186,316 @@ export interface Restaurant {
   cuisine?: string;              // e.g. "American BBQ", "Israeli", "Italian"
   priceRange?: '$' | '$$' | '$$$';
   hours?: string;
+  goodFor?: GoodFor[];           // tags: breakfast/lunch/coffee/etc
   image?: string;
-  notes?: string;                // "Closed on Shabbos", etc.
+  notes?: string;                // "Closed on Shabbos", "Switched hashgacha", etc.
   area?: string;                 // default "Crown Heights"
   status: 'active' | 'closed';
 }
 
-// Seed list — Crown Heights establishments (April 2026).
-// Addresses filled where commonly known; admin can correct via UI.
+// Helper to keep seed list compact
+const t = (
+  id: string,
+  name: string,
+  type: RestaurantType,
+  hashgacha: HashgachaId,
+  fields: Partial<Restaurant> = {}
+): Restaurant => ({ id, name, type, hashgacha, area: 'Crown Heights', status: 'active', ...fields });
+
+// Crown Heights establishments — April 2026.
+// Many addresses, hours, and websites still need verification by admin.
 export const restaurantsDefaults: Restaurant[] = [
-  // --- CHK Meat ---
-  { id: 'r-prime-avenue', name: 'Prime Avenue', type: 'meat', hashgacha: 'chk', cuisine: 'Steakhouse', area: 'Crown Heights', status: 'active' },
-  { id: 'r-mendys', name: "Mendy's", type: 'meat', hashgacha: 'chk', cuisine: 'American · Catering', area: 'Crown Heights', status: 'active', notes: 'Also offers catering' },
-  { id: 'r-machane-yehuda', name: 'Machane Yehuda', type: 'meat', hashgacha: 'chk', cuisine: 'Israeli', area: 'Crown Heights', status: 'active' },
-  { id: 'r-josephs-dream-burger', name: "Joseph's Dream Burger", type: 'meat', hashgacha: 'chk', cuisine: 'Burgers', area: 'Crown Heights', status: 'active' },
-  { id: 'r-house-of-glatt', name: 'House of Glatt', type: 'meat', hashgacha: 'chk', cuisine: 'American · Take-out', area: 'Crown Heights', status: 'active' },
-  { id: 'r-holy-schnitzel', name: 'Holy Schnitzel', type: 'meat', hashgacha: 'chk', address: '262 Kingston Ave, Crown Heights', cuisine: 'Schnitzel · Fast Casual', website: 'https://holyschnitzel.com/holy-finder/holy-schnitzel-crown-heights/', area: 'Crown Heights', status: 'active' },
-  { id: 'r-boeuf-and-bun', name: 'Boeuf & Bun', type: 'meat', hashgacha: 'chk', cuisine: 'Burgers', area: 'Crown Heights', status: 'active' },
-  { id: 'r-butcher-grill-house', name: 'Butcher Grill House', type: 'meat', hashgacha: 'chk', cuisine: 'Grill', area: 'Crown Heights', status: 'active' },
-  { id: 'r-pita-point', name: 'Pita Point', type: 'meat', hashgacha: 'chk', cuisine: 'Middle Eastern', area: 'Crown Heights', status: 'active' },
-
-  // --- CHK Dairy ---
-  { id: 'r-ricotta-coffee', name: 'Ricotta Coffee', type: 'dairy', hashgacha: 'chk', cuisine: 'Cafe · Italian', area: 'Crown Heights', status: 'active' },
-  { id: 'r-chocolatte', name: 'Chocolatte', type: 'dairy', hashgacha: 'chk', cuisine: 'Coffee · Desserts', area: 'Crown Heights', status: 'active' },
-  { id: 'r-bread-and-dairy', name: 'Bread & Dairy Cafe', type: 'dairy', hashgacha: 'chk', cuisine: 'Cafe · Breakfast', area: 'Crown Heights', status: 'active' },
-  { id: 'r-almah-cafe', name: 'Almah Cafe', type: 'dairy', hashgacha: 'chk', cuisine: 'Cafe · Brunch', area: 'Crown Heights', status: 'active' },
-  { id: 'r-almah-cafe-albany', name: 'Almah Cafe — Albany', type: 'dairy', hashgacha: 'chk', address: 'Albany Ave, Crown Heights', cuisine: 'Cafe · Brunch', area: 'Crown Heights', status: 'active' },
-  { id: 'r-bunch-o-bagels', name: "Bunch O' Bagels", type: 'dairy', hashgacha: 'chk', cuisine: 'Bagels', area: 'Crown Heights', status: 'active' },
-  { id: 'r-holesome-bagels', name: 'Holesome Bagels', type: 'dairy', hashgacha: 'chk', cuisine: 'Bagels · Catering', area: 'Crown Heights', status: 'active' },
-  { id: 'r-brooklyn-artisan-bakehouse', name: 'Brooklyn Artisan Bakehouse', type: 'dairy', hashgacha: 'chk', cuisine: 'Bakery · Cafe', area: 'Crown Heights', status: 'active' },
-  { id: 'r-kingston-pizza', name: 'Kingston Pizza', type: 'dairy', hashgacha: 'chk', cuisine: 'Pizza', area: 'Crown Heights', status: 'active' },
-  { id: 'r-kingston-bake-shop', name: 'Kingston Bake Shop', type: 'bakery', hashgacha: 'chk', cuisine: 'Bakery · Dairy', area: 'Crown Heights', status: 'active' },
-  { id: 'r-mozzarella', name: 'Crown Heights Mozzarella', type: 'dairy', hashgacha: 'chk', address: '265 Troy Ave, Crown Heights', website: 'https://chmozzarella.com/', cuisine: 'Italian · Brunch', notes: 'Cholov Yisroel, Pas Yisroel, Yoshon', area: 'Crown Heights', status: 'active' },
-
-  // --- CHK Pareve / Fish / Sushi ---
-  { id: 'r-sushi-spot', name: 'Sushi Spot', type: 'sushi', hashgacha: 'chk', website: 'https://www.sushispot2.com/', cuisine: 'Sushi · Parve', area: 'Crown Heights', status: 'active' },
-  { id: 'r-noribar', name: 'Noribar — Crown Heights', type: 'sushi', hashgacha: 'chk', cuisine: 'Sushi · Parve', area: 'Crown Heights', status: 'active' },
-  { id: 'r-shabbos-fish-market', name: 'Shabbos Fish Market', type: 'fish', hashgacha: 'chk', cuisine: 'Fish Market', area: 'Crown Heights', status: 'active' },
-  { id: 'r-batyam', name: 'BatYam', type: 'fish', hashgacha: 'chk', cuisine: 'Fish Market', area: 'Crown Heights', status: 'active' },
-
-  // --- CHK Pizza ---
-  { id: 'r-pizza-crust', name: 'Pizza Crust', type: 'pizza', hashgacha: 'chk', cuisine: 'Pizza', area: 'Crown Heights', status: 'active' },
-
-  // --- CHK Bakeries & Sweets ---
-  { id: 'r-splendid-cafe', name: 'Splendid Cafe & Pastry', type: 'bakery', hashgacha: 'chk', cuisine: 'Bakery · Cafe', area: 'Crown Heights', status: 'active' },
-  { id: 'r-albany-bake-shop', name: 'Albany Bake Shop', type: 'bakery', hashgacha: 'chk', address: 'Albany Ave, Crown Heights', cuisine: 'Bakery', area: 'Crown Heights', status: 'active' },
-  { id: 'r-lubavitch-matzah', name: 'Lubavitch Matzah Bakery', type: 'matzah', hashgacha: 'chk', cuisine: 'Matzah · Shmurah', area: 'Crown Heights', status: 'active' },
-  { id: 'r-tov-products', name: 'Tov Products', type: 'matzah', hashgacha: 'chk', cuisine: 'Matzah Bakery', area: 'Crown Heights', status: 'active' },
-  { id: 'r-sweet-expressions-troy', name: 'Sweet Expressions — Troy Avenue', type: 'ice-cream', hashgacha: 'chk', address: 'Troy Ave, Crown Heights', cuisine: 'Ice Cream · Sweets', area: 'Crown Heights', status: 'active' },
-  { id: 'r-sweet-expressions-kingston', name: 'Sweet Expressions — Kingston Avenue', type: 'ice-cream', hashgacha: 'chk', address: 'Kingston Ave, Crown Heights', cuisine: 'Ice Cream', area: 'Crown Heights', status: 'active' },
-
-  // --- CHK Caterers / Venues ---
-  { id: 'r-smadar-events', name: 'Smadar Events', type: 'catering', hashgacha: 'chk', cuisine: 'Party Planner · Catering', area: 'Crown Heights', status: 'active' },
-  { id: 'r-table-one-catering', name: 'Table One Catering', type: 'catering', hashgacha: 'chk', cuisine: 'Catering', area: 'Crown Heights', status: 'active' },
-  { id: 'r-ben-sion-kohen', name: 'Ben Sion Kohen', type: 'catering', hashgacha: 'chk', cuisine: 'Catering', area: 'Crown Heights', status: 'active' },
-  { id: 'r-razag-ballroom', name: 'Razag Ballroom', type: 'venue', hashgacha: 'chk', cuisine: 'Event Hall', area: 'Crown Heights', status: 'active' },
-
-  // --- CHK Butchers / Meat Suppliers ---
-  { id: 'r-770-glatt', name: '770 Glatt', type: 'butcher', hashgacha: 'chk', cuisine: 'Meat & Poultry', area: 'Crown Heights', status: 'active' },
-  { id: 'r-generation-7', name: 'Generation 7', type: 'butcher', hashgacha: 'chk', cuisine: 'Meat & Poultry', area: 'Crown Heights', status: 'active' },
-  { id: 'r-rubashkins', name: "Rubashkin's Meat Store", type: 'butcher', hashgacha: 'chk', cuisine: 'Butcher', area: 'Crown Heights', status: 'active' },
-
-  // --- Non-CHK establishments in Crown Heights ---
-  {
-    id: 'r-izzys-smokehouse',
-    name: "Izzy's Brooklyn Smokehouse",
-    type: 'meat',
-    hashgacha: 'ok',
+  // ============ MEAT ============
+  t('r-prime-avenue', 'Prime Avenue', 'meat', 'chk', {
+    cuisine: 'Steakhouse', priceRange: '$$$',
+    goodFor: ['dinner', 'date-night'],
+  }),
+  t('r-mendys', "Mendy's Deli", 'meat', 'chk', {
+    address: '792 Eastern Pkwy, Crown Heights',
+    cuisine: 'Deli · American · Catering',
+    goodFor: ['lunch', 'dinner', 'takeout', 'family'],
+    notes: 'Also offers catering',
+  }),
+  t('r-machane-yehuda', 'Machane Yehuda', 'meat', 'chk', {
+    cuisine: 'Israeli',
+    goodFor: ['lunch', 'dinner'],
+  }),
+  t('r-josephs-dream-burger', "Joseph's Dream Burger", 'meat', 'chk', {
+    cuisine: 'Burgers',
+    goodFor: ['lunch', 'dinner', 'family'],
+  }),
+  t('r-house-of-glatt', 'House of Glatt', 'meat', 'chk', {
+    cuisine: 'American · Take-out',
+    goodFor: ['lunch', 'dinner', 'takeout'],
+  }),
+  t('r-holy-schnitzel', 'Holy Schnitzel', 'meat', 'chk', {
+    address: '262 Kingston Ave, Crown Heights',
+    cuisine: 'Schnitzel · Fast Casual',
+    website: 'https://holyschnitzel.com/holy-finder/holy-schnitzel-crown-heights/',
+    priceRange: '$$',
+    goodFor: ['lunch', 'dinner', 'takeout', 'family'],
+    notes: 'Moved into the former Carbon location in 2024',
+  }),
+  t('r-boeuf-and-bun', 'Boeuf & Bun', 'meat', 'chk', {
+    address: '271 Kingston Ave, Crown Heights',
+    cuisine: 'Burgers',
+    priceRange: '$$',
+    goodFor: ['lunch', 'dinner', 'family'],
+  }),
+  t('r-butcher-grill-house', 'Butcher Grill House', 'meat', 'chk', {
+    cuisine: 'Steakhouse · Grill', priceRange: '$$$',
+    goodFor: ['dinner', 'date-night'],
+  }),
+  t('r-pita-point', 'Pita Point', 'meat', 'chk', {
+    cuisine: 'Middle Eastern · Falafel',
+    priceRange: '$',
+    goodFor: ['lunch', 'takeout'],
+  }),
+  t('r-mama-kitchen', 'Mama Kitchen', 'meat', 'chk', {
+    address: '419 Utica Ave, Crown Heights',
+    cuisine: 'Home-Style',
+    goodFor: ['lunch', 'dinner', 'takeout'],
+  }),
+  t('r-kt2', 'KT2', 'meat', 'chk', {
+    address: '333 Kingston Ave, Crown Heights',
+    cuisine: 'Israeli · Mediterranean',
+    goodFor: ['lunch', 'dinner'],
+  }),
+  t('r-meat', 'MEAT', 'meat', 'ou', {
+    address: '123 Kingston Ave (corner Bergen St), Crown Heights',
+    cuisine: 'High-End Steakhouse',
+    website: 'https://mdr.meatny.com/',
+    hashgachaNote: 'OU Glatt',
+    priceRange: '$$$',
+    goodFor: ['dinner', 'date-night', 'cocktails'],
+  }),
+  t('r-gruit', "GRÜIT by Abe's", 'meat', 'ok', {
+    address: '252 Empire Blvd, Crown Heights',
+    cuisine: 'Gastropub · American',
+    priceRange: '$$$',
+    goodFor: ['dinner', 'date-night', 'cocktails'],
+  }),
+  t('r-alenbi', 'Alenbi', 'meat', 'ok', {
+    address: '887 Nostrand Ave, Crown Heights',
+    cuisine: 'Israeli · Mediterranean',
+    goodFor: ['lunch', 'dinner'],
+  }),
+  t('r-abes-corner', "Abe's Corner", 'meat', 'rabbi-matusof', {
+    address: '670 Rogers Ave, Crown Heights',
+    cuisine: 'American',
+    goodFor: ['lunch', 'dinner', 'takeout'],
+  }),
+  t('r-izzys-smokehouse', "Izzy's Brooklyn Smokehouse", 'meat', 'ok', {
     address: '397 Troy Ave, Crown Heights',
     website: 'https://izzyssmokehouse.com/',
     cuisine: 'American BBQ · Smokehouse',
     priceRange: '$$$',
-    area: 'Crown Heights',
-    status: 'active',
-  },
-  {
-    id: 'r-biarritz',
-    name: 'Biarritz Kosher Pizza & Wine Bar',
-    type: 'pizza',
-    hashgacha: 'vkm',
-    hashgachaNote: 'Guided by Rabbi Tzvi Altusky',
+    goodFor: ['lunch', 'dinner', 'date-night', 'family'],
+  }),
+
+  // ============ DAIRY ============
+  t('r-mozzarella', 'Crown Heights Mozzarella', 'dairy', 'chk', {
+    address: '265 Troy Ave, Crown Heights',
+    website: 'https://chmozzarella.com/',
+    cuisine: 'Italian · Brunch · Pizza',
+    hashgachaNote: 'Cholov Yisroel, Pas Yisroel, Yoshon',
+    priceRange: '$$',
+    goodFor: ['breakfast', 'brunch', 'lunch', 'dinner', 'family'],
+  }),
+  t('r-ricotta-coffee', 'Ricotta Coffee', 'dairy', 'chk', {
+    cuisine: 'Italian Cafe',
+    hashgachaNote: 'Cholov Yisroel',
+    goodFor: ['breakfast', 'coffee', 'tea', 'lunch', 'dessert'],
+  }),
+  t('r-chocolatte', 'Chocolatte', 'dairy', 'chk', {
+    address: '792 Eastern Pkwy, Crown Heights',
+    cuisine: 'Coffee · Desserts · Chocolate',
+    hashgachaNote: 'Cholov Yisroel',
+    goodFor: ['coffee', 'tea', 'dessert', 'breakfast'],
+  }),
+  t('r-bread-and-dairy', 'Bread & Dairy Cafe', 'dairy', 'chk', {
+    cuisine: 'Cafe · Breakfast · Salads',
+    hashgachaNote: 'Cholov Yisroel',
+    goodFor: ['breakfast', 'brunch', 'lunch', 'coffee', 'tea'],
+  }),
+  t('r-almah-cafe-utica', 'Almah Cafe', 'dairy', 'chk', {
+    address: '87 Utica Ave, Crown Heights',
+    cuisine: 'Cafe · Brunch · Mediterranean',
+    hashgachaNote: 'Cholov Yisroel',
+    goodFor: ['breakfast', 'brunch', 'lunch', 'coffee', 'tea', 'date-night'],
+  }),
+  t('r-almah-cafe-albany', 'Almah Cafe — Albany', 'dairy', 'chk', {
+    address: 'Albany Ave, Crown Heights',
+    cuisine: 'Cafe · Brunch',
+    hashgachaNote: 'Cholov Yisroel',
+    goodFor: ['breakfast', 'brunch', 'lunch', 'coffee'],
+  }),
+  t('r-bunch-o-bagels', "Bunch O' Bagels", 'dairy', 'chk', {
+    cuisine: 'Bagels · Breakfast',
+    hashgachaNote: 'Cholov Yisroel',
+    goodFor: ['breakfast', 'brunch', 'lunch', 'coffee'],
+  }),
+  t('r-holesome-bagels', 'Holesome Bagels', 'dairy', 'chk', {
+    cuisine: 'Bagels · Catering · Cafe',
+    hashgachaNote: 'Cholov Yisroel',
+    goodFor: ['breakfast', 'brunch', 'lunch', 'coffee'],
+  }),
+  t('r-brooklyn-artisan-bakehouse', 'Brooklyn Artisan Bakehouse', 'dairy', 'ok', {
+    address: '529 E New York Ave, Crown Heights',
+    cuisine: 'Bakery · Cafe',
+    hashgachaNote: 'Cholov Yisroel',
+    goodFor: ['breakfast', 'coffee', 'tea', 'lunch', 'dessert'],
+  }),
+  t('r-kingston-pizza', 'Kingston Pizza', 'pizza', 'chk', {
+    address: 'Kingston Ave, Crown Heights',
+    cuisine: 'Pizza · Italian',
+    priceRange: '$',
+    goodFor: ['lunch', 'dinner', 'takeout', 'family'],
+  }),
+  t('r-bouote', "Bou'ote", 'dairy', 'ok', {
+    address: '302 Troy Ave, Crown Heights',
+    cuisine: 'Cafe · Dairy',
+    hashgachaNote: 'Cholov Yisroel',
+    goodFor: ['breakfast', 'brunch', 'lunch', 'coffee'],
+  }),
+  t('r-patis', 'Patis', 'dairy', 'ou', {
+    address: '302 Troy Ave, Crown Heights',
+    cuisine: 'French Bakery · Pastries',
+    hashgachaNote: 'OU(D), Cholov Yisroel',
+    goodFor: ['breakfast', 'coffee', 'tea', 'dessert'],
+  }),
+  t('r-koshertown-dairy', 'Koshertown Supermarket Dairy', 'dairy', 'chk', {
+    address: '469 Albany Ave, Crown Heights',
+    cuisine: 'Supermarket Dairy Café',
+    hashgachaNote: 'Cholov Yisroel',
+    goodFor: ['breakfast', 'lunch', 'takeout', 'coffee'],
+  }),
+
+  // ============ PIZZA ============
+  t('r-pizza-crust', 'Pizza Crust', 'pizza', 'chk', {
+    cuisine: 'Pizza',
+    priceRange: '$',
+    goodFor: ['lunch', 'dinner', 'takeout', 'family'],
+  }),
+  t('r-biarritz', 'Biarritz Kosher Pizza & Wine Bar', 'pizza', 'vkm', {
     address: 'Kingston Ave, Crown Heights',
     cuisine: 'Pizza · Wine Bar · Dairy',
-    notes: 'Switched from CHK to VKM in May 2025',
-    area: 'Crown Heights',
-    status: 'active',
-  },
+    hashgachaNote: 'Guided by Rabbi Tzvi Altusky',
+    priceRange: '$$',
+    goodFor: ['lunch', 'dinner', 'date-night', 'cocktails'],
+    notes: 'Switched from CHK to VKM in May 2025. Took over former Basil location.',
+  }),
+
+  // ============ PARVE / FISH / SUSHI ============
+  t('r-sushi-spot', 'Sushi Spot', 'sushi', 'chk', {
+    website: 'https://www.sushispot2.com/',
+    cuisine: 'Sushi · Parve',
+    priceRange: '$$',
+    goodFor: ['lunch', 'dinner', 'takeout', 'date-night'],
+  }),
+  t('r-noribar', 'Noribar', 'sushi', 'chk', {
+    cuisine: 'Sushi · Parve',
+    goodFor: ['lunch', 'dinner', 'takeout'],
+  }),
+  t('r-shabbos-fish-market', 'Shabbos Fish Market', 'fish', 'chk', {
+    cuisine: 'Fish Market',
+    goodFor: ['takeout'],
+  }),
+  t('r-batyam', 'BatYam', 'fish', 'chk', {
+    cuisine: 'Fish Market',
+    goodFor: ['takeout'],
+  }),
+
+  // ============ VEGAN ============
+  t('r-reverie', 'Reverie', 'vegan', 'ikc', {
+    cuisine: 'Vegan · Cocktail Bar · Modern',
+    website: 'https://reveriebrooklyn.com/crown-heights-restaurants/',
+    priceRange: '$$$',
+    goodFor: ['dinner', 'date-night', 'cocktails', 'dessert'],
+    notes: '100% plant-based. Part of City Roots Hospitality.',
+  }),
+
+  // ============ BAKERIES & SWEETS ============
+  t('r-kingston-bake-shop', 'Kingston Bake Shop', 'bakery', 'chk', {
+    address: '380 Kingston Ave, Crown Heights',
+    cuisine: 'Bakery · Dairy Cafe',
+    hashgachaNote: 'Cholov Yisroel',
+    goodFor: ['breakfast', 'coffee', 'dessert', 'takeout'],
+  }),
+  t('r-splendid-cafe', 'Splendid Cafe & Pastry', 'bakery', 'chk', {
+    cuisine: 'Bakery · Cafe · Pastries',
+    goodFor: ['breakfast', 'coffee', 'tea', 'dessert'],
+  }),
+  t('r-albany-bake-shop', 'Albany Bake Shop', 'bakery', 'chk', {
+    address: 'Albany Ave, Crown Heights',
+    cuisine: 'Bakery',
+    goodFor: ['breakfast', 'coffee', 'dessert', 'takeout'],
+  }),
+  t('r-lubavitch-matzah', 'Lubavitch Matzah Bakery', 'matzah', 'chk', {
+    cuisine: 'Shmurah Matzah',
+    goodFor: ['takeout'],
+    notes: 'Hand Shmurah Matzah for Pesach',
+  }),
+  t('r-tov-products', 'Tov Products', 'matzah', 'chk', {
+    cuisine: 'Matzah Bakery',
+    goodFor: ['takeout'],
+  }),
+  t('r-sweet-expressions-troy', 'Sweet Expressions — Troy', 'ice-cream', 'chk', {
+    address: 'Troy Ave, Crown Heights',
+    cuisine: 'Ice Cream · Sweets',
+    goodFor: ['dessert', 'family'],
+  }),
+  t('r-sweet-expressions-kingston', 'Sweet Expressions — Kingston', 'ice-cream', 'chk', {
+    address: 'Kingston Ave, Crown Heights',
+    cuisine: 'Ice Cream',
+    goodFor: ['dessert', 'family'],
+  }),
+
+  // ============ CATERERS / VENUES ============
+  t('r-smadar-events', 'Smadar Events', 'catering', 'chk', {
+    cuisine: 'Party Planner · Catering',
+  }),
+  t('r-table-one-catering', 'Table One Catering', 'catering', 'chk', {
+    cuisine: 'Catering',
+  }),
+  t('r-ben-sion-kohen', 'Ben Sion Kohen', 'catering', 'chk', {
+    cuisine: 'Catering',
+  }),
+  t('r-razag-ballroom', 'Razag Ballroom', 'venue', 'chk', {
+    cuisine: 'Event Hall · Simcha Venue',
+  }),
+
+  // ============ BUTCHERS / MEAT SUPPLIERS ============
+  t('r-770-glatt', '770 Glatt', 'butcher', 'chk', {
+    cuisine: 'Glatt Meat & Poultry',
+    goodFor: ['takeout'],
+  }),
+  t('r-generation-7', 'Generation 7', 'butcher', 'chk', {
+    cuisine: 'Glatt Meat & Poultry',
+    goodFor: ['takeout'],
+  }),
+  t('r-rubashkins', "Rubashkin's Meat Store", 'butcher', 'chk', {
+    cuisine: 'Glatt Butcher',
+    goodFor: ['takeout'],
+  }),
+
+  // ============ CLOSED — kept for historical reference ============
+  t('r-carbon', 'Carbon Charcoal Grill & Bar', 'meat', 'chk', {
+    address: '262 Kingston Ave, Crown Heights',
+    cuisine: 'Charcoal Grill',
+    notes: 'CLOSED in 2024 after a 2-year run. Holy Schnitzel took over the location.',
+    status: 'closed',
+  }),
+  t('r-basil', 'Basil Pizza & Wine Bar', 'pizza', 'ou', {
+    address: '270 Kingston Ave, Crown Heights',
+    cuisine: 'Pizza · Wine Bar · Dairy',
+    notes: 'CLOSED. Replaced by Biarritz at the same location.',
+    status: 'closed',
+  }),
+  t('r-gombos', "Gombo's Heimishe Bakery", 'bakery', 'chk', {
+    address: 'Kingston Ave & President St, Crown Heights',
+    cuisine: 'Heimishe Bakery',
+    notes: 'CLOSED — lease ended, location was dismantled.',
+    status: 'closed',
+  }),
 ];

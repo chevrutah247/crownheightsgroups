@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import type { Hashgacha, HashgachaId, Restaurant, RestaurantType } from '@/lib/restaurants-data';
+import type { GoodFor, Hashgacha, HashgachaId, Restaurant, RestaurantType } from '@/lib/restaurants-data';
 
 type TypeFilter = 'all' | RestaurantType;
 type HashgachaFilter = 'all' | HashgachaId;
+type GoodForFilter = 'all' | GoodFor;
 
 const TYPE_LABELS: Record<RestaurantType, { label: string; icon: string }> = {
   meat: { label: 'Meat', icon: '🥩' },
@@ -23,6 +24,22 @@ const TYPE_LABELS: Record<RestaurantType, { label: string; icon: string }> = {
   matzah: { label: 'Matzah', icon: '🍞' },
   grocery: { label: 'Grocery', icon: '🛒' },
   venue: { label: 'Venue', icon: '🎪' },
+  vegan: { label: 'Vegan', icon: '🌱' },
+};
+
+const GOOD_FOR_LABELS: Record<GoodFor, { label: string; icon: string }> = {
+  breakfast: { label: 'Breakfast', icon: '🥞' },
+  brunch: { label: 'Brunch', icon: '🍳' },
+  lunch: { label: 'Lunch', icon: '🥪' },
+  dinner: { label: 'Dinner', icon: '🍽️' },
+  coffee: { label: 'Coffee', icon: '☕' },
+  tea: { label: 'Tea', icon: '🍵' },
+  dessert: { label: 'Dessert', icon: '🍰' },
+  takeout: { label: 'Take-out', icon: '🥡' },
+  delivery: { label: 'Delivery', icon: '🛵' },
+  'date-night': { label: 'Date Night', icon: '💕' },
+  family: { label: 'Family', icon: '👨‍👩‍👧' },
+  cocktails: { label: 'Cocktails', icon: '🍸' },
 };
 
 export default function RestaurantsPage() {
@@ -31,6 +48,7 @@ export default function RestaurantsPage() {
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [hashgachaFilter, setHashgachaFilter] = useState<HashgachaFilter>('all');
+  const [goodForFilter, setGoodForFilter] = useState<GoodForFilter>('all');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -48,6 +66,7 @@ export default function RestaurantsPage() {
     return restaurants.filter((r) => {
       if (typeFilter !== 'all' && r.type !== typeFilter) return false;
       if (hashgachaFilter !== 'all' && r.hashgacha !== hashgachaFilter) return false;
+      if (goodForFilter !== 'all' && (!r.goodFor || !r.goodFor.includes(goodForFilter))) return false;
       if (search) {
         const q = search.toLowerCase();
         const haystack = [r.name, r.address, r.cuisine, r.notes].filter(Boolean).join(' ').toLowerCase();
@@ -55,7 +74,15 @@ export default function RestaurantsPage() {
       }
       return true;
     });
-  }, [restaurants, typeFilter, hashgachaFilter, search]);
+  }, [restaurants, typeFilter, hashgachaFilter, goodForFilter, search]);
+
+  const goodForCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of restaurants) {
+      for (const gf of r.goodFor || []) counts[gf] = (counts[gf] || 0) + 1;
+    }
+    return counts;
+  }, [restaurants]);
 
   const typeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -114,6 +141,21 @@ export default function RestaurantsPage() {
               {TYPE_LABELS[t].icon} {TYPE_LABELS[t].label} · {typeCounts[t] || 0}
             </Chip>
           ))}
+        </div>
+
+        {/* "Good for" filters */}
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.75rem', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.8rem', color: '#64748b', marginRight: '0.25rem' }}>Good for:</span>
+          <Chip active={goodForFilter === 'all'} onClick={() => setGoodForFilter('all')}>
+            Anytime
+          </Chip>
+          {(Object.keys(GOOD_FOR_LABELS) as GoodFor[])
+            .filter((gf) => goodForCounts[gf])
+            .map((gf) => (
+              <Chip key={gf} active={goodForFilter === gf} onClick={() => setGoodForFilter(gf)}>
+                {GOOD_FOR_LABELS[gf].icon} {GOOD_FOR_LABELS[gf].label} · {goodForCounts[gf] || 0}
+              </Chip>
+            ))}
         </div>
 
         {/* Hashgacha filters */}
@@ -272,6 +314,33 @@ function RestaurantCard({ restaurant, hashgacha }: { restaurant: Restaurant; has
       )}
       {restaurant.hours && (
         <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.15rem' }}>🕐 {restaurant.hours}</div>
+      )}
+      {restaurant.hashgachaNote && (
+        <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.2rem', fontStyle: 'italic' }}>{restaurant.hashgachaNote}</div>
+      )}
+      {restaurant.goodFor && restaurant.goodFor.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.5rem' }}>
+          {restaurant.goodFor.map((gf) => {
+            const meta = GOOD_FOR_LABELS[gf];
+            if (!meta) return null;
+            return (
+              <span
+                key={gf}
+                title={`Good for ${meta.label}`}
+                style={{
+                  background: '#f1f5f9',
+                  color: '#334155',
+                  fontSize: '0.65rem',
+                  fontWeight: 600,
+                  padding: '2px 7px',
+                  borderRadius: '999px',
+                }}
+              >
+                {meta.icon} {meta.label}
+              </span>
+            );
+          })}
+        </div>
       )}
       {restaurant.notes && (
         <div style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '0.35rem', fontStyle: 'italic' }}>ℹ️ {restaurant.notes}</div>
