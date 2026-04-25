@@ -15,7 +15,7 @@ function getRedis() {
 
 // One-time cleanup: removed/closed entries that should be purged from Redis
 // even if they were saved by an earlier version of the seed.
-const PURGE_IDS = new Set(['r-carbon', 'r-basil', 'r-gombos']);
+const PURGE_IDS = new Set(['r-carbon', 'r-basil', 'r-gombos', 'r-reverie']);
 
 async function loadRestaurants(): Promise<Restaurant[]> {
   const redis = getRedis();
@@ -29,12 +29,44 @@ async function loadRestaurants(): Promise<Restaurant[]> {
     const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
     if (!Array.isArray(parsed)) return restaurantsDefaults;
 
-    // Auto-purge entries that have been removed from the canonical list
-    const cleaned = parsed.filter((r: Restaurant) => !PURGE_IDS.has(r.id));
-    if (cleaned.length !== parsed.length) {
-      await redis.set(RESTAURANTS_KEY, JSON.stringify(cleaned));
+    // Build merged view:
+    // 1. Auto-purge removed IDs
+    // 2. For every default, layer admin-stored fields on top so admin edits win
+    //    BUT new fields from defaults (e.g. newly added descriptions/addresses)
+    //    show up for entries that haven't been admin-edited recently.
+    const storedMap = new Map<string, Restaurant>(
+      parsed.filter((r: Restaurant) => r && r.id && !PURGE_IDS.has(r.id))
+            .map((r: Restaurant) => [r.id, r])
+    );
+
+    const merged: Restaurant[] = [];
+    const seen = new Set<string>();
+
+    for (const def of restaurantsDefaults) {
+      const stored = storedMap.get(def.id);
+      if (stored) {
+        // Stored entry exists — keep admin edits but fill in any missing fields from defaults
+        const cleanStored: Partial<Restaurant> = {};
+        for (const [k, v] of Object.entries(stored)) {
+          if (v !== undefined && v !== null && v !== '') {
+            (cleanStored as any)[k] = v;
+          }
+        }
+        merged.push({ ...def, ...cleanStored });
+      } else {
+        merged.push(def);
+      }
+      seen.add(def.id);
     }
-    return cleaned;
+
+    // Append any stored entries that aren't in defaults (admin-added places)
+    for (const [id, r] of storedMap.entries()) {
+      if (!seen.has(id)) merged.push(r);
+    }
+
+    // Persist the merged list so admin sees the enriched data and future reads are clean
+    await redis.set(RESTAURANTS_KEY, JSON.stringify(merged));
+    return merged;
   } catch {
     return restaurantsDefaults;
   }

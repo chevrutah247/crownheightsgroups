@@ -306,6 +306,9 @@ function RestaurantCard({ restaurant, hashgacha }: { restaurant: Restaurant; has
       {restaurant.cuisine && (
         <div style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '0.3rem' }}>{restaurant.cuisine}</div>
       )}
+      {restaurant.description && (
+        <div style={{ fontSize: '0.82rem', color: '#1e293b', marginBottom: '0.5rem', lineHeight: 1.4 }}>{restaurant.description}</div>
+      )}
       {restaurant.address && (
         <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.15rem' }}>📍 {restaurant.address}</div>
       )}
