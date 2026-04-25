@@ -14,7 +14,7 @@ export interface ManualSpecial {
 }
 
 export interface ManualStore {
-  id: 'kahans' | 'koltuv' | 'marketplace';
+  id: 'kahans' | 'koltuv';
   name: string;
   logo?: string; // path under /images or emoji fallback
   logoEmoji?: string;
@@ -152,16 +152,6 @@ export const manualStoresDefaults: ManualStore[] = [
     address: 'Crown Heights',
     referenceUrl: 'https://www.koltuvgrocery.com/',
     updateInstructions: 'Visit koltuvgrocery.com and copy the current week\'s specials.',
-    specials: [],
-    updatedAt: undefined,
-  },
-  {
-    id: 'marketplace',
-    name: 'Market Place',
-    logoEmoji: '🏬',
-    address: 'Crown Heights',
-    referenceUrl: '',
-    updateInstructions: 'Get this week\'s flyer from the store and enter items below.',
     specials: [],
     updatedAt: undefined,
   },

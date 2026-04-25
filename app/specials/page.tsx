@@ -3,7 +3,7 @@ import SpecialsClient from './SpecialsClient';
 
 export const metadata: Metadata = {
   title: 'Store Specials — Price Comparison | Crown Heights Groups',
-  description: 'Compare weekly specials and sale prices from Crown Heights kosher grocery stores: KosherTown, Kosher Family, Empire Kosher, and Kahan\'s Kosher.',
+  description: 'Compare weekly specials and sale prices from Crown Heights kosher grocery stores: KosherTown, Market Place, Empire Kosher, and Kahan\'s Superette.',
   openGraph: {
     title: 'Store Specials — Price Comparison | Crown Heights Groups',
     description: 'Compare weekly specials from Crown Heights kosher grocery stores. Find the best deals on kosher products.',

@@ -16,7 +16,7 @@ const MCG_STORES = [
   },
   {
     id: 'kosherfamily',
-    name: 'Kosher Family',
+    name: 'Market Place',
     logo: '/images/kosherfamily-logo.svg',
     url: 'https://kosherfamily.com/Brooklyn-Crown-Heights/category/specials',
     apiBase: 'https://kosherfamily.com/api',
@@ -240,14 +240,23 @@ export async function GET() {
       byStore[s.id] = allProducts.filter(p => p.store === s.id);
     }
 
-    // Load manually-updated stores from Redis (Kahan's, Kol Tuv, Market Place)
+    // Load manually-updated stores from Redis (Kahan's, Kol Tuv).
+    // 'marketplace' was a duplicate — the real "Market Place" store is the
+    // MCG-API-fed kosherfamily (its website is hosted on kosherfamily.com).
+    const MANUAL_PURGE_IDS = new Set(['marketplace']);
     let manualStores: ManualStore[] = manualStoresDefaults;
     if (redis) {
       try {
         const raw = await redis.get(MANUAL_KEY);
         if (raw) {
           const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-          if (Array.isArray(parsed)) manualStores = parsed;
+          if (Array.isArray(parsed)) {
+            const cleaned = parsed.filter((s: ManualStore) => !MANUAL_PURGE_IDS.has(s.id));
+            if (cleaned.length !== parsed.length) {
+              await redis.set(MANUAL_KEY, JSON.stringify(cleaned));
+            }
+            manualStores = cleaned;
+          }
         }
       } catch {}
     }
